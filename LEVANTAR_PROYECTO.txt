@@ -1,0 +1,87 @@
+==============================================================
+ ALERTPROMPT - CÓMO LEVANTAR EL PROYECTO EN LOCAL
+==============================================================
+
+REQUISITOS
+----------
+- Docker + Docker Compose
+- Node.js + npm
+- Archivo .env en la raíz (si no existe: cp .env.example .env)
+
+
+1. LEVANTAR CONTENEDORES
+------------------------
+    cd ~/projects/alertprompt
+    docker compose up -d --build
+
+Servicios que arrancan:
+    app         PHP-FPM (Laravel)
+    nginx       http://localhost:8000
+    horizon     procesa la cola (arranca solo)
+    scheduler   tareas programadas (arranca solo)
+    postgres    puerto 5434 en el host  (db: comms / user: comms / pass: secret)
+    redis       puerto 6380 en el host
+
+
+2. BASE DE DATOS (solo la primera vez)
+--------------------------------------
+    docker compose exec app php artisan key:generate     # solo si APP_KEY está vacío
+    docker compose exec app php artisan migrate --seed
+
+IMPORTANTE: todos los comandos artisan se corren DENTRO del contenedor
+(docker compose exec app ...), porque el .env usa DB_HOST=postgres y
+REDIS_HOST=redis, que solo existen en la red de Docker.
+
+CUIDADO: "php artisan migrate:fresh --seed" BORRA TODA LA BASE.
+Usarlo solo para reiniciar desde cero.
+
+
+3. FRONTEND (React + Vite)
+--------------------------
+    npm install
+    npm run dev
+
+Dejar esta terminal abierta mientras se trabaja.
+
+
+4. ENTRAR A LA APP
+------------------
+    URL:        http://localhost:8000
+    Usuario:    admin@demo.pe
+    Contraseña: password
+    Tenant:     Demo Empresa SAC (con contactos de prueba)
+
+
+5. VERIFICAR QUE TODO CORRE
+---------------------------
+    docker compose ps
+    docker compose exec app php artisan horizon:status
+    docker compose logs -f horizon        # ver jobs de envío en vivo
+    docker compose exec app php artisan queue:failed
+
+
+6. ANTES DE ENVIAR MENSAJES REALES
+----------------------------------
+Revisar en .env:
+    WHATSAPP_DRIVER=twilio
+    SMS_DRIVER=twilio
+    EMAIL_DRIVER=sendgrid
+    TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_SMS_FROM / TWILIO_WHATSAPP_FROM
+    SENDGRID_API_KEY / MAIL_FROM_ADDRESS / MAIL_FROM_NAME
+
+Después de cambiar el .env:
+    docker compose exec app php artisan config:clear
+    docker compose restart app horizon
+
+
+7. CALIDAD (antes de cada commit)
+---------------------------------
+    docker compose exec app ./vendor/bin/pint
+    docker compose exec app ./vendor/bin/pest
+    npm run typecheck
+
+
+8. APAGAR
+---------
+    docker compose down          # apaga, conserva datos
+    docker compose down -v       # apaga y BORRA volúmenes (base de datos incluida)
