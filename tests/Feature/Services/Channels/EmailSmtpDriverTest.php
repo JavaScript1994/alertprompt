@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\Channel;
 use App\Services\Channels\Email\EmailSmtpDriver;
 use App\Services\Channels\OutboundMessage;
+use App\Services\Channels\SendResult;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\Mailer\Exception\TransportException;
 
@@ -37,7 +38,7 @@ it('sends an email through the smtp mailer and returns a successful SendResult',
  * Mail::fake() nunca llega a invocar el transporte real, así que no hay
  * forma de simular un TransportExceptionInterface a través del contrato público.
  */
-function mapSmtpTransportException(string $message): App\Services\Channels\SendResult
+function mapSmtpTransportException(string $message): SendResult
 {
     $driver = new EmailSmtpDriver;
     $method = new ReflectionMethod($driver, 'mapTransportException');

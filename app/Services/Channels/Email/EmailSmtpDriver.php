@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Channels\Email;
 
 use App\Services\Channels\ChannelDriver;
-use App\Services\Channels\MessageStatusUpdate;
 use App\Services\Channels\OutboundMessage;
 use App\Services\Channels\SendResult;
 use Illuminate\Http\Request;
