@@ -1,0 +1,64 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /*
+     * Paleta de marca AlertPrompt — System Mapping UX/UI.
+     * brand    = Alert Blue (#0B3B60 en 600): color principal, headers,
+     *            botones primarios, navegación.
+     * prompt   = Prompt Teal (#1FBAA6 en 500): gradientes de marca, acentos,
+     *            links interactivos, hover de CTA primario.
+     * whatsapp = WhatsApp Green (#25D366 en 500): estados de éxito/entrega,
+     *            confirmación de consentimiento, canal WhatsApp. bg-whatsapp-500
+     *            es solo para íconos/badges (fondo claro); un botón sólido con
+     *            texto blanco necesita whatsapp-700 u oscuro para pasar AA —
+     *            el verde base es demasiado luminoso para texto blanco encima.
+     * ink      = Base Text & Neutral Dark (#1A2530): texto principal.
+     * surface  = Background Grey / Card Surface (#F4F7F9): fondo de pantalla.
+     *
+     * Bordes suaves (#E2E8F0) y gris de bloqueado/lista negra (#64748B) ya
+     * coinciden exactamente con slate-200 y slate-500 de Tailwind — se siguen
+     * usando esas clases sin necesidad de un token nuevo. Lo mismo con el rojo
+     * de error (#DC2626 = red-600).
+     */
+    --color-brand-50: #eaf0f5;
+    --color-brand-100: #ccdce9;
+    --color-brand-200: #99b9d3;
+    --color-brand-300: #6696bc;
+    --color-brand-400: #3b7098;
+    --color-brand-500: #164f79;
+    --color-brand-600: #0b3b60;
+    --color-brand-700: #092e4b;
+    --color-brand-800: #072337;
+    --color-brand-900: #051826;
+
+    --color-prompt-50: #eafbf8;
+    --color-prompt-100: #cdf4ee;
+    --color-prompt-200: #9be8dd;
+    --color-prompt-300: #66d9c9;
+    --color-prompt-400: #37c7b2;
+    --color-prompt-500: #1fbaa6;
+    --color-prompt-600: #189889;
+    --color-prompt-700: #147b70;
+    --color-prompt-800: #12615a;
+    --color-prompt-900: #0f4f49;
+
+    --color-whatsapp-50: #e9fbf0;
+    --color-whatsapp-100: #c8f5d8;
+    --color-whatsapp-200: #97ebb4;
+    --color-whatsapp-300: #5fdd8c;
+    --color-whatsapp-400: #3ad777;
+    --color-whatsapp-500: #25d366;
+    --color-whatsapp-600: #1eae55;
+    --color-whatsapp-700: #178a43;
+    --color-whatsapp-800: #106832;
+    --color-whatsapp-900: #0a4a23;
+
+    --color-ink-900: #1a2530;
+    --color-surface: #f4f7f9;
+}
