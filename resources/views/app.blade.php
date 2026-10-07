@@ -7,12 +7,22 @@
 
         <title>{{ config('app.name') }}</title>
 
+        {{-- Aplica el tema guardado antes de pintar, para evitar el destello claro en modo oscuro. --}}
+        <script>
+            (function () {
+                var theme = 'system';
+                try { theme = localStorage.getItem('alertprompt-theme') || 'system'; } catch (e) {}
+                var dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (dark) document.documentElement.classList.add('dark');
+            })();
+        </script>
+
         @fonts
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     </head>
-    <body class="antialiased">
+    <body>
         <div id="app"></div>
     </body>
 </html>
