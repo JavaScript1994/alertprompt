@@ -87,6 +87,7 @@
     --color-ring: var(--ring);
     --color-sidebar: var(--sidebar);
     --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-tenant-accent: var(--tenant-accent);
 
     --color-info: var(--info);
     --color-success: var(--success);
@@ -139,6 +140,17 @@
     --ring: color-mix(in oklab, var(--primary) 40%, transparent);
     --sidebar: var(--white);
     --sidebar-foreground: #475569;
+
+    /*
+     * Acento de marca de las pantallas públicas (login). Hoy es fijo: el
+     * Prompt Teal de AlertPrompt para todos.
+     * TODO(módulo de clientes): cuando exista el registro de empresas, cada
+     * tenant podrá personalizar su login (logo y color) desde su perfil de
+     * empresa, guardado en tenants.settings. Como el login es pre-auth, el
+     * tenant se resolverá por subdominio o slug y se sobreescribirá solo esta
+     * variable; sin configuración, se usa este valor por defecto.
+     */
+    --tenant-accent: #147b70;
 
     --lightprimary: color-mix(in oklab, var(--primary) 10%, transparent);
     --lightsecondary: color-mix(in oklab, var(--secondary) 12%, transparent);
