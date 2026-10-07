@@ -1,42 +1,45 @@
-import { MessageSquareText, ShieldCheck, Zap } from 'lucide-react';
+import { CircleHelp } from 'lucide-react';
 import { Outlet } from 'react-router-dom';
 import Logo from '@/components/shared/Logo';
-import { Card } from '@/components/ui/card';
+import ComingSoon from '@/pages/auth/partials/ComingSoon';
+import LoginHero from '@/pages/auth/partials/LoginHero';
 
-const FEATURES = [
-    { icon: MessageSquareText, label: 'WhatsApp, SMS y Email' },
-    { icon: ShieldCheck, label: 'Cumplimiento Ley N° 32323' },
-    { icon: Zap, label: 'Entregas en vivo' },
-];
+const CURRENT_YEAR = new Date().getFullYear();
 
-/** Layout "auth2" de Tailwindadmin: tarjeta centrada sobre fondo tenue de marca. */
+/**
+ * Layout de las pantallas públicas: panel de marca a la izquierda y formulario
+ * a la derecha. Usa el branding por defecto de AlertPrompt (ver
+ * --tenant-accent en app.css para la futura personalización por empresa).
+ */
 export default function AuthLayout() {
     return (
-        <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-lightprimary px-4 py-10">
-            <div
-                aria-hidden
-                className="pointer-events-none absolute -top-32 -right-32 size-96 rounded-full bg-prompt-500/15 blur-3xl"
-            />
-            <div
-                aria-hidden
-                className="pointer-events-none absolute -bottom-32 -left-32 size-96 rounded-full bg-brand-500/15 blur-3xl"
-            />
+        <div className="flex min-h-dvh flex-col bg-card xl:h-dvh xl:min-h-[600px]">
+            <header className="mx-auto w-full max-w-[1600px] flex shrink-0 items-center justify-between px-6 py-5 sm:px-10 xl:px-16 xl:py-7 short:xl:py-4">
+                <Logo size="lg" />
+                <ComingSoon className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+                    <CircleHelp className="size-4.5" />
+                    <span className="hidden sm:inline">Centro de ayuda</span>
+                </ComingSoon>
+            </header>
 
-            <div className="relative w-full md:w-[450px]">
-                <Card className="gap-0 border-none p-8 shadow-lg">
-                    <Logo className="mx-auto mb-8" />
-                    <Outlet />
-                </Card>
+            <main className="mx-auto w-full max-w-[1600px] grid min-h-0 flex-1 grid-cols-1 gap-16 px-6 sm:px-10 xl:grid-cols-2 xl:px-16 2xl:gap-24">
+                <div className="hidden min-h-0 xl:block">
+                    <LoginHero />
+                </div>
+                <div className="flex items-center justify-center py-6 sm:py-10 xl:py-0">
+                    <div className="w-full max-w-md">
+                        <Outlet />
+                    </div>
+                </div>
+            </main>
 
-                <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-                    {FEATURES.map((feature) => (
-                        <li key={feature.label} className="flex items-center gap-1.5">
-                            <feature.icon className="size-3.5 text-primary dark:text-brand-200" />
-                            {feature.label}
-                        </li>
-                    ))}
-                </ul>
-            </div>
+            <footer className="mx-auto w-full max-w-[1600px] flex shrink-0 flex-col items-center justify-between gap-3 px-6 py-5 text-xs text-muted-foreground sm:flex-row sm:px-10 xl:px-16 xl:py-6 short:xl:py-4">
+                <p>© {CURRENT_YEAR} AlertPrompt. Todos los derechos reservados.</p>
+                <div className="flex gap-6">
+                    <ComingSoon className="hover:text-foreground">Privacidad</ComingSoon>
+                    <ComingSoon className="hover:text-foreground">Términos de uso</ComingSoon>
+                </div>
+            </footer>
         </div>
     );
 }
