@@ -1,18 +1,20 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AxiosError } from 'axios';
-import { CheckCircle2, MessageSquareText } from 'lucide-react';
+import { CheckCircle2, MessageSquareText, TriangleAlert, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import Alert from '@/components/ui/Alert';
-import Badge, { type BadgeVariant } from '@/components/ui/Badge';
-import Button from '@/components/ui/Button';
-import EmptyState from '@/components/ui/EmptyState';
-import Input from '@/components/ui/Input';
-import PageHeader from '@/components/ui/PageHeader';
-import Select from '@/components/ui/Select';
-import { SkeletonTable } from '@/components/ui/Skeleton';
-import Textarea from '@/components/ui/Textarea';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import EmptyState from '@/components/shared/EmptyState';
+import PageHeader from '@/components/shared/PageHeader';
+import { TemplateStatusBadge } from '@/components/shared/StatusBadge';
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import {
     useCreateTemplate,
     useDeleteTemplate,
@@ -20,24 +22,9 @@ import {
     useTemplates,
     useUpdateTemplate,
 } from '@/hooks/useTemplates';
-import type { Template, TemplateStatus } from '@/types';
+import { apiErrorMessage } from '@/lib/format';
+import type { Template } from '@/types';
 import TemplatesTable from './TemplatesTable';
-
-const STATUS_LABELS: Record<TemplateStatus, string> = {
-    draft: 'Borrador',
-    pending_approval: 'Pendiente',
-    approved: 'Aprobada',
-    rejected: 'Rechazada',
-    disabled: 'Deshabilitada',
-};
-
-const STATUS_VARIANTS: Record<TemplateStatus, BadgeVariant> = {
-    draft: 'neutral',
-    pending_approval: 'warning',
-    approved: 'success',
-    rejected: 'error',
-    disabled: 'neutral',
-};
 
 const templateSchema = z.object({
     channel: z.enum(['whatsapp', 'sms', 'email']),
@@ -60,11 +47,11 @@ export default function Templates() {
     // estado y la acción para aprobarla, ya que no hay ningún flujo
     // automático de revisión en este MVP — todas nacen en "Borrador".
     const [justCreated, setJustCreated] = useState<Template | null>(null);
+    const [deleting, setDeleting] = useState<Template | null>(null);
 
-    const onDeleteTemplate = (template: Template) => {
-        if (window.confirm(`¿Eliminar la plantilla "${template.name}"? Esta acción no se puede deshacer.`)) {
-            deleteTemplate.mutate(template.id);
-        }
+    const confirmDelete = () => {
+        if (!deleting) return;
+        deleteTemplate.mutate(deleting.id, { onSettled: () => setDeleting(null) });
     };
 
     const onApproveTemplate = (template: Template) => {
@@ -91,6 +78,7 @@ export default function Templates() {
 
     const {
         register,
+        control,
         handleSubmit,
         watch,
         reset,
@@ -109,7 +97,6 @@ export default function Templates() {
         if (!body) return;
         const timeout = setTimeout(() => {
             preview.mutate({ body, sampleData });
-            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, 400);
         return () => clearTimeout(timeout);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -129,90 +116,124 @@ export default function Templates() {
         <div>
             <PageHeader title="Plantillas" description="Definí el contenido de tus mensajes con variables dinámicas." />
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <section>
-                    <h2 className="mb-3 text-sm font-semibold text-ink-900">Nueva plantilla</h2>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                <section className="space-y-6 xl:col-span-5">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Nueva plantilla</CardTitle>
+                            <CardDescription>Todas nacen en Borrador y se aprueban antes de usarse.</CardDescription>
+                        </CardHeader>
 
-                    <form
-                        onSubmit={onSubmit}
-                        className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-                    >
-                        <div className="grid grid-cols-2 gap-4">
-                            <Select label="Canal" {...register('channel')}>
-                                <option value="whatsapp">WhatsApp</option>
-                                <option value="sms">SMS</option>
-                                <option value="email">Email</option>
-                            </Select>
-                            <Select label="Categoría" {...register('category')}>
-                                <option value="marketing">Marketing</option>
-                                <option value="utility">Utility</option>
-                                <option value="authentication">Authentication</option>
-                            </Select>
-                        </div>
+                        <form onSubmit={onSubmit} className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="Canal" htmlFor="template-channel">
+                                    <Controller
+                                        control={control}
+                                        name="channel"
+                                        render={({ field }) => (
+                                            <Select value={field.value} onValueChange={field.onChange}>
+                                                <SelectTrigger id="template-channel">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                                                    <SelectItem value="sms">SMS</SelectItem>
+                                                    <SelectItem value="email">Email</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    />
+                                </Field>
+                                <Field label="Categoría" htmlFor="template-category">
+                                    <Controller
+                                        control={control}
+                                        name="category"
+                                        render={({ field }) => (
+                                            <Select value={field.value} onValueChange={field.onChange}>
+                                                <SelectTrigger id="template-category">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="marketing">Marketing</SelectItem>
+                                                    <SelectItem value="utility">Utility</SelectItem>
+                                                    <SelectItem value="authentication">Authentication</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    />
+                                </Field>
+                            </div>
 
-                        <Input
-                            label="Nombre"
-                            placeholder="bienvenida_nuevo_cliente"
-                            error={errors.name?.message}
-                            {...register('name')}
-                        />
+                            <Field label="Nombre" htmlFor="template-name" error={errors.name?.message}>
+                                <Input
+                                    id="template-name"
+                                    placeholder="bienvenida_nuevo_cliente"
+                                    aria-invalid={Boolean(errors.name)}
+                                    {...register('name')}
+                                />
+                            </Field>
 
-                        <Textarea
-                            label={
-                                <>
-                                    Contenido{' '}
-                                    <span className="font-normal text-slate-400">
-                                        — usa {'{{variable}}'} para campos dinámicos
-                                    </span>
-                                </>
-                            }
-                            rows={5}
-                            className="font-mono"
-                            placeholder="Hola {{nombre}}, tu pedido {{pedido}} está listo."
-                            error={errors.body?.message}
-                            {...register('body')}
-                        />
+                            <Field
+                                label={
+                                    <>
+                                        Contenido
+                                        <span className="font-normal text-muted-foreground">
+                                            — usa {'{{variable}}'} para campos dinámicos
+                                        </span>
+                                    </>
+                                }
+                                htmlFor="template-body"
+                                error={errors.body?.message}
+                            >
+                                <Textarea
+                                    id="template-body"
+                                    rows={5}
+                                    className="font-mono"
+                                    placeholder="Hola {{nombre}}, tu pedido {{pedido}} está listo."
+                                    aria-invalid={Boolean(errors.body)}
+                                    {...register('body')}
+                                />
+                            </Field>
 
-                        {createTemplate.isError && (
-                            <Alert type="error">
-                                {createTemplate.error instanceof AxiosError
-                                    ? (createTemplate.error.response?.data?.errors?.name?.[0] ??
-                                      createTemplate.error.response?.data?.errors?.channel?.[0] ??
-                                      createTemplate.error.response?.data?.errors?.category?.[0] ??
-                                      createTemplate.error.response?.data?.errors?.body?.[0] ??
-                                      createTemplate.error.response?.data?.message ??
-                                      'No se pudo crear la plantilla.')
-                                    : 'No se pudo crear la plantilla.'}
-                            </Alert>
-                        )}
+                            {createTemplate.isError && (
+                                <Alert variant="error">
+                                    <XCircle />
+                                    <AlertTitle>
+                                        {apiErrorMessage(
+                                            createTemplate.error,
+                                            ['name', 'channel', 'category', 'body'],
+                                            'No se pudo crear la plantilla.',
+                                        )}
+                                    </AlertTitle>
+                                </Alert>
+                            )}
 
-                        <Button type="submit" loading={createTemplate.isPending} className="w-full">
-                            {createTemplate.isPending ? 'Guardando…' : 'Crear plantilla'}
-                        </Button>
-                    </form>
+                            <Button type="submit" loading={createTemplate.isPending} className="w-full">
+                                {createTemplate.isPending ? 'Guardando…' : 'Crear plantilla'}
+                            </Button>
+                        </form>
+                    </Card>
 
                     {justCreated && (
-                        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
+                        <Card className="gap-3">
                             <div className="flex items-center justify-between gap-3">
                                 <div>
-                                    <p className="text-sm font-medium text-ink-900">{justCreated.name}</p>
-                                    <p className="mt-0.5 text-xs text-slate-500">
+                                    <p className="font-medium text-foreground">{justCreated.name}</p>
+                                    <p className="mt-0.5 text-xs text-muted-foreground">
                                         Estado actual de la plantilla que acabás de crear.
                                     </p>
                                 </div>
-                                <Badge variant={STATUS_VARIANTS[justCreated.status]}>
-                                    {STATUS_LABELS[justCreated.status]}
-                                </Badge>
+                                <TemplateStatusBadge status={justCreated.status} />
                             </div>
 
                             {justCreated.status === 'approved' ? (
-                                <p className="mt-3 flex items-center gap-1.5 text-xs text-whatsapp-700">
-                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                <p className="flex items-center gap-1.5 text-xs text-success">
+                                    <CheckCircle2 className="size-3.5" />
                                     Ya está aprobada — podés usarla para lanzar una campaña.
                                 </p>
                             ) : (
                                 <>
-                                    <p className="mt-3 text-xs text-slate-500">
+                                    <p className="text-xs text-muted-foreground">
                                         Las plantillas nuevas quedan en <strong>Borrador</strong>. Este MVP no tiene
                                         un flujo automático de revisión (en producción, WhatsApp exige que Meta
                                         apruebe cada plantilla) — para poder usarla en una campaña, alguien tiene
@@ -221,7 +242,7 @@ export default function Templates() {
                                     <Button
                                         size="sm"
                                         variant="success"
-                                        className="mt-3"
+                                        className="w-fit"
                                         onClick={() => onApproveTemplate(justCreated)}
                                         loading={updateTemplate.isPending}
                                     >
@@ -229,71 +250,84 @@ export default function Templates() {
                                     </Button>
                                 </>
                             )}
-                        </div>
+                        </Card>
                     )}
 
                     {preview.data && preview.data.variables.length > 0 && (
-                        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
-                            <p className="mb-2 text-sm font-medium text-slate-700">Datos de prueba</p>
-                            <div className="space-y-2">
+                        <Card className="gap-4">
+                            <CardHeader>
+                                <CardTitle className="text-base">Datos de prueba</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2">
                                 {preview.data.variables.map((variable) => (
-                                    <div key={variable} className="flex items-center gap-2">
-                                        <label className="w-28 shrink-0 text-sm text-slate-600">{variable}</label>
-                                        <input
+                                    <div key={variable} className="flex items-center gap-3">
+                                        <label
+                                            htmlFor={`sample-${variable}`}
+                                            className="w-28 shrink-0 truncate font-mono text-sm text-muted-foreground"
+                                        >
+                                            {variable}
+                                        </label>
+                                        <Input
+                                            id={`sample-${variable}`}
+                                            className="h-9"
                                             value={sampleData[variable] ?? ''}
                                             onChange={(event) =>
                                                 setSampleData((prev) => ({ ...prev, [variable]: event.target.value }))
                                             }
-                                            className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 focus:outline-none"
                                         />
                                     </div>
                                 ))}
-                            </div>
+                            </CardContent>
 
-                            <p className="mt-4 mb-1.5 text-sm font-medium text-slate-700">Vista previa</p>
-                            <p className="rounded-lg bg-slate-50 p-3 text-sm whitespace-pre-wrap text-slate-800">
-                                {preview.data.rendered}
-                            </p>
-                            {preview.data.missing.length > 0 && (
-                                <p className="mt-2 text-xs text-amber-600">
-                                    Faltan valores para: {preview.data.missing.join(', ')}
+                            <div>
+                                <p className="mb-2 text-sm font-medium text-foreground">Vista previa</p>
+                                <p className="rounded-lg bg-muted p-3 text-sm whitespace-pre-wrap text-foreground">
+                                    {preview.data.rendered}
                                 </p>
-                            )}
-                        </div>
+                                {preview.data.missing.length > 0 && (
+                                    <p className="mt-2 flex items-center gap-1.5 text-xs text-warning">
+                                        <TriangleAlert className="size-3.5" />
+                                        Faltan valores para: {preview.data.missing.join(', ')}
+                                    </p>
+                                )}
+                            </div>
+                        </Card>
                     )}
                 </section>
 
-                <section>
-                    <h2 className="mb-3 text-sm font-semibold text-ink-900">Todas las plantillas</h2>
+                <section className="xl:col-span-7">
+                    <h2 className="mb-3 text-base">Todas las plantillas</h2>
 
                     {deleteTemplate.isError && (
-                        <Alert type="error" className="mb-3">
-                            {deleteTemplate.error instanceof AxiosError
-                                ? (deleteTemplate.error.response?.data?.message ??
-                                  'No se pudo eliminar la plantilla.')
-                                : 'No se pudo eliminar la plantilla.'}
+                        <Alert variant="error" className="mb-3">
+                            <XCircle />
+                            <AlertTitle>
+                                {apiErrorMessage(deleteTemplate.error, [], 'No se pudo eliminar la plantilla.')}
+                            </AlertTitle>
                         </Alert>
                     )}
                     {updateTemplate.isError && (
-                        <Alert type="error" className="mb-3">
-                            {updateTemplate.error instanceof AxiosError
-                                ? (updateTemplate.error.response?.data?.message ??
-                                  'No se pudo aprobar la plantilla.')
-                                : 'No se pudo aprobar la plantilla.'}
+                        <Alert variant="error" className="mb-3">
+                            <XCircle />
+                            <AlertTitle>
+                                {apiErrorMessage(updateTemplate.error, [], 'No se pudo aprobar la plantilla.')}
+                            </AlertTitle>
                         </Alert>
                     )}
 
                     {isLoading && (
-                        <div className="rounded-xl border border-slate-200 bg-white p-5">
-                            <SkeletonTable rows={5} />
-                        </div>
+                        <Card className="gap-4">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                                <Skeleton key={i} className="h-10 w-full" />
+                            ))}
+                        </Card>
                     )}
 
                     {!isLoading && data?.data.length === 0 && (
                         <EmptyState
                             icon={MessageSquareText}
                             title="No hay plantillas todavía"
-                            description="Creá tu primera plantilla desde el formulario de la izquierda."
+                            description="Creá tu primera plantilla desde el formulario."
                         />
                     )}
 
@@ -302,13 +336,24 @@ export default function Templates() {
                             data={data}
                             onApprove={onApproveTemplate}
                             approvePendingId={updateTemplate.isPending ? (updateTemplate.variables?.id ?? null) : null}
-                            onDelete={onDeleteTemplate}
+                            onDelete={setDeleting}
                             deletePendingId={deleteTemplate.isPending ? deleteTemplate.variables : null}
                             onPageChange={setPage}
                         />
                     )}
                 </section>
             </div>
+
+            <ConfirmDialog
+                open={deleting !== null}
+                title="Eliminar plantilla"
+                description={`¿Eliminar la plantilla "${deleting?.name ?? ''}"? Esta acción no se puede deshacer.`}
+                confirmLabel="Eliminar"
+                destructive
+                loading={deleteTemplate.isPending}
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleting(null)}
+            />
         </div>
     );
 }

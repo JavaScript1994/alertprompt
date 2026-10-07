@@ -1,22 +1,25 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AxiosError } from 'axios';
-import { Megaphone } from 'lucide-react';
+import { Megaphone, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import Alert from '@/components/ui/Alert';
-import Button from '@/components/ui/Button';
-import EmptyState from '@/components/ui/EmptyState';
-import Input from '@/components/ui/Input';
-import PageHeader from '@/components/ui/PageHeader';
-import Select from '@/components/ui/Select';
-import { SkeletonTable } from '@/components/ui/Skeleton';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import EmptyState from '@/components/shared/EmptyState';
+import PageHeader from '@/components/shared/PageHeader';
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCampaigns, useCreateCampaign, useDeleteCampaign, useDispatchCampaign } from '@/hooks/useCampaigns';
 import { useApprovedTemplates } from '@/hooks/useTemplates';
+import { apiErrorMessage } from '@/lib/format';
 import type { Campaign } from '@/types';
 import CampaignFormModal from './CampaignFormModal';
 import CampaignsTable from './CampaignsTable';
 import ContactPicker from './ContactPicker';
+import TemplateSelect from './TemplateSelect';
 
 const campaignSchema = z.object({
     name: z.string().min(1, 'Ingresa un nombre').max(255),
@@ -33,11 +36,11 @@ export default function Campaigns() {
     const dispatchCampaign = useDispatchCampaign();
     const deleteCampaign = useDeleteCampaign();
     const [editingCampaignId, setEditingCampaignId] = useState<number | null>(null);
+    const [deleting, setDeleting] = useState<Campaign | null>(null);
 
-    const onDelete = (campaign: Campaign) => {
-        if (window.confirm(`¿Eliminar la campaña "${campaign.name}"? Esta acción no se puede deshacer.`)) {
-            deleteCampaign.mutate(campaign.id);
-        }
+    const confirmDelete = () => {
+        if (!deleting) return;
+        deleteCampaign.mutate(deleting.id, { onSettled: () => setDeleting(null) });
     };
 
     const [selectedContactIds, setSelectedContactIds] = useState<number[]>([]);
@@ -46,6 +49,7 @@ export default function Campaigns() {
 
     const {
         register,
+        control,
         handleSubmit,
         reset,
         formState: { errors },
@@ -77,98 +81,123 @@ export default function Campaigns() {
         );
     });
 
-    const createError =
-        createCampaign.error instanceof AxiosError
-            ? (createCampaign.error.response?.data?.errors?.template_id?.[0] ??
-              createCampaign.error.response?.data?.errors?.contact_ids?.[0] ??
-              createCampaign.error.response?.data?.errors?.scheduled_at?.[0] ??
-              'Error al crear la campaña.')
-            : audienceError;
-
     return (
         <div>
             <PageHeader title="Campañas" description="Lanzá y seguí el progreso de tus campañas en vivo." />
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <section>
-                    <h2 className="mb-3 text-sm font-semibold text-ink-900">Nueva campaña</h2>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                <section className="xl:col-span-5">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Nueva campaña</CardTitle>
+                            <CardDescription>Elegí plantilla, destinatarios y, si querés, fecha de envío.</CardDescription>
+                        </CardHeader>
 
-                    <form
-                        onSubmit={onSubmit}
-                        className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-                    >
-                        <Input
-                            label="Nombre"
-                            placeholder="Promo de fin de semana"
-                            error={errors.name?.message}
-                            {...register('name')}
-                        />
+                        <form onSubmit={onSubmit} className="space-y-4">
+                            <Field label="Nombre" htmlFor="campaign-name" error={errors.name?.message}>
+                                <Input
+                                    id="campaign-name"
+                                    placeholder="Promo de fin de semana"
+                                    aria-invalid={Boolean(errors.name)}
+                                    {...register('name')}
+                                />
+                            </Field>
 
-                        <Select
-                            label="Plantilla"
-                            error={errors.template_id?.message}
-                            hint={
-                                templates?.length === 0
-                                    ? 'No hay plantillas aprobadas todavía. Aprobá una desde la sección de plantillas.'
-                                    : undefined
-                            }
-                            {...register('template_id', { valueAsNumber: true })}
-                        >
-                            <option value={0}>Elegí una plantilla aprobada…</option>
-                            {templates?.map((template) => (
-                                <option key={template.id} value={template.id}>
-                                    {template.name} ({template.channel})
-                                </option>
-                            ))}
-                        </Select>
+                            <Field
+                                label="Plantilla"
+                                htmlFor="campaign-template"
+                                error={errors.template_id?.message}
+                                hint={
+                                    templates?.length === 0
+                                        ? 'No hay plantillas aprobadas todavía. Aprobá una desde la sección de plantillas.'
+                                        : undefined
+                                }
+                            >
+                                <Controller
+                                    control={control}
+                                    name="template_id"
+                                    render={({ field }) => (
+                                        <TemplateSelect
+                                            id="campaign-template"
+                                            templates={templates}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            invalid={Boolean(errors.template_id)}
+                                        />
+                                    )}
+                                />
+                            </Field>
 
-                        <ContactPicker selected={selectedContactIds} onChange={setSelectedContactIds} />
+                            <ContactPicker
+                                selected={selectedContactIds}
+                                onChange={setSelectedContactIds}
+                                error={audienceError}
+                            />
 
-                        <Input
-                            type="datetime-local"
-                            label="Programar para (opcional)"
-                            hint="Si lo dejás vacío, la campaña queda como borrador y la iniciás vos manualmente."
-                            value={scheduledAt}
-                            onChange={(event) => setScheduledAt(event.target.value)}
-                        />
+                            <Field
+                                label="Programar para (opcional)"
+                                htmlFor="campaign-scheduled-at"
+                                hint="Si lo dejás vacío, la campaña queda como borrador y la iniciás vos manualmente."
+                            >
+                                <Input
+                                    id="campaign-scheduled-at"
+                                    type="datetime-local"
+                                    value={scheduledAt}
+                                    onChange={(event) => setScheduledAt(event.target.value)}
+                                />
+                            </Field>
 
-                        {createError && <Alert type="error">{createError}</Alert>}
+                            {createCampaign.isError && (
+                                <Alert variant="error">
+                                    <XCircle />
+                                    <AlertTitle>
+                                        {apiErrorMessage(
+                                            createCampaign.error,
+                                            ['template_id', 'contact_ids', 'scheduled_at'],
+                                            'Error al crear la campaña.',
+                                        )}
+                                    </AlertTitle>
+                                </Alert>
+                            )}
 
-                        <Button type="submit" loading={createCampaign.isPending} className="w-full">
-                            {createCampaign.isPending ? 'Creando…' : 'Crear campaña'}
-                        </Button>
-                    </form>
+                            <Button type="submit" loading={createCampaign.isPending} className="w-full">
+                                {createCampaign.isPending ? 'Creando…' : 'Crear campaña'}
+                            </Button>
+                        </form>
+                    </Card>
                 </section>
 
-                <section>
+                <section className="xl:col-span-7">
                     <div className="mb-3 flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-ink-900">Todas las campañas</h2>
-                        <span className="flex items-center gap-1.5 text-xs text-slate-400">
-                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-whatsapp-500" />
+                        <h2 className="text-base">Todas las campañas</h2>
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span className="size-1.5 animate-pulse rounded-full bg-whatsapp-500" />
                             en vivo
                         </span>
                     </div>
 
                     {deleteCampaign.isError && (
-                        <Alert type="error" className="mb-3">
-                            {deleteCampaign.error instanceof AxiosError
-                                ? (deleteCampaign.error.response?.data?.message ??
-                                  'No se pudo eliminar la campaña.')
-                                : 'No se pudo eliminar la campaña.'}
+                        <Alert variant="error" className="mb-3">
+                            <XCircle />
+                            <AlertTitle>
+                                {apiErrorMessage(deleteCampaign.error, [], 'No se pudo eliminar la campaña.')}
+                            </AlertTitle>
                         </Alert>
                     )}
 
                     {isLoading && (
-                        <div className="rounded-xl border border-slate-200 bg-white p-5">
-                            <SkeletonTable rows={5} />
-                        </div>
+                        <Card className="gap-4">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                                <Skeleton key={i} className="h-12 w-full" />
+                            ))}
+                        </Card>
                     )}
 
                     {!isLoading && data?.data.length === 0 && (
                         <EmptyState
                             icon={Megaphone}
                             title="No hay campañas todavía"
-                            description="Creá tu primera campaña desde el formulario de la izquierda."
+                            description="Creá tu primera campaña desde el formulario."
                         />
                     )}
 
@@ -178,7 +207,7 @@ export default function Campaigns() {
                             onDispatch={(campaign) => dispatchCampaign.mutate(campaign.id)}
                             dispatchPendingId={dispatchCampaign.isPending ? dispatchCampaign.variables : null}
                             onEdit={(campaign) => setEditingCampaignId(campaign.id)}
-                            onDelete={onDelete}
+                            onDelete={setDeleting}
                             deletePendingId={deleteCampaign.isPending ? deleteCampaign.variables : null}
                             onPageChange={setPage}
                         />
@@ -187,6 +216,17 @@ export default function Campaigns() {
             </div>
 
             <CampaignFormModal campaignId={editingCampaignId} onClose={() => setEditingCampaignId(null)} />
+
+            <ConfirmDialog
+                open={deleting !== null}
+                title="Eliminar campaña"
+                description={`¿Eliminar la campaña "${deleting?.name ?? ''}"? Esta acción no se puede deshacer.`}
+                confirmLabel="Eliminar"
+                destructive
+                loading={deleteCampaign.isPending}
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleting(null)}
+            />
         </div>
     );
 }

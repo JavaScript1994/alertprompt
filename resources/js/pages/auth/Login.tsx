@@ -1,13 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
-import { Lock, Mail } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Navigate } from 'react-router-dom';
 import { z } from 'zod';
-import Alert from '@/components/ui/Alert';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuthUser, useLogin } from '@/hooks/useAuth';
 
 const loginSchema = z.object({
@@ -46,47 +49,57 @@ export default function Login() {
     const invalidCredentials =
         login.error instanceof AxiosError && login.error.response?.status !== 422 ? login.error : null;
 
+    const emailError = errors.email?.message ?? serverErrors?.email?.[0];
+
     return (
         <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-ink-900">Bienvenido de nuevo</h2>
-            <p className="mt-1.5 mb-8 text-sm text-slate-500">Ingresá con las credenciales de tu cuenta.</p>
+            <h2 className="text-2xl tracking-tight">Bienvenido de nuevo</h2>
+            <p className="mt-1.5 mb-8 text-sm text-muted-foreground">Ingresá con las credenciales de tu cuenta.</p>
 
             <form onSubmit={onSubmit} className="space-y-4" noValidate>
-                <Input
-                    type="email"
-                    label="Email"
-                    autoComplete="email"
-                    icon={Mail}
-                    placeholder="vos@empresa.pe"
-                    error={errors.email?.message ?? serverErrors?.email?.[0]}
-                    {...register('email')}
-                />
+                <Field label="Email" htmlFor="email" error={emailError}>
+                    <Input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="vos@empresa.pe"
+                        aria-invalid={Boolean(emailError)}
+                        {...register('email')}
+                    />
+                </Field>
 
-                <Input
-                    type="password"
-                    label="Contraseña"
-                    autoComplete="current-password"
-                    icon={Lock}
-                    error={errors.password?.message}
-                    {...register('password')}
-                />
+                <Field label="Contraseña" htmlFor="password" error={errors.password?.message}>
+                    <Input
+                        id="password"
+                        type="password"
+                        autoComplete="current-password"
+                        aria-invalid={Boolean(errors.password)}
+                        {...register('password')}
+                    />
+                </Field>
 
-                <div className="flex items-center justify-between">
-                    <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
-                        <input
-                            type="checkbox"
+                <div className="flex items-center justify-between py-1">
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            id="remember"
                             checked={remember}
-                            onChange={(event) => setRemember(event.target.checked)}
-                            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-2 focus:ring-brand-500/30"
+                            onCheckedChange={(checked) => setRemember(checked === true)}
                         />
-                        Recordarme
-                    </label>
-                    <a href="#" className="text-sm font-medium text-brand-600 hover:text-brand-500">
+                        <Label htmlFor="remember" className="cursor-pointer font-normal text-muted-foreground">
+                            Recordarme
+                        </Label>
+                    </div>
+                    <a href="#" className="text-sm font-medium text-primary hover:underline dark:text-brand-200">
                         ¿Olvidaste tu contraseña?
                     </a>
                 </div>
 
-                {invalidCredentials && <Alert type="error">No pudimos iniciar sesión. Intentá de nuevo.</Alert>}
+                {invalidCredentials && (
+                    <Alert variant="error">
+                        <AlertCircle />
+                        <AlertTitle>No pudimos iniciar sesión. Intentá de nuevo.</AlertTitle>
+                    </Alert>
+                )}
 
                 <Button type="submit" loading={login.isPending} className="w-full">
                     {login.isPending ? 'Ingresando…' : 'Ingresar'}
