@@ -11,17 +11,17 @@ const CHANNELS = [
 /** Panel izquierdo del login: propuesta de valor + ilustración de mensajes. */
 export default function LoginHero() {
     return (
-        <section className="relative flex h-full flex-col overflow-hidden rounded-3xl bg-gradient-to-b from-slate-50 via-slate-50 to-prompt-50 px-12 pt-14 short:pt-9 shorter:pt-8 dark:from-white/[0.05] dark:via-white/[0.04] dark:to-prompt-500/10">
-            <h1 className="text-[2.75rem] leading-[1.1] font-bold tracking-tight text-brand-700 short:text-[2.25rem] dark:text-white">
+        <section className="relative flex h-full flex-col overflow-hidden rounded-3xl bg-gradient-to-b from-slate-50 via-slate-50 to-prompt-50 px-12 pt-14 short:pt-9 shorter:pt-6 dark:from-white/[0.05] dark:via-white/[0.04] dark:to-prompt-500/10">
+            <h1 className="text-[2.75rem] leading-[1.1] font-bold tracking-tight text-brand-700 short:text-[2.25rem] shorter:text-[1.9rem] dark:text-white">
                 Comunicaciones
                 <br />
                 Masivas <span className="text-tenant-accent dark:text-prompt-400">Sencillas.</span>
             </h1>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground short:mt-3">
+            <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground short:mt-3 shorter:mt-2 shorter:text-sm">
                 Conecta con tus clientes por WhatsApp, SMS y Email desde un solo lugar.
             </p>
 
-            <ul className="mt-6 flex flex-wrap gap-2.5 short:mt-4">
+            <ul className="mt-6 flex flex-wrap gap-2.5 short:mt-4 shorter:mt-3">
                 {CHANNELS.map((channel) => (
                     <li
                         key={channel.label}
@@ -33,14 +33,14 @@ export default function LoginHero() {
                 ))}
             </ul>
 
-            {/* Ocupa el espacio libre y se escala para entrar; en pantallas muy bajas se oculta. */}
-            <HeroIllustration className="mt-6 short:mt-3 shorter:hidden" />
+            {/* Ocupa el espacio libre y se escala para entrar en cualquier alto de pantalla. */}
+            <HeroIllustration className="mt-6 short:mt-3 shorter:mt-2" />
 
-            <p className="relative z-10 mt-3 text-center text-sm text-muted-foreground shorter:mt-auto">
+            <p className="relative z-10 mt-3 text-center text-sm text-muted-foreground shorter:mt-1">
                 Todos tus canales. Un mismo lugar.
             </p>
 
-            <SkylineArt className="-mx-12 mt-4 h-28 shrink-0 short:h-20 w-[calc(100%+6rem)] max-w-none text-brand-200/70 dark:text-brand-400/30" />
+            <SkylineArt className="-mx-12 mt-4 h-28 shrink-0 short:h-20 shorter:mt-2 shorter:h-14 w-[calc(100%+6rem)] max-w-none text-brand-200/70 dark:text-brand-400/30" />
         </section>
     );
 }

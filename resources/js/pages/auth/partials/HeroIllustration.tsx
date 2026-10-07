@@ -33,7 +33,7 @@ export default function HeroIllustration({ className }: { className?: string }) 
         <div
             ref={wrapperRef}
             aria-hidden
-            className={cn('relative min-h-[170px] w-full flex-1 [--fit:1]', className)}
+            className={cn('relative min-h-[140px] w-full flex-1 [--fit:1]', className)}
         >
             <div
                 className="absolute top-1/2 left-1/2"
