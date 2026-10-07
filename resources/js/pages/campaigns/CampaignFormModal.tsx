@@ -22,11 +22,12 @@ const campaignSchema = z.object({
 
 type CampaignFormValues = z.infer<typeof campaignSchema>;
 
+const pad = (n: number) => String(n).padStart(2, '0');
+
 // Input datetime-local necesita "YYYY-MM-DDTHH:mm" en hora local, sin
 // segundos ni zona horaria.
 function toDatetimeLocal(iso: string): string {
     const date = new Date(iso);
-    const pad = (n: number) => String(n).padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 

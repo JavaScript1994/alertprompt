@@ -19,6 +19,22 @@ import ContactFormModal from './ContactFormModal';
 
 const columnHelper = createColumnHelper<Contact>();
 
+function downloadTemplate(): void {
+    const csv = [
+        'name,phone,email,distrito',
+        'Ana Torres,+51987654321,ana.torres@example.com,Miraflores',
+        'Carlos Ramos,+51911223344,,San Isidro',
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'plantilla_contactos.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
 export default function Contacts() {
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
@@ -42,22 +58,6 @@ export default function Contacts() {
         event.target.value = '';
         if (!file) return;
         importContacts.mutate(file);
-    };
-
-    const downloadTemplate = () => {
-        const csv = [
-            'name,phone,email,distrito',
-            'Ana Torres,+51987654321,ana.torres@example.com,Miraflores',
-            'Carlos Ramos,+51911223344,,San Isidro',
-        ].join('\n');
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'plantilla_contactos.csv';
-        link.click();
-        URL.revokeObjectURL(url);
     };
 
     const columns = useMemo(

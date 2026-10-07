@@ -78,20 +78,15 @@ export default function Login() {
                     />
                 </Field>
 
-                <div className="flex items-center justify-between py-1">
-                    <div className="flex items-center gap-2">
-                        <Checkbox
-                            id="remember"
-                            checked={remember}
-                            onCheckedChange={(checked) => setRemember(checked === true)}
-                        />
-                        <Label htmlFor="remember" className="cursor-pointer font-normal text-muted-foreground">
-                            Recordarme
-                        </Label>
-                    </div>
-                    <a href="#" className="text-sm font-medium text-primary hover:underline dark:text-brand-200">
-                        ¿Olvidaste tu contraseña?
-                    </a>
+                <div className="flex items-center gap-2 py-1">
+                    <Checkbox
+                        id="remember"
+                        checked={remember}
+                        onCheckedChange={(checked) => setRemember(checked === true)}
+                    />
+                    <Label htmlFor="remember" className="cursor-pointer font-normal text-muted-foreground">
+                        Recordarme
+                    </Label>
                 </div>
 
                 {invalidCredentials && (
