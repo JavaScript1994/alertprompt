@@ -22,7 +22,7 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-const inputClasses = 'h-14 rounded-lg bg-card pl-12 text-base';
+const inputClasses = 'h-14 rounded-lg bg-card pl-12 text-base shorter:h-12';
 const iconClasses = 'pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground';
 
 export default function Login() {
@@ -60,13 +60,13 @@ export default function Login() {
     return (
         <div>
             <div className="text-center">
-                <h2 className="text-[2rem] font-bold tracking-tight text-brand-700 dark:text-white">
+                <h2 className="text-[2rem] font-bold tracking-tight text-brand-700 shorter:text-[1.75rem] dark:text-white">
                     Bienvenido de nuevo
                 </h2>
-                <p className="mt-3 text-muted-foreground">Inicia sesión y continúa conectando con tus clientes.</p>
+                <p className="mt-3 text-muted-foreground shorter:mt-1.5">Inicia sesión y continúa conectando con tus clientes.</p>
             </div>
 
-            <form onSubmit={onSubmit} className="mt-10 space-y-6" noValidate>
+            <form onSubmit={onSubmit} className="mt-10 space-y-6 short:mt-7 shorter:mt-5 shorter:space-y-4" noValidate>
                 <Field label="Correo electrónico" htmlFor="email" error={emailError} className="space-y-2.5">
                     <div className="relative">
                         <Mail className={iconClasses} />
@@ -132,14 +132,14 @@ export default function Login() {
                 <Button
                     type="submit"
                     loading={login.isPending}
-                    className="h-14 w-full rounded-lg bg-tenant-accent text-base hover:bg-tenant-accent/90"
+                    className="h-14 w-full rounded-lg bg-tenant-accent text-base hover:bg-tenant-accent/90 shorter:h-12"
                 >
                     {login.isPending ? 'Iniciando sesión…' : 'Iniciar sesión'}
                     {!login.isPending && <ArrowRight className="size-5" />}
                 </Button>
             </form>
 
-            <Separator className="my-8" />
+            <Separator className="my-8 short:my-6 shorter:my-4" />
 
             <p className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
                 ¿Aún no tienes una cuenta?
