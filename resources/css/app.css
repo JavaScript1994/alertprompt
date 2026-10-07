@@ -1,30 +1,30 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/*
+ * Tema basado en Tailwindadmin (shadcn/ui): los componentes usan tokens
+ * semánticos (primary, card, muted, border…) definidos como variables CSS,
+ * así el modo oscuro es solo redefinir esas variables bajo `.dark`.
+ */
+@custom-variant dark (&:is(.dark *));
+
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
+    --shadow-md: 0 1px 4px rgba(133, 146, 173, 0.2);
+
     /*
-     * Paleta de marca AlertPrompt — System Mapping UX/UI.
-     * brand    = Alert Blue (#0B3B60 en 600): color principal, headers,
-     *            botones primarios, navegación.
-     * prompt   = Prompt Teal (#1FBAA6 en 500): gradientes de marca, acentos,
-     *            links interactivos, hover de CTA primario.
-     * whatsapp = WhatsApp Green (#25D366 en 500): estados de éxito/entrega,
-     *            confirmación de consentimiento, canal WhatsApp. bg-whatsapp-500
-     *            es solo para íconos/badges (fondo claro); un botón sólido con
-     *            texto blanco necesita whatsapp-700 u oscuro para pasar AA —
-     *            el verde base es demasiado luminoso para texto blanco encima.
-     * ink      = Base Text & Neutral Dark (#1A2530): texto principal.
-     * surface  = Background Grey / Card Surface (#F4F7F9): fondo de pantalla.
-     *
-     * Bordes suaves (#E2E8F0) y gris de bloqueado/lista negra (#64748B) ya
-     * coinciden exactamente con slate-200 y slate-500 de Tailwind — se siguen
-     * usando esas clases sin necesidad de un token nuevo. Lo mismo con el rojo
-     * de error (#DC2626 = red-600).
+     * Paleta de marca AlertPrompt — System Mapping UX/UI. Se conservan las
+     * escalas completas porque la iconografía por canal (ChannelBadge) las usa
+     * directamente; el resto de la UI pasa por los tokens semánticos de abajo.
+     * brand    = Alert Blue (#0B3B60 en 600)
+     * prompt   = Prompt Teal (#1FBAA6 en 500)
+     * whatsapp = WhatsApp Green (#25D366 en 500) — sólo fondos claros/íconos;
+     *            con texto blanco encima hace falta 700 para pasar AA.
      */
     --color-brand-50: #eaf0f5;
     --color-brand-100: #ccdce9;
@@ -59,6 +59,152 @@
     --color-whatsapp-800: #106832;
     --color-whatsapp-900: #0a4a23;
 
-    --color-ink-900: #1a2530;
-    --color-surface: #f4f7f9;
+}
+
+@theme inline {
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+
+    --color-info: var(--info);
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-error: var(--error);
+    --color-dark: var(--dark);
+    --color-lightprimary: var(--lightprimary);
+    --color-lightsecondary: var(--lightsecondary);
+    --color-lightsuccess: var(--lightsuccess);
+    --color-lighterror: var(--lighterror);
+    --color-lightinfo: var(--lightinfo);
+    --color-lightwarning: var(--lightwarning);
+    --color-primaryemphasis: var(--primary-emphasis);
+    --color-successemphasis: var(--success-emphasis);
+    --color-erroremphasis: var(--error-emphasis);
+}
+
+:root {
+    --radius: 10px;
+
+    --white: #ffffff;
+    --dark: #1a2530;
+
+    /* Alert Blue como primario; el hover vira a Prompt Teal (CTA de marca). */
+    --primary: #0b3b60;
+    --primary-foreground: var(--white);
+    --primary-emphasis: #189889;
+    --secondary: #189889;
+    --secondary-foreground: var(--white);
+
+    /* Estados: success = WhatsApp Green 700 (AA con texto blanco). */
+    --success: #178a43;
+    --warning: #d97706;
+    --error: #dc2626;
+    --info: #2563eb;
+
+    --background: #f4f7f9;
+    --foreground: var(--dark);
+    --card: var(--white);
+    --card-foreground: var(--dark);
+    --popover: var(--white);
+    --popover-foreground: var(--dark);
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+    --accent: var(--lightprimary);
+    --accent-foreground: var(--primary);
+    --destructive: var(--error);
+    --border: #e2e8f0;
+    --input: #cbd5e1;
+    --ring: color-mix(in oklab, var(--primary) 40%, transparent);
+    --sidebar: var(--white);
+    --sidebar-foreground: #475569;
+
+    --lightprimary: color-mix(in oklab, var(--primary) 10%, transparent);
+    --lightsecondary: color-mix(in oklab, var(--secondary) 12%, transparent);
+    --lightsuccess: color-mix(in oklab, var(--success) 12%, transparent);
+    --lightwarning: color-mix(in oklab, var(--warning) 12%, transparent);
+    --lighterror: color-mix(in oklab, var(--error) 10%, transparent);
+    --lightinfo: color-mix(in oklab, var(--info) 10%, transparent);
+
+    --success-emphasis: color-mix(in oklab, var(--success) 80%, black);
+    --error-emphasis: color-mix(in oklab, var(--error) 80%, black);
+}
+
+.dark {
+    /* Alert Blue 600 se pierde sobre fondo oscuro: se aclara a 400. */
+    --primary: #3b7098;
+    --primary-emphasis: #1fbaa6;
+    --secondary: #1fbaa6;
+
+    --success: #3ad777;
+    --warning: #f6b51e;
+    --error: #f87171;
+    --info: #60a5fa;
+
+    --background: #111a22;
+    --foreground: #e2e8f0;
+    --card: var(--dark);
+    --card-foreground: #e2e8f0;
+    --popover: #243241;
+    --popover-foreground: #e2e8f0;
+    --muted: #243241;
+    --muted-foreground: #8a9bb0;
+    --accent: var(--lightprimary);
+    --accent-foreground: #99b9d3;
+    --border: #2c3b4b;
+    --input: #3a4b5d;
+    --sidebar: var(--dark);
+    --sidebar-foreground: #8a9bb0;
+
+    --lightprimary: color-mix(in oklab, var(--primary) 25%, transparent);
+    --lightsecondary: color-mix(in oklab, var(--secondary) 20%, transparent);
+    --lightsuccess: color-mix(in oklab, var(--success) 18%, transparent);
+    --lightwarning: color-mix(in oklab, var(--warning) 18%, transparent);
+    --lighterror: color-mix(in oklab, var(--error) 18%, transparent);
+    --lightinfo: color-mix(in oklab, var(--info) 18%, transparent);
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+
+    body {
+        @apply bg-background text-sm text-foreground antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-semibold text-foreground;
+    }
+
+    button:not(:disabled),
+    [role='button']:not(:disabled) {
+        cursor: pointer;
+    }
 }

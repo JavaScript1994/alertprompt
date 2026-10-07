@@ -1,7 +1,11 @@
 import { Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import Input from '@/components/ui/Input';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useContacts } from '@/hooks/useContacts';
+import { cn } from '@/lib/utils';
 
 interface ContactSummary {
     name: string;
@@ -13,12 +17,14 @@ export default function ContactPicker({
     selected,
     onChange,
     initialDetails,
+    error,
 }: {
     selected: number[];
     onChange: (ids: number[]) => void;
     /** Nombres/teléfonos de contactos ya matriculados (edición), para mostrarlos
      *  como chips aunque no aparezcan en la página actual de la búsqueda. */
     initialDetails?: Record<number, ContactSummary>;
+    error?: string | null;
 }) {
     const [search, setSearch] = useState('');
     const { data } = useContacts({ page: 1, search });
@@ -33,7 +39,6 @@ export default function ContactPicker({
         if (initialDetails) {
             setKnownDetails((prev) => ({ ...initialDetails, ...prev }));
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialDetails]);
 
     useEffect(() => {
@@ -53,63 +58,60 @@ export default function ContactPicker({
     };
 
     return (
-        <div>
-            <div className="mb-2 flex items-center justify-between">
-                <label className="block text-sm font-medium text-slate-700">Destinatarios</label>
-                <span className="text-xs text-slate-500">{selected.length} seleccionados</span>
+        <div className="space-y-2">
+            <div className="flex items-center justify-between">
+                <Label>Destinatarios</Label>
+                <span className="text-xs text-muted-foreground">{selected.length} seleccionados</span>
             </div>
 
             {selected.length > 0 && (
-                <div className="mb-2 flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5">
                     {selected.map((id) => (
-                        <span
-                            key={id}
-                            className="inline-flex items-center gap-1 rounded-full bg-brand-50 py-1 pr-1.5 pl-2.5 text-xs font-medium text-brand-700"
-                        >
+                        <Badge key={id} variant="primary" className="py-1 pr-1">
                             {knownDetails[id]?.name ?? `Contacto #${id}`}
                             <button
                                 type="button"
                                 onClick={() => toggle(id)}
-                                className="rounded-full p-0.5 hover:bg-brand-100"
+                                aria-label="Quitar"
+                                className="rounded-full p-0.5 hover:bg-primary/15"
                             >
-                                <X className="h-3 w-3" />
+                                <X />
                             </button>
-                        </span>
+                        </Badge>
                     ))}
                 </div>
             )}
 
-            <div className="rounded-lg border border-slate-300">
-                <div className="border-b border-slate-200 p-2">
+            <div className={cn('overflow-hidden rounded-md border border-input', error && 'border-error')}>
+                <div className="relative border-b">
+                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                        icon={Search}
                         placeholder="Buscar contacto…"
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
-                        className="border-0 focus:ring-0"
+                        className="rounded-none border-0 pl-9 focus-visible:ring-0"
                     />
                 </div>
                 <div className="max-h-48 overflow-y-auto p-1.5">
                     {contacts.length === 0 && (
-                        <p className="px-2 py-4 text-center text-sm text-slate-400">Sin contactos.</p>
+                        <p className="px-2 py-4 text-center text-sm text-muted-foreground">Sin contactos.</p>
                     )}
                     {contacts.map((contact) => (
                         <label
                             key={contact.id}
-                            className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm hover:bg-slate-50"
+                            className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
                         >
-                            <input
-                                type="checkbox"
-                                checked={selected.includes(contact.id)}
-                                onChange={() => toggle(contact.id)}
-                                className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-2 focus:ring-brand-500/30"
-                            />
-                            <span className="min-w-0 flex-1 truncate text-slate-800">{contact.name}</span>
-                            <span className="shrink-0 text-xs text-slate-400">{contact.phone ?? contact.email}</span>
+                            <Checkbox checked={selected.includes(contact.id)} onCheckedChange={() => toggle(contact.id)} />
+                            <span className="min-w-0 flex-1 truncate text-foreground">{contact.name}</span>
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                                {contact.phone ?? contact.email}
+                            </span>
                         </label>
                     ))}
                 </div>
             </div>
+
+            {error && <p className="text-sm text-error">{error}</p>}
         </div>
     );
 }
