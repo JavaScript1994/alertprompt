@@ -13,8 +13,8 @@ const CURRENT_YEAR = new Date().getFullYear();
  */
 export default function AuthLayout() {
     return (
-        <div className="flex min-h-screen flex-col bg-card">
-            <header className="flex items-center justify-between px-6 py-6 sm:px-10 lg:px-16 lg:py-8">
+        <div className="flex min-h-dvh flex-col bg-card xl:h-dvh xl:min-h-[600px]">
+            <header className="mx-auto w-full max-w-[1600px] flex shrink-0 items-center justify-between px-6 py-5 sm:px-10 xl:px-16 xl:py-7 short:xl:py-4">
                 <Logo size="lg" />
                 <ComingSoon className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
                     <CircleHelp className="size-4.5" />
@@ -22,18 +22,18 @@ export default function AuthLayout() {
                 </ComingSoon>
             </header>
 
-            <main className="grid flex-1 grid-cols-1 gap-10 px-6 sm:px-10 lg:grid-cols-2 lg:px-16 xl:gap-20">
-                <div className="hidden min-h-[680px] lg:block">
+            <main className="mx-auto w-full max-w-[1600px] grid min-h-0 flex-1 grid-cols-1 gap-16 px-6 sm:px-10 xl:grid-cols-2 xl:px-16 2xl:gap-24">
+                <div className="hidden min-h-0 xl:block">
                     <LoginHero />
                 </div>
-                <div className="flex items-center justify-center py-8 lg:py-0">
+                <div className="flex items-center justify-center py-6 sm:py-10 xl:py-0">
                     <div className="w-full max-w-md">
                         <Outlet />
                     </div>
                 </div>
             </main>
 
-            <footer className="flex flex-col items-center justify-between gap-3 px-6 py-6 text-xs text-muted-foreground sm:flex-row sm:px-10 lg:px-16 lg:py-8">
+            <footer className="mx-auto w-full max-w-[1600px] flex shrink-0 flex-col items-center justify-between gap-3 px-6 py-5 text-xs text-muted-foreground sm:flex-row sm:px-10 xl:px-16 xl:py-6 short:xl:py-4">
                 <p>© {CURRENT_YEAR} AlertPrompt. Todos los derechos reservados.</p>
                 <div className="flex gap-6">
                     <ComingSoon className="hover:text-foreground">Privacidad</ComingSoon>

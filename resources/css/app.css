@@ -11,6 +11,10 @@
  */
 @custom-variant dark (&:is(.dark *));
 
+/* Pantallas bajas (laptops 720–768px, o 1080px con escalado de Windows al 125%). */
+@custom-variant short (@media (max-height: 859px));
+@custom-variant shorter (@media (max-height: 699px));
+
 @theme {
     --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
