@@ -68,7 +68,7 @@ export default function Dashboard() {
                     <AvatarFallback className="bg-card text-sm">{initials(user?.name)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                    <h1 className="text-lg">¡Hola de nuevo, {user?.name?.split(' ')[0] ?? ''}! 👋</h1>
+                    <h1 className="text-lg">¡Hola de nuevo, {user?.name?.split(' ')[0] ?? ''}!</h1>
                     <p className="text-muted-foreground">Así está {user?.tenant.name ?? 'tu cuenta'} hoy.</p>
                 </div>
             </div>
@@ -90,7 +90,7 @@ export default function Dashboard() {
                 <CardHeader className="flex-row items-center justify-between border-b px-6 py-4">
                     <div className="flex items-center gap-3">
                         <CardTitle className="text-base">Campañas recientes</CardTitle>
-                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
                             <span className="size-1.5 animate-pulse rounded-full bg-whatsapp-500" />
                             en vivo
                         </span>

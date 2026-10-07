@@ -170,7 +170,7 @@ export default function Campaigns() {
                 <section className="xl:col-span-7">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="text-base">Todas las campañas</h2>
-                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
                             <span className="size-1.5 animate-pulse rounded-full bg-whatsapp-500" />
                             en vivo
                         </span>

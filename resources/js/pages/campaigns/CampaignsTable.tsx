@@ -63,7 +63,7 @@ export default function CampaignsTable({
                 cell: (info) => {
                     const campaign = info.row.original;
                     return (
-                        <div className="max-w-[220px]">
+                        <div className="max-w-[200px]">
                             <p className="truncate font-medium text-foreground">{campaign.name}</p>
                             <ChannelBadge channel={campaign.channel} className="mt-1" />
                             <p className="mt-1 truncate text-xs text-muted-foreground">
@@ -92,7 +92,7 @@ export default function CampaignsTable({
             columnHelper.display({
                 id: 'actions',
                 header: () => <span className="sr-only">Acciones</span>,
-                meta: { className: 'w-44 text-right' },
+                meta: { className: 'w-40 text-right' },
                 cell: (info) => {
                     const campaign = info.row.original;
                     if (campaign.status !== 'draft' && campaign.status !== 'scheduled') return null;
@@ -145,7 +145,7 @@ export default function CampaignsTable({
 
     return (
         <div>
-            <DataTable data={data.data} columns={columns} minWidth="min-w-[680px]" />
+            <DataTable data={data.data} columns={columns} minWidth="min-w-[580px]" />
             <Pagination meta={data.meta} noun="campañas" onPageChange={onPageChange} />
         </div>
     );

@@ -125,6 +125,7 @@ export default function ConsentsModal({
                                                 <Button
                                                     variant="ghosterror"
                                                     size="sm"
+                                                    className="text-error"
                                                     onClick={() => setRevoking(consent)}
                                                     disabled={revokeConsent.isPending}
                                                 >
@@ -135,6 +136,7 @@ export default function ConsentsModal({
                                                 <Button
                                                     variant="ghostsuccess"
                                                     size="sm"
+                                                    className="text-success"
                                                     onClick={() => openGrantForm(channel)}
                                                 >
                                                     <ShieldCheck />

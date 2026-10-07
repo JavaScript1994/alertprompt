@@ -33,7 +33,7 @@ export default function TemplatesTable({
                 cell: (info) => {
                     const template = info.row.original;
                     return (
-                        <div className="max-w-[240px]">
+                        <div className="max-w-[200px]">
                             <p className="truncate font-medium text-foreground">{template.name}</p>
                             <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{template.body}</p>
                             {template.variables.length > 0 && (
@@ -112,7 +112,7 @@ export default function TemplatesTable({
 
     return (
         <div>
-            <DataTable data={data.data} columns={columns} minWidth="min-w-[680px]" />
+            <DataTable data={data.data} columns={columns} minWidth="min-w-[580px]" />
             <Pagination meta={data.meta} noun="plantillas" onPageChange={onPageChange} />
         </div>
     );

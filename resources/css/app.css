@@ -59,9 +59,6 @@
     --color-whatsapp-800: #106832;
     --color-whatsapp-900: #0a4a23;
 
-    /* Legacy: se eliminan cuando todas las páginas usan tokens semánticos. */
-    --color-ink-900: #1a2530;
-    --color-surface: #f4f7f9;
 }
 
 @theme inline {
