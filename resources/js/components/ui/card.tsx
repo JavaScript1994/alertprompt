@@ -15,8 +15,12 @@ function CardHeader({ className, ...props }: ComponentProps<'div'>) {
     return <div data-slot="card-header" className={cn('flex flex-col gap-1.5', className)} {...props} />;
 }
 
-function CardTitle({ className, ...props }: ComponentProps<'h2'>) {
-    return <h2 data-slot="card-title" className={cn('text-lg leading-none font-semibold', className)} {...props} />;
+function CardTitle({ className, children, ...props }: ComponentProps<'h2'>) {
+    return (
+        <h2 data-slot="card-title" className={cn('text-lg leading-none font-semibold', className)} {...props}>
+            {children}
+        </h2>
+    );
 }
 
 function CardDescription({ className, ...props }: ComponentProps<'p'>) {

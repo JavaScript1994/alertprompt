@@ -1,19 +1,15 @@
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { useEffect, useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import Header from './partials/Header';
 import Sidebar from './partials/Sidebar';
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 /** FullLayout de Tailwindadmin: sidebar fijo de 270px en desktop, Sheet en móvil. */
 export default function DashboardLayout() {
-    const { pathname } = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-    // Cerrar el menú móvil al navegar entre secciones.
-    useEffect(() => {
-        setIsSidebarOpen(false);
-    }, [pathname]);
 
     return (
         <div className="min-h-screen">
@@ -27,6 +23,7 @@ export default function DashboardLayout() {
                         <SheetTitle>Menú de navegación</SheetTitle>
                         <SheetDescription>Secciones de AlertPrompt</SheetDescription>
                     </VisuallyHidden>
+                    {/* Cierra el menú móvil al elegir una sección. */}
                     <Sidebar onNavigate={() => setIsSidebarOpen(false)} />
                 </SheetContent>
             </Sheet>
@@ -41,7 +38,7 @@ export default function DashboardLayout() {
                 </main>
 
                 <footer className="px-6 pb-6 text-center text-xs text-muted-foreground">
-                    © {new Date().getFullYear()} AlertPrompt · Mensajería con consentimiento (Ley N° 32323)
+                    © {CURRENT_YEAR} AlertPrompt · Mensajería con consentimiento (Ley N° 32323)
                 </footer>
             </div>
         </div>

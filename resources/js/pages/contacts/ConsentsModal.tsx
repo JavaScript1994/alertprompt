@@ -77,7 +77,7 @@ export default function ConsentsModal({
     const latestByChannel = (channel: TemplateChannel): Consent | undefined =>
         consents
             ?.filter((c) => c.channel === channel)
-            .sort((a, b) => new Date(b.granted_at).getTime() - new Date(a.granted_at).getTime())[0];
+            .toSorted((a, b) => new Date(b.granted_at).getTime() - new Date(a.granted_at).getTime())[0];
 
     return (
         <>
