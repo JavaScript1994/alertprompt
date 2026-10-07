@@ -1,0 +1,32 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["typescript", "react", "jsx-a11y", "import", "unicorn", "oxc"],
+    "env": {
+        "browser": true,
+        "es2024": true
+    },
+    "categories": {
+        "correctness": "error",
+        "suspicious": "warn"
+    },
+    "rules": {
+        "react/rules-of-hooks": "error",
+        "react/exhaustive-deps": "warn",
+        "react/react-in-jsx-scope": "off",
+        "typescript/no-explicit-any": "error",
+        "typescript/consistent-type-imports": "error",
+        "no-unused-vars": "error",
+        "import/no-cycle": "error",
+        "eqeqeq": "error",
+
+        // Los `cell:` de las columnas de TanStack Table son render functions, no componentes anidados.
+        "react/no-unstable-nested-components": "off",
+        // Solo aplica con React Compiler, que este proyecto no usa.
+        "react/incompatible-library": "off",
+        // `axios.create()` es el uso documentado de axios.
+        "import/no-named-as-default-member": "off",
+        // Los imports de CSS (`import '../css/app.css'`) son intencionales.
+        "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }]
+    },
+    "ignorePatterns": ["public/**", "vendor/**", "storage/**", "bootstrap/**", "node_modules/**"]
+}

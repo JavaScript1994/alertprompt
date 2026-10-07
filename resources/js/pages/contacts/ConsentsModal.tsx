@@ -1,17 +1,20 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AxiosError } from 'axios';
-import { ShieldCheck, ShieldOff } from 'lucide-react';
+import { ShieldCheck, ShieldOff, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import Alert from '@/components/ui/Alert';
-import Badge from '@/components/ui/Badge';
-import Button from '@/components/ui/Button';
-import ChannelBadge from '@/components/ui/ChannelBadge';
-import Input from '@/components/ui/Input';
-import Modal from '@/components/ui/Modal';
-import Textarea from '@/components/ui/Textarea';
+import ChannelBadge from '@/components/shared/ChannelBadge';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Field } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import { useConsents, useGrantConsent, useRevokeConsent } from '@/hooks/useConsents';
+import { apiErrorMessage, formatDateTime } from '@/lib/format';
 import type { Consent, TemplateChannel } from '@/types';
 
 const CHANNELS: TemplateChannel[] = ['whatsapp', 'sms', 'email'];
@@ -22,10 +25,6 @@ const consentSchema = z.object({
 });
 
 type ConsentFormValues = z.infer<typeof consentSchema>;
-
-function formatDate(iso: string): string {
-    return new Date(iso).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
-}
 
 export default function ConsentsModal({
     contactId,
@@ -41,6 +40,7 @@ export default function ConsentsModal({
     const revokeConsent = useRevokeConsent(contactId);
 
     const [grantingChannel, setGrantingChannel] = useState<TemplateChannel | null>(null);
+    const [revoking, setRevoking] = useState<Consent | null>(null);
 
     const {
         register,
@@ -67,14 +67,9 @@ export default function ConsentsModal({
         );
     });
 
-    const onRevoke = (consent: Consent) => {
-        if (
-            window.confirm(
-                `¿Revocar el consentimiento de ${contactName ?? 'este contacto'} para ${consent.channel}? Tiene efecto inmediato y no se puede deshacer.`,
-            )
-        ) {
-            revokeConsent.mutate(consent.id);
-        }
+    const confirmRevoke = () => {
+        if (!revoking) return;
+        revokeConsent.mutate(revoking.id, { onSettled: () => setRevoking(null) });
     };
 
     // Un contacto puede tener varias filas históricas por canal (otorgado,
@@ -82,119 +77,158 @@ export default function ConsentsModal({
     const latestByChannel = (channel: TemplateChannel): Consent | undefined =>
         consents
             ?.filter((c) => c.channel === channel)
-            .sort((a, b) => new Date(b.granted_at).getTime() - new Date(a.granted_at).getTime())[0];
+            .toSorted((a, b) => new Date(b.granted_at).getTime() - new Date(a.granted_at).getTime())[0];
 
     return (
-        <Modal
-            open={contactId !== null}
-            onClose={onClose}
-            title={contactName ? `Consentimientos de ${contactName}` : 'Consentimientos'}
-            size="md"
-        >
-            <div className="space-y-3 p-6">
-                <p className="text-xs text-slate-500">
-                    Evidencia de consentimiento por canal (Ley N° 32323): quién lo autorizó, de dónde vino y el texto
-                    exacto que aceptó. Revocar tiene efecto inmediato.
-                </p>
+        <>
+            <Dialog open={contactId !== null} onOpenChange={(isOpen) => !isOpen && onClose()}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {contactName ? `Consentimientos de ${contactName}` : 'Consentimientos'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Evidencia de consentimiento por canal (Ley N° 32323): quién lo autorizó, de dónde vino y el
+                            texto exacto que aceptó. Revocar tiene efecto inmediato.
+                        </DialogDescription>
+                    </DialogHeader>
 
-                {isLoading && <p className="text-sm text-slate-400">Cargando…</p>}
+                    <div className="space-y-3">
+                        {isLoading &&
+                            CHANNELS.map((channel) => <Skeleton key={channel} className="h-14 w-full rounded-lg" />)}
 
-                {!isLoading &&
-                    CHANNELS.map((channel) => {
-                        const consent = latestByChannel(channel);
-                        const isActive = consent?.is_active ?? false;
+                        {!isLoading &&
+                            CHANNELS.map((channel) => {
+                                const consent = latestByChannel(channel);
+                                const isActive = consent?.is_active ?? false;
 
-                        return (
-                            <div key={channel} className="rounded-lg border border-slate-200 p-3.5">
-                                <div className="flex items-center justify-between gap-3">
-                                    <div className="flex items-center gap-2">
-                                        <ChannelBadge channel={channel} />
-                                        {isActive && consent && (
-                                            <Badge variant="success">Vigente desde {formatDate(consent.granted_at)}</Badge>
-                                        )}
-                                        {!isActive && consent && (
-                                            <Badge variant="neutral">
-                                                Revocado el {formatDate(consent.revoked_at ?? consent.granted_at)}
-                                            </Badge>
-                                        )}
-                                        {!consent && <Badge variant="neutral">Sin registrar</Badge>}
-                                    </div>
+                                return (
+                                    <div key={channel} className="rounded-lg border p-4">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <ChannelBadge channel={channel} />
+                                                {isActive && consent && (
+                                                    <Badge variant="success">
+                                                        Vigente desde {formatDateTime(consent.granted_at)}
+                                                    </Badge>
+                                                )}
+                                                {!isActive && consent && (
+                                                    <Badge variant="neutral">
+                                                        Revocado el{' '}
+                                                        {formatDateTime(consent.revoked_at ?? consent.granted_at)}
+                                                    </Badge>
+                                                )}
+                                                {!consent && <Badge variant="neutral">Sin registrar</Badge>}
+                                            </div>
 
-                                    {isActive && consent ? (
-                                        <button
-                                            onClick={() => onRevoke(consent)}
-                                            disabled={revokeConsent.isPending}
-                                            className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
-                                        >
-                                            <ShieldOff className="h-3.5 w-3.5" />
-                                            Revocar
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => openGrantForm(channel)}
-                                            className="inline-flex items-center gap-1 text-xs font-medium text-whatsapp-700 hover:text-whatsapp-800"
-                                        >
-                                            <ShieldCheck className="h-3.5 w-3.5" />
-                                            Otorgar
-                                        </button>
-                                    )}
-                                </div>
-
-                                {consent && (
-                                    <p className="mt-2 text-xs text-slate-400">
-                                        Origen: {consent.source} · &ldquo;{consent.evidence_text}&rdquo;
-                                    </p>
-                                )}
-
-                                {grantingChannel === channel && (
-                                    <form onSubmit={onGrant} className="mt-3 space-y-3 border-t border-slate-100 pt-3">
-                                        {grantConsent.isError && (
-                                            <Alert type="error">
-                                                {grantConsent.error instanceof AxiosError
-                                                    ? (grantConsent.error.response?.data?.message ??
-                                                      'No se pudo registrar el consentimiento.')
-                                                    : 'No se pudo registrar el consentimiento.'}
-                                            </Alert>
-                                        )}
-
-                                        <Input
-                                            label="Origen del consentimiento"
-                                            placeholder="ej. formulario web, opt-in por WhatsApp, registro telefónico"
-                                            error={errors.source?.message}
-                                            {...register('source')}
-                                        />
-                                        <Textarea
-                                            label="Texto exacto que aceptó el contacto"
-                                            rows={2}
-                                            placeholder="ej. Acepto recibir comunicaciones comerciales de AlertPrompt por este canal."
-                                            error={errors.evidence_text?.message}
-                                            {...register('evidence_text')}
-                                        />
-
-                                        <div className="flex justify-end gap-2">
-                                            <Button
-                                                type="button"
-                                                variant="secondary"
-                                                size="sm"
-                                                onClick={() => setGrantingChannel(null)}
-                                            >
-                                                Cancelar
-                                            </Button>
-                                            <Button
-                                                type="submit"
-                                                variant="success"
-                                                size="sm"
-                                                loading={grantConsent.isPending}
-                                            >
-                                                Confirmar consentimiento
-                                            </Button>
+                                            {isActive && consent ? (
+                                                <Button
+                                                    variant="ghosterror"
+                                                    size="sm"
+                                                    className="text-error"
+                                                    onClick={() => setRevoking(consent)}
+                                                    disabled={revokeConsent.isPending}
+                                                >
+                                                    <ShieldOff />
+                                                    Revocar
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    variant="ghostsuccess"
+                                                    size="sm"
+                                                    className="text-success"
+                                                    onClick={() => openGrantForm(channel)}
+                                                >
+                                                    <ShieldCheck />
+                                                    Otorgar
+                                                </Button>
+                                            )}
                                         </div>
-                                    </form>
-                                )}
-                            </div>
-                        );
-                    })}
-            </div>
-        </Modal>
+
+                                        {consent && (
+                                            <p className="mt-2 text-xs text-muted-foreground">
+                                                Origen: {consent.source} · &ldquo;{consent.evidence_text}&rdquo;
+                                            </p>
+                                        )}
+
+                                        {grantingChannel === channel && (
+                                            <form onSubmit={onGrant} className="mt-4 space-y-4 border-t pt-4">
+                                                {grantConsent.isError && (
+                                                    <Alert variant="error">
+                                                        <XCircle />
+                                                        <AlertTitle>
+                                                            {apiErrorMessage(
+                                                                grantConsent.error,
+                                                                [],
+                                                                'No se pudo registrar el consentimiento.',
+                                                            )}
+                                                        </AlertTitle>
+                                                    </Alert>
+                                                )}
+
+                                                <Field
+                                                    label="Origen del consentimiento"
+                                                    htmlFor={`consent-source-${channel}`}
+                                                    error={errors.source?.message}
+                                                >
+                                                    <Input
+                                                        id={`consent-source-${channel}`}
+                                                        placeholder="ej. formulario web, opt-in por WhatsApp, registro telefónico"
+                                                        aria-invalid={Boolean(errors.source)}
+                                                        {...register('source')}
+                                                    />
+                                                </Field>
+                                                <Field
+                                                    label="Texto exacto que aceptó el contacto"
+                                                    htmlFor={`consent-evidence-${channel}`}
+                                                    error={errors.evidence_text?.message}
+                                                >
+                                                    <Textarea
+                                                        id={`consent-evidence-${channel}`}
+                                                        rows={2}
+                                                        placeholder="ej. Acepto recibir comunicaciones comerciales de AlertPrompt por este canal."
+                                                        aria-invalid={Boolean(errors.evidence_text)}
+                                                        {...register('evidence_text')}
+                                                    />
+                                                </Field>
+
+                                                <DialogFooter>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setGrantingChannel(null)}
+                                                    >
+                                                        Cancelar
+                                                    </Button>
+                                                    <Button
+                                                        type="submit"
+                                                        variant="success"
+                                                        size="sm"
+                                                        loading={grantConsent.isPending}
+                                                    >
+                                                        Confirmar consentimiento
+                                                    </Button>
+                                                </DialogFooter>
+                                            </form>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <ConfirmDialog
+                open={revoking !== null}
+                title="Revocar consentimiento"
+                description={`¿Revocar el consentimiento de ${contactName ?? 'este contacto'} para ${revoking?.channel ?? ''}? Tiene efecto inmediato y no se puede deshacer.`}
+                confirmLabel="Revocar"
+                destructive
+                loading={revokeConsent.isPending}
+                onConfirm={confirmRevoke}
+                onCancel={() => setRevoking(null)}
+            />
+        </>
     );
 }

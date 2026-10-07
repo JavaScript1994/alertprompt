@@ -1,17 +1,19 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AxiosError } from 'axios';
+import { XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import Alert from '@/components/ui/Alert';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import Modal from '@/components/ui/Modal';
-import Select from '@/components/ui/Select';
-import { SkeletonCard } from '@/components/ui/Skeleton';
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Field } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCampaign, useUpdateCampaign } from '@/hooks/useCampaigns';
 import { useApprovedTemplates } from '@/hooks/useTemplates';
+import { apiErrorMessage } from '@/lib/format';
 import ContactPicker from './ContactPicker';
+import TemplateSelect from './TemplateSelect';
 
 const campaignSchema = z.object({
     name: z.string().min(1, 'Ingresa un nombre').max(255),
@@ -20,11 +22,12 @@ const campaignSchema = z.object({
 
 type CampaignFormValues = z.infer<typeof campaignSchema>;
 
+const pad = (n: number) => String(n).padStart(2, '0');
+
 // Input datetime-local necesita "YYYY-MM-DDTHH:mm" en hora local, sin
 // segundos ni zona horaria.
 function toDatetimeLocal(iso: string): string {
     const date = new Date(iso);
-    const pad = (n: number) => String(n).padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
@@ -40,6 +43,7 @@ export default function CampaignFormModal({ campaignId, onClose }: { campaignId:
 
     const {
         register,
+        control,
         handleSubmit,
         reset,
         formState: { errors },
@@ -86,78 +90,97 @@ export default function CampaignFormModal({ campaignId, onClose }: { campaignId:
             },
             {
                 onSuccess: onClose,
-                onError: (error) => {
-                    if (error instanceof AxiosError) {
-                        setGeneralError(
-                            error.response?.data?.errors?.template_id?.[0] ??
-                                error.response?.data?.errors?.contact_ids?.[0] ??
-                                error.response?.data?.errors?.scheduled_at?.[0] ??
-                                error.response?.data?.message ??
-                                'No se pudo guardar la campaña.',
-                        );
-                        return;
-                    }
-                    setGeneralError('No se pudo guardar la campaña.');
-                },
+                onError: (error) =>
+                    setGeneralError(
+                        apiErrorMessage(
+                            error,
+                            ['template_id', 'contact_ids', 'scheduled_at'],
+                            'No se pudo guardar la campaña.',
+                        ),
+                    ),
             },
         );
     });
 
     return (
-        <Modal open={campaignId !== null} onClose={onClose} title="Editar campaña" size="lg">
-            {isLoading || !campaign ? (
-                <div className="p-6">
-                    <SkeletonCard />
-                </div>
-            ) : (
-                <form onSubmit={onSubmit} className="space-y-4 p-6">
-                    <Input
-                        label="Nombre"
-                        placeholder="Promo de fin de semana"
-                        error={errors.name?.message}
-                        {...register('name')}
-                    />
+        <Dialog open={campaignId !== null} onOpenChange={(isOpen) => !isOpen && onClose()}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Editar campaña</DialogTitle>
+                    <DialogDescription>Solo se pueden editar campañas en borrador o programadas.</DialogDescription>
+                </DialogHeader>
 
-                    <Select
-                        label="Plantilla"
-                        error={errors.template_id?.message}
-                        {...register('template_id', { valueAsNumber: true })}
-                    >
-                        <option value={0}>Elegí una plantilla aprobada…</option>
-                        {templates?.map((template) => (
-                            <option key={template.id} value={template.id}>
-                                {template.name} ({template.channel})
-                            </option>
-                        ))}
-                    </Select>
-
-                    <ContactPicker
-                        selected={selectedContactIds}
-                        onChange={setSelectedContactIds}
-                        initialDetails={initialContactDetails}
-                    />
-                    {audienceError && <p className="text-sm text-red-600">{audienceError}</p>}
-
-                    <Input
-                        type="datetime-local"
-                        label="Programar para (opcional)"
-                        hint="Si lo dejás vacío, la campaña queda como borrador."
-                        value={scheduledAt}
-                        onChange={(event) => setScheduledAt(event.target.value)}
-                    />
-
-                    {generalError && <Alert type="error">{generalError}</Alert>}
-
-                    <div className="flex justify-end gap-2 pt-2">
-                        <Button type="button" variant="secondary" onClick={onClose}>
-                            Cancelar
-                        </Button>
-                        <Button type="submit" loading={updateCampaign.isPending}>
-                            {updateCampaign.isPending ? 'Guardando…' : 'Guardar cambios'}
-                        </Button>
+                {isLoading || !campaign ? (
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-40 w-full" />
                     </div>
-                </form>
-            )}
-        </Modal>
+                ) : (
+                    <form onSubmit={onSubmit} className="space-y-4">
+                        <Field label="Nombre" htmlFor="edit-campaign-name" error={errors.name?.message}>
+                            <Input
+                                id="edit-campaign-name"
+                                placeholder="Promo de fin de semana"
+                                aria-invalid={Boolean(errors.name)}
+                                {...register('name')}
+                            />
+                        </Field>
+
+                        <Field label="Plantilla" htmlFor="edit-campaign-template" error={errors.template_id?.message}>
+                            <Controller
+                                control={control}
+                                name="template_id"
+                                render={({ field }) => (
+                                    <TemplateSelect
+                                        id="edit-campaign-template"
+                                        templates={templates}
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        invalid={Boolean(errors.template_id)}
+                                    />
+                                )}
+                            />
+                        </Field>
+
+                        <ContactPicker
+                            selected={selectedContactIds}
+                            onChange={setSelectedContactIds}
+                            initialDetails={initialContactDetails}
+                            error={audienceError}
+                        />
+
+                        <Field
+                            label="Programar para (opcional)"
+                            htmlFor="edit-campaign-scheduled-at"
+                            hint="Si lo dejás vacío, la campaña queda como borrador."
+                        >
+                            <Input
+                                id="edit-campaign-scheduled-at"
+                                type="datetime-local"
+                                value={scheduledAt}
+                                onChange={(event) => setScheduledAt(event.target.value)}
+                            />
+                        </Field>
+
+                        {generalError && (
+                            <Alert variant="error">
+                                <XCircle />
+                                <AlertTitle>{generalError}</AlertTitle>
+                            </Alert>
+                        )}
+
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={onClose}>
+                                Cancelar
+                            </Button>
+                            <Button type="submit" loading={updateCampaign.isPending}>
+                                {updateCampaign.isPending ? 'Guardando…' : 'Guardar cambios'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                )}
+            </DialogContent>
+        </Dialog>
     );
 }

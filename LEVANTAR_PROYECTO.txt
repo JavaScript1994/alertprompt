@@ -79,6 +79,7 @@ Después de cambiar el .env:
     docker compose exec app ./vendor/bin/pint
     docker compose exec app ./vendor/bin/pest
     npm run typecheck
+    npm run lint                     # oxlint (config en .oxlintrc.json)
 
 
 8. APAGAR

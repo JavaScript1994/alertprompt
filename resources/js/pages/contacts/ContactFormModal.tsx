@@ -1,12 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
+import { XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import Alert from '@/components/ui/Alert';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import Modal from '@/components/ui/Modal';
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Field } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { useCreateContact, useUpdateContact } from '@/hooks/useContacts';
 import type { Contact } from '@/types';
 
@@ -106,39 +108,57 @@ export default function ContactFormModal({
     });
 
     return (
-        <Modal
-            open={open}
-            onClose={onClose}
-            title={isEditing ? 'Editar contacto' : 'Registro manual de contacto'}
-            size="sm"
-        >
-            <form onSubmit={onSubmit} className="space-y-4 p-6">
-                {generalError && <Alert type="error">{generalError}</Alert>}
+        <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle>{isEditing ? 'Editar contacto' : 'Registro manual de contacto'}</DialogTitle>
+                    <DialogDescription>Teléfono en formato internacional (ej. +51987654321).</DialogDescription>
+                </DialogHeader>
 
-                <Input label="Nombre" placeholder="Ana Torres" error={errors.name?.message} {...register('name')} />
-                <Input
-                    label="Teléfono"
-                    placeholder="+51987654321"
-                    error={errors.phone?.message}
-                    {...register('phone')}
-                />
-                <Input
-                    label="Email"
-                    type="email"
-                    placeholder="ana.torres@example.com"
-                    error={errors.email?.message}
-                    {...register('email')}
-                />
+                <form onSubmit={onSubmit} className="space-y-4">
+                    {generalError && (
+                        <Alert variant="error">
+                            <XCircle />
+                            <AlertTitle>{generalError}</AlertTitle>
+                        </Alert>
+                    )}
 
-                <div className="flex justify-end gap-2 pt-2">
-                    <Button type="button" variant="secondary" onClick={onClose}>
-                        Cancelar
-                    </Button>
-                    <Button type="submit" loading={mutation.isPending}>
-                        {mutation.isPending ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Registrar contacto'}
-                    </Button>
-                </div>
-            </form>
-        </Modal>
+                    <Field label="Nombre" htmlFor="contact-name" error={errors.name?.message}>
+                        <Input
+                            id="contact-name"
+                            placeholder="Ana Torres"
+                            aria-invalid={Boolean(errors.name)}
+                            {...register('name')}
+                        />
+                    </Field>
+                    <Field label="Teléfono" htmlFor="contact-phone" error={errors.phone?.message}>
+                        <Input
+                            id="contact-phone"
+                            placeholder="+51987654321"
+                            aria-invalid={Boolean(errors.phone)}
+                            {...register('phone')}
+                        />
+                    </Field>
+                    <Field label="Email" htmlFor="contact-email" error={errors.email?.message}>
+                        <Input
+                            id="contact-email"
+                            type="email"
+                            placeholder="ana.torres@example.com"
+                            aria-invalid={Boolean(errors.email)}
+                            {...register('email')}
+                        />
+                    </Field>
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={onClose}>
+                            Cancelar
+                        </Button>
+                        <Button type="submit" loading={mutation.isPending}>
+                            {mutation.isPending ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Registrar contacto'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

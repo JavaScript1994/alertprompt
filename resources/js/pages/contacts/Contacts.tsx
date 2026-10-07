@@ -1,16 +1,39 @@
-import { AxiosError } from 'axios';
-import { ChevronLeft, ChevronRight, Download, Pencil, Search, ShieldCheck, UserPlus, Upload, Users } from 'lucide-react';
-import { useRef, useState } from 'react';
-import Alert from '@/components/ui/Alert';
-import Button from '@/components/ui/Button';
-import EmptyState from '@/components/ui/EmptyState';
-import Input from '@/components/ui/Input';
-import PageHeader from '@/components/ui/PageHeader';
-import { SkeletonTable } from '@/components/ui/Skeleton';
+import { createColumnHelper } from '@tanstack/react-table';
+import { CheckCircle2, Download, Info, Pencil, Search, ShieldCheck, UserPlus, Upload, Users, XCircle } from 'lucide-react';
+import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import DataTable from '@/components/shared/DataTable';
+import EmptyState from '@/components/shared/EmptyState';
+import PageHeader from '@/components/shared/PageHeader';
+import Pagination from '@/components/shared/Pagination';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useContacts, useImportContacts } from '@/hooks/useContacts';
+import { apiErrorMessage } from '@/lib/format';
 import type { Contact } from '@/types';
 import ConsentsModal from './ConsentsModal';
 import ContactFormModal from './ContactFormModal';
+
+const columnHelper = createColumnHelper<Contact>();
+
+function downloadTemplate(): void {
+    const csv = [
+        'name,phone,email,distrito',
+        'Ana Torres,+51987654321,ana.torres@example.com,Miraflores',
+        'Carlos Ramos,+51911223344,,San Isidro',
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'plantilla_contactos.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+}
 
 export default function Contacts() {
     const [page, setPage] = useState(1);
@@ -24,39 +47,78 @@ export default function Contacts() {
     const importContacts = useImportContacts();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const onSearchSubmit = (event: React.FormEvent) => {
+    const onSearchSubmit = (event: FormEvent) => {
         event.preventDefault();
         setPage(1);
         setSearch(searchInput);
     };
 
-    const onFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const onFileSelected = (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         event.target.value = '';
         if (!file) return;
         importContacts.mutate(file);
     };
 
-    const importError =
-        importContacts.error instanceof AxiosError
-            ? (importContacts.error.response?.data?.message ?? 'Error al importar el archivo.')
-            : null;
-
-    const downloadTemplate = () => {
-        const csv = [
-            'name,phone,email,distrito',
-            'Ana Torres,+51987654321,ana.torres@example.com,Miraflores',
-            'Carlos Ramos,+51911223344,,San Isidro',
-        ].join('\n');
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'plantilla_contactos.csv';
-        link.click();
-        URL.revokeObjectURL(url);
-    };
+    const columns = useMemo(
+        () => [
+            columnHelper.accessor('name', {
+                header: 'Nombre',
+                cell: (info) => (
+                    <p className="max-w-[220px] truncate font-medium text-foreground">{info.getValue()}</p>
+                ),
+            }),
+            columnHelper.accessor('phone', {
+                header: 'Teléfono',
+                cell: (info) => <span className="whitespace-nowrap text-muted-foreground">{info.getValue() ?? '—'}</span>,
+            }),
+            columnHelper.accessor('email', {
+                header: 'Email',
+                cell: (info) => (
+                    <p className="max-w-[220px] truncate text-muted-foreground">{info.getValue() ?? '—'}</p>
+                ),
+            }),
+            columnHelper.display({
+                id: 'actions',
+                header: () => <span className="sr-only">Acciones</span>,
+                meta: { className: 'w-24 text-right' },
+                cell: (info) => {
+                    const contact = info.row.original;
+                    return (
+                        <div className="inline-flex gap-1">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghostsuccess"
+                                        size="icon-sm"
+                                        aria-label="Consentimientos"
+                                        onClick={() => setConsentsContact(contact)}
+                                    >
+                                        <ShieldCheck />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Consentimientos</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        aria-label="Editar contacto"
+                                        onClick={() => setEditingContact(contact)}
+                                    >
+                                        <Pencil />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Editar contacto</TooltipContent>
+                            </Tooltip>
+                        </div>
+                    );
+                },
+            }),
+        ],
+        [],
+    );
 
     return (
         <div>
@@ -65,12 +127,12 @@ export default function Contacts() {
                 description={data ? `${data.meta.total.toLocaleString('es-PE')} contactos en tu base` : 'Cargando…'}
                 actions={
                     <>
-                        <Button variant="secondary" onClick={() => setIsManualModalOpen(true)}>
-                            <UserPlus className="h-4 w-4" />
+                        <Button variant="outline" onClick={() => setIsManualModalOpen(true)}>
+                            <UserPlus />
                             Registro manual
                         </Button>
-                        <Button variant="secondary" onClick={downloadTemplate}>
-                            <Download className="h-4 w-4" />
+                        <Button variant="outline" onClick={downloadTemplate}>
+                            <Download />
                             Descargar plantilla
                         </Button>
                         <input
@@ -81,53 +143,65 @@ export default function Contacts() {
                             onChange={onFileSelected}
                         />
                         <Button onClick={() => fileInputRef.current?.click()} loading={importContacts.isPending}>
-                            {!importContacts.isPending && <Upload className="h-4 w-4" />}
+                            {!importContacts.isPending && <Upload />}
                             {importContacts.isPending ? 'Subiendo…' : 'Importar CSV'}
                         </Button>
                     </>
                 }
             />
 
-            <Alert type="info" className="mb-4">
-                El CSV necesita columnas <code className="font-mono">name</code> (obligatoria) y al menos una de{' '}
-                <code className="font-mono">phone</code> / <code className="font-mono">email</code>. Cualquier otra
-                columna (como <code className="font-mono">distrito</code>) se guarda como dato extra del contacto.{' '}
-                <button onClick={downloadTemplate} className="font-medium text-brand-700 underline">
-                    Descargá la plantilla de ejemplo
-                </button>
-                .
+            <Alert variant="primary" className="mb-4">
+                <Info />
+                <AlertDescription>
+                    <p>
+                        El CSV necesita columnas <code className="font-mono font-semibold">name</code> (obligatoria) y
+                        al menos una de <code className="font-mono font-semibold">phone</code> /{' '}
+                        <code className="font-mono font-semibold">email</code>. Cualquier otra columna (como{' '}
+                        <code className="font-mono font-semibold">distrito</code>) se guarda como dato extra del
+                        contacto.{' '}
+                        <button onClick={downloadTemplate} className="font-medium underline">
+                            Descargá la plantilla de ejemplo
+                        </button>
+                        .
+                    </p>
+                </AlertDescription>
             </Alert>
 
+            {importContacts.isError && (
+                <Alert variant="error" className="mb-4">
+                    <XCircle />
+                    <AlertTitle>{apiErrorMessage(importContacts.error, [], 'Error al importar el archivo.')}</AlertTitle>
+                </Alert>
+            )}
+            {importContacts.isSuccess && (
+                <Alert variant="success" className="mb-4">
+                    <CheckCircle2 />
+                    <AlertTitle>Archivo recibido. Los contactos se están procesando.</AlertTitle>
+                </Alert>
+            )}
+
             <form onSubmit={onSearchSubmit} className="mb-4 flex gap-2">
-                <div className="max-w-sm flex-1">
+                <div className="relative max-w-sm flex-1">
+                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         type="search"
                         placeholder="Buscar por nombre, teléfono o email"
-                        icon={Search}
+                        className="bg-card pl-9"
                         value={searchInput}
                         onChange={(event) => setSearchInput(event.target.value)}
                     />
                 </div>
-                <Button type="submit" variant="secondary">
+                <Button type="submit" variant="outline">
                     Buscar
                 </Button>
             </form>
 
-            {importError && (
-                <Alert type="error" className="mb-4">
-                    {importError}
-                </Alert>
-            )}
-            {importContacts.isSuccess && (
-                <Alert type="success" className="mb-4">
-                    Archivo recibido. Los contactos se están procesando.
-                </Alert>
-            )}
-
             {isLoading && (
-                <div className="rounded-xl border border-slate-200 bg-white p-5">
-                    <SkeletonTable rows={6} />
-                </div>
+                <Card className="gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <Skeleton key={i} className="h-8 w-full" />
+                    ))}
+                </Card>
             )}
 
             {!isLoading && data?.data.length === 0 && (
@@ -139,82 +213,10 @@ export default function Contacts() {
             )}
 
             {!isLoading && data && data.data.length > 0 && (
-                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[480px] text-left text-sm">
-                            <thead className="border-b border-slate-200 bg-slate-50 text-xs font-medium text-slate-500 uppercase">
-                                <tr>
-                                    <th className="px-5 py-3">Nombre</th>
-                                    <th className="px-5 py-3">Teléfono</th>
-                                    <th className="px-5 py-3">Email</th>
-                                    <th className="px-5 py-3 text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {data.data.map((contact) => (
-                                    <tr
-                                        key={contact.id}
-                                        className={`transition-opacity ${isFetching ? 'opacity-50' : ''}`}
-                                    >
-                                        <td className="max-w-[220px] truncate px-5 py-3.5 font-medium text-ink-900">
-                                            {contact.name}
-                                        </td>
-                                        <td className="px-5 py-3.5 whitespace-nowrap text-slate-600">
-                                            {contact.phone ?? '—'}
-                                        </td>
-                                        <td className="max-w-[220px] truncate px-5 py-3.5 text-slate-600">
-                                            {contact.email ?? '—'}
-                                        </td>
-                                        <td className="px-5 py-3.5 text-right">
-                                            <div className="inline-flex gap-1.5">
-                                                <button
-                                                    onClick={() => setConsentsContact(contact)}
-                                                    title="Consentimientos"
-                                                    className="inline-flex rounded-md p-1.5 text-slate-400 hover:bg-whatsapp-50 hover:text-whatsapp-700"
-                                                >
-                                                    <ShieldCheck className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => setEditingContact(contact)}
-                                                    title="Editar contacto"
-                                                    className="inline-flex rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-
-            {data && data.meta.last_page > 1 && (
-                <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-                    <span>
-                        Página {data.meta.current_page} de {data.meta.last_page}
-                    </span>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            disabled={data.meta.current_page <= 1}
-                        >
-                            <ChevronLeft className="h-4 w-4" /> Anterior
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setPage((p) => Math.min(data.meta.last_page, p + 1))}
-                            disabled={data.meta.current_page >= data.meta.last_page}
-                        >
-                            Siguiente <ChevronRight className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
+                <>
+                    <DataTable data={data.data} columns={columns} minWidth="min-w-[520px]" dimmed={isFetching} />
+                    <Pagination meta={data.meta} noun="contactos" onPageChange={setPage} />
+                </>
             )}
 
             <ContactFormModal open={isManualModalOpen} onClose={() => setIsManualModalOpen(false)} />

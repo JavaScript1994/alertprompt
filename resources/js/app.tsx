@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRoot } from 'react-dom/client';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import Root from '@/Root';
 import '../css/app.css';
 
@@ -13,6 +15,10 @@ if (!container) {
 
 createRoot(container).render(
     <QueryClientProvider client={queryClient}>
-        <Root />
+        <ThemeProvider>
+            <TooltipProvider delayDuration={200}>
+                <Root />
+            </TooltipProvider>
+        </ThemeProvider>
     </QueryClientProvider>,
 );
