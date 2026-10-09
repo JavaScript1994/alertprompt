@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Enums\CampaignRecipientStatus;
 use App\Enums\Channel;
 use App\Enums\MembershipStatus;
-use App\Models\Alert;
+use App\Models\AuditLog;
 use App\Models\Campaign;
 use App\Models\CampaignRecipient;
 use App\Models\Contact;
@@ -16,12 +16,13 @@ use App\Models\User;
 use App\Services\Memberships\MembershipManager;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 
 function membershipPayload(array $overrides = []): array
 {
     return [
-        'plan' => 'growth',
+        'plan' => 'intermedio',
         'billing_cycle' => 'monthly',
         'price' => '450.00',
         'starts_at' => now()->toDateString(),
@@ -38,7 +39,7 @@ function membershipsOf(Tenant $tenant): Builder
 }
 
 it('activates a membership that starts today and moves the client to its plan', function () {
-    $client = Tenant::factory()->create(['plan' => 'starter']);
+    $client = Tenant::factory()->create(['plan' => 'basico']);
 
     $this->actingAs(platformOwner())->postJson("/api/admin/clients/{$client->id}/memberships", membershipPayload())
         ->assertCreated()
@@ -46,16 +47,16 @@ it('activates a membership that starts today and moves the client to its plan', 
         ->assertJsonPath('data.quotas.whatsapp', 1000)
         ->assertJsonPath('data.quotas.email', null);
 
-    expect($client->fresh()->plan)->toBe('growth');
+    expect($client->fresh()->plan)->toBe('intermedio');
 });
 
 it('schedules a future membership and activates it when it starts, expiring the previous one', function () {
     $client = Tenant::factory()->create();
     $owner = platformOwner();
-    $this->actingAs($owner)->postJson("/api/admin/clients/{$client->id}/memberships", membershipPayload(['plan' => 'starter']))->assertCreated();
+    $this->actingAs($owner)->postJson("/api/admin/clients/{$client->id}/memberships", membershipPayload(['plan' => 'basico']))->assertCreated();
 
     $next = $this->actingAs($owner)->postJson("/api/admin/clients/{$client->id}/memberships", membershipPayload([
-        'plan' => 'scale',
+        'plan' => 'avanzado',
         'starts_at' => now()->addMonth()->addDay()->toDateString(),
         'ends_at' => now()->addMonths(13)->toDateString(),
         'billing_cycle' => 'yearly',
@@ -65,29 +66,35 @@ it('schedules a future membership and activates it when it starts, expiring the 
 
     expect(membershipsOf($client)->find($next->json('data.id'))->status)->toBe(MembershipStatus::Active)
         ->and(membershipsOf($client)->where('status', MembershipStatus::Active)->count())->toBe(1)
-        ->and($client->fresh()->plan)->toBe('scale');
+        ->and($client->fresh()->plan)->toBe('avanzado');
 });
 
-it('expires a membership without renewal and alerts the platform', function () {
+it('renews an expired membership with the same terms so the client is never left without one', function () {
     $client = Tenant::factory()->create();
-    app(MembershipManager::class)->create($client, membershipPayload([
+    $old = app(MembershipManager::class)->create($client, membershipPayload([
         'starts_at' => now()->subMonths(2)->toDateString(),
         'ends_at' => now()->subDay()->toDateString(),
     ]));
 
     $this->artisan('memberships:refresh')->assertSuccessful();
 
-    expect(membershipsOf($client)->first()->status)->toBe(MembershipStatus::Expired)
-        ->and(Alert::query()->withoutGlobalScope(TenantScope::class)->where('tenant_id', $client->id)->where('type', 'membership.expired')->exists())->toBeTrue();
+    $renewal = membershipsOf($client)->where('status', MembershipStatus::Active)->sole();
+    expect($old->fresh()->status)->toBe(MembershipStatus::Expired)
+        ->and($renewal->plan)->toBe($old->plan)
+        ->and((string) $renewal->price)->toBe((string) $old->price)
+        ->and($renewal->starts_at->toDateString())->toBe(now()->toDateString())
+        ->and(AuditLog::query()->where('action', 'membership.renewed')->exists())->toBeTrue();
 });
 
-it('warns when the membership is about to expire with no renewal', function () {
+it('does not renew when a successor membership is already scheduled', function () {
     $client = Tenant::factory()->create();
-    app(MembershipManager::class)->create($client, membershipPayload(['ends_at' => now()->addDays(3)->toDateString()]));
+    $manager = app(MembershipManager::class);
+    $manager->create($client, membershipPayload(['starts_at' => now()->subMonth()->toDateString(), 'ends_at' => now()->subDay()->toDateString()]));
+    $manager->create($client, membershipPayload(['plan' => 'avanzado', 'starts_at' => now()->addDays(2)->toDateString(), 'ends_at' => now()->addYear()->toDateString()]));
 
-    app(MembershipManager::class)->refresh();
+    $manager->refresh();
 
-    expect(Alert::query()->withoutGlobalScope(TenantScope::class)->where('tenant_id', $client->id)->where('type', 'membership.expiring')->exists())->toBeTrue();
+    expect(membershipsOf($client)->count())->toBe(2);
 });
 
 it('rejects overlapping scheduled memberships', function () {
@@ -100,14 +107,36 @@ it('rejects overlapping scheduled memberships', function () {
         ->assertUnprocessable()->assertJsonValidationErrors('starts_at');
 });
 
-it('cancels a membership with a reason', function () {
+it('cancels only scheduled memberships, never the current one', function () {
     $client = Tenant::factory()->create();
-    $membership = app(MembershipManager::class)->create($client, membershipPayload());
+    $current = app(MembershipManager::class)->create($client, membershipPayload());
+    $next = app(MembershipManager::class)->create($client, membershipPayload([
+        'starts_at' => now()->addMonths(2)->toDateString(), 'ends_at' => now()->addYear()->toDateString(),
+    ]));
+    $owner = platformOwner();
 
-    $this->actingAs(platformOwner())->postJson("/api/admin/clients/{$client->id}/memberships/{$membership->id}/cancel", ['reason' => 'Pidió la baja'])
+    $this->actingAs($owner)->postJson("/api/admin/clients/{$client->id}/memberships/{$current->id}/cancel", ['reason' => 'x'])
+        ->assertUnprocessable()->assertJsonValidationErrors('membership');
+
+    $this->actingAs($owner)->postJson("/api/admin/clients/{$client->id}/memberships/{$next->id}/cancel", ['reason' => 'Ya no la quiere'])
         ->assertOk()
         ->assertJsonPath('data.status', 'cancelled')
-        ->assertJsonPath('data.cancel_reason', 'Pidió la baja');
+        ->assertJsonPath('data.cancel_reason', 'Ya no la quiere');
+});
+
+it('gives every new client the membership of its plan', function () {
+    Notification::fake();
+
+    $id = $this->actingAs(platformOwner())->postJson('/api/admin/clients', [
+        'type' => 'company', 'name' => 'Nueva SAC', 'document_type' => 'ruc', 'document_number' => '20131312955',
+        'plan' => 'avanzado', 'admin_name' => 'Ana', 'admin_email' => 'ana@nueva.pe',
+    ])->assertCreated()->json('data.id');
+
+    $membership = membershipsOf(Tenant::query()->findOrFail($id))->sole();
+    expect($membership->status)->toBe(MembershipStatus::Active)
+        ->and($membership->plan)->toBe('avanzado')
+        ->and((string) $membership->price)->toBe('1200.00')
+        ->and($membership->quotas['whatsapp'])->toBe(20000);
 });
 
 it('shows the client its membership and monthly usage, without internal notes', function () {
@@ -120,7 +149,7 @@ it('shows the client its membership and monthly usage, without internal notes', 
 
     $data = $this->actingAs($user)->getJson('/api/membership')->assertOk()->json('data');
 
-    expect($data['current']['plan'])->toBe('growth')
+    expect($data['current']['plan'])->toBe('intermedio')
         ->and($data['current'])->not->toHaveKey('notes')
         ->and($data['usage']['sms'])->toBe(['used' => 3, 'quota' => 500])
         ->and($data['usage']['email']['quota'])->toBeNull();

@@ -27,7 +27,7 @@ class PlatformSeeder extends Seeder
         $tenant = new Tenant([
             'name' => 'AlertPrompt',
             'type' => TenantType::Company,
-            'plan' => 'enterprise',
+            'plan' => 'empresarial',
             'status' => TenantStatus::Active,
             'settings' => ['timezone' => 'America/Lima'],
         ]);

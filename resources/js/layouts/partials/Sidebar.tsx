@@ -77,8 +77,8 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     </div>
                     <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-foreground">{tenant?.name ?? '—'}</p>
-                        <p className={cn('truncate text-xs text-muted-foreground', !isPlatform && 'capitalize')}>
-                            {isPlatform ? 'Plataforma' : `Plan ${tenant?.plan ?? '—'}`}
+                        <p className="truncate text-xs text-muted-foreground">
+                            {isPlatform ? 'Plataforma' : `Plan ${tenant?.plan_name ?? '—'}`}
                         </p>
                     </div>
                 </div>

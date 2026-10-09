@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\SetPasswordLink;
 use App\Services\AuditLogger;
+use App\Services\Memberships\MembershipManager;
 use App\Services\Modules\TenantModules;
 use App\Support\TenantContext;
 use Illuminate\Support\Facades\DB;
@@ -52,6 +53,9 @@ class ClientManager
 
             $admin = $this->createUser($tenant, $data['admin_name'], $data['admin_email'], 'client-admin');
             $this->modules->sync($tenant, $this->modules->defaultsFor((string) $tenant->plan));
+
+            // Un cliente siempre tiene membresía: nace con la de su plan.
+            app(MembershipManager::class)->startFromCatalog($tenant, (string) $tenant->plan);
 
             $this->audit->record('client.created', $tenant->id, $tenant, [
                 'admin_email' => $admin->email,

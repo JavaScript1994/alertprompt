@@ -164,7 +164,7 @@ export default function AccountSettings() {
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">Plan</p>
-                            <p className="font-medium capitalize">{account.plan}</p>
+                            <p className="font-medium">{account.plan_name}</p>
                         </div>
                     </CardContent>
                 </Card>

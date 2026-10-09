@@ -13,14 +13,14 @@ use Illuminate\Support\Facades\Notification;
 it('shows the client three public plans and marks its current one', function () {
     $user = User::factory()->create();
     app(MembershipManager::class)->create($user->tenant, [
-        'plan' => 'growth', 'billing_cycle' => 'monthly', 'price' => '450',
+        'plan' => 'intermedio', 'billing_cycle' => 'monthly', 'price' => '450',
         'starts_at' => now()->toDateString(), 'ends_at' => now()->addMonth()->toDateString(),
     ]);
 
     $data = $this->actingAs($user)->getJson('/api/membership')->assertOk()->json('data');
 
-    expect(collect($data['plans'])->pluck('key')->all())->toBe(['starter', 'growth', 'scale'])
-        ->and($data['current_plan'])->toBe('growth')
+    expect(collect($data['plans'])->pluck('key')->all())->toBe(['basico', 'intermedio', 'avanzado'])
+        ->and($data['current_plan'])->toBe('intermedio')
         ->and($data['plans'][0]['quotas'])->toBe(['whatsapp' => 1000, 'sms' => 1000, 'email' => 1000])
         ->and($data['plans'][0]['monthly_price'])->toBe('150.00');
 });
@@ -28,17 +28,17 @@ it('shows the client three public plans and marks its current one', function () 
 it('includes a private plan when it is the client current plan', function () {
     $user = User::factory()->create();
     app(MembershipManager::class)->create($user->tenant, [
-        'plan' => 'enterprise', 'billing_cycle' => 'yearly', 'price' => '20000',
+        'plan' => 'empresarial', 'billing_cycle' => 'yearly', 'price' => '20000',
         'starts_at' => now()->toDateString(), 'ends_at' => now()->addYear()->toDateString(),
     ]);
 
     $keys = collect($this->actingAs($user)->getJson('/api/membership')->json('data.plans'))->pluck('key');
 
-    expect($keys)->toContain('enterprise');
+    expect($keys)->toContain('empresarial');
 });
 
 it('lets the general administrator edit a plan with audit', function () {
-    $plan = Plan::query()->where('key', 'starter')->firstOrFail();
+    $plan = Plan::query()->where('key', 'basico')->firstOrFail();
 
     $this->actingAs(platformOwner())->putJson("/api/admin/plans/{$plan->id}", [
         'name' => 'Inicial',
@@ -58,10 +58,10 @@ it('lets the general administrator edit a plan with audit', function () {
 it('does not change existing memberships when the catalog changes', function () {
     $user = User::factory()->create();
     $membership = app(MembershipManager::class)->create($user->tenant, [
-        'plan' => 'starter', 'billing_cycle' => 'monthly', 'price' => '150', 'quotas' => ['sms' => 1000],
+        'plan' => 'basico', 'billing_cycle' => 'monthly', 'price' => '150', 'quotas' => ['sms' => 1000],
         'starts_at' => now()->toDateString(), 'ends_at' => now()->addMonth()->toDateString(),
     ]);
-    Plan::query()->where('key', 'starter')->update(['monthly_price' => 999]);
+    Plan::query()->where('key', 'basico')->update(['monthly_price' => 999]);
 
     expect((string) $membership->fresh()->price)->toBe('150.00');
 });
@@ -99,7 +99,7 @@ it('creates a new plan with a stable key and its default modules', function () {
 });
 
 it('rejects a duplicated plan name', function () {
-    $this->actingAs(platformOwner())->postJson('/api/admin/plans', planPayload(['name' => 'Growth']))
+    $this->actingAs(platformOwner())->postJson('/api/admin/plans', planPayload(['name' => 'Intermedio']))
         ->assertUnprocessable()->assertJsonValidationErrors('name');
 });
 
@@ -119,36 +119,36 @@ it('uses a new plan for clients and memberships', function () {
 
 it('deactivates a plan: no new memberships, current clients keep it, hidden from others', function () {
     $owner = platformOwner();
-    $starter = Plan::query()->where('key', 'starter')->firstOrFail();
+    $basico = Plan::query()->where('key', 'basico')->firstOrFail();
     $customer = User::factory()->create();
     app(MembershipManager::class)->create($customer->tenant, [
-        'plan' => 'starter', 'billing_cycle' => 'monthly', 'price' => '150',
+        'plan' => 'basico', 'billing_cycle' => 'monthly', 'price' => '150',
         'starts_at' => now()->toDateString(), 'ends_at' => now()->addMonth()->toDateString(),
     ]);
 
-    $this->actingAs($owner)->postJson("/api/admin/plans/{$starter->id}/deactivate")
+    $this->actingAs($owner)->postJson("/api/admin/plans/{$basico->id}/deactivate")
         ->assertOk()
         ->assertJsonPath('data.is_active', false)
         ->assertJsonPath('data.clients_count', 1);
 
     $other = Tenant::factory()->create();
     $this->actingAs($owner)->postJson("/api/admin/clients/{$other->id}/memberships", [
-        'plan' => 'starter', 'billing_cycle' => 'monthly', 'price' => '150',
+        'plan' => 'basico', 'billing_cycle' => 'monthly', 'price' => '150',
         'starts_at' => now()->toDateString(), 'ends_at' => now()->addMonth()->toDateString(),
     ])->assertUnprocessable()->assertJsonValidationErrors('plan');
 
     $this->app['auth']->forgetGuards();
     $this->flushSession();
     $mine = collect($this->actingAs($customer->fresh())->getJson('/api/membership')->json('data.plans'))->pluck('key');
-    expect($mine)->toContain('starter');
+    expect($mine)->toContain('basico');
 
     $this->app['auth']->forgetGuards();
     $this->flushSession();
     $stranger = User::factory()->create();
     $theirs = collect($this->actingAs($stranger)->getJson('/api/membership')->json('data.plans'))->pluck('key');
-    expect($theirs)->not->toContain('starter');
+    expect($theirs)->not->toContain('basico');
 
     $this->app['auth']->forgetGuards();
     $this->flushSession();
-    $this->actingAs($owner)->postJson("/api/admin/plans/{$starter->id}/activate")->assertOk()->assertJsonPath('data.is_active', true);
+    $this->actingAs($owner)->postJson("/api/admin/plans/{$basico->id}/activate")->assertOk()->assertJsonPath('data.is_active', true);
 });

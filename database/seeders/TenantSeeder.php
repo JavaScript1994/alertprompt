@@ -16,7 +16,7 @@ class TenantSeeder extends Seeder
     {
         $tenant = Tenant::create([
             'name' => 'Demo Empresa SAC',
-            'plan' => 'growth',
+            'plan' => 'intermedio',
             'settings' => [
                 'timezone' => 'America/Lima',
                 'whatsapp_daily_limit' => 1000,

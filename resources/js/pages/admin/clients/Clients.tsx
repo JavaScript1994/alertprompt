@@ -59,7 +59,7 @@ export default function Clients({ type }: { type: TenantType }) {
                 header: 'Estado',
                 cell: (info) => <Badge variant={CLIENT_STATUS[info.getValue()].variant}>{CLIENT_STATUS[info.getValue()].label}</Badge>,
             }),
-            columnHelper.accessor('plan', { header: 'Plan', cell: (info) => <span className="capitalize">{info.getValue()}</span> }),
+            columnHelper.accessor('plan_name', { header: 'Plan' }),
             columnHelper.accessor('users_count', { header: 'Usuarios', meta: { className: 'text-right tabular-nums' } }),
             columnHelper.accessor('contacts_count', {
                 header: 'Contactos',

@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { ChannelUsage, Membership, MembershipOverview, Plan } from '@/types';
+import type { ChannelUsage, Membership, MembershipOverview, PaginatedResponse, Plan, PlanChangeRequest, PlanChangeStatus } from '@/types';
 
 const KEY = 'memberships';
 
@@ -103,5 +103,49 @@ export function useUpdatePlan() {
         mutationFn: async ({ id, ...input }: PlanInput & { id: number }) =>
             (await api.put<{ data: Plan }>(`/api/admin/plans/${id}`, input)).data.data,
         onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEY] }),
+    });
+}
+
+export function useRequestPlanChange() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (input: { plan: string; comment: string | null }) =>
+            (await api.post<{ data: PlanChangeRequest }>('/api/membership/plan-change', input)).data.data,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEY, 'mine'] }),
+    });
+}
+
+export function useCancelPlanChange() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async () => {
+            await api.delete('/api/membership/plan-change');
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEY, 'mine'] }),
+    });
+}
+
+export function usePlanChanges(status: PlanChangeStatus, page: number) {
+    return useQuery({
+        queryKey: [KEY, 'plan-changes', status, page],
+        queryFn: async () =>
+            (await api.get<PaginatedResponse<PlanChangeRequest>>('/api/admin/plan-changes', { params: { status, page } })).data,
+        placeholderData: keepPreviousData,
+    });
+}
+
+export function useDecidePlanChange() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, approve, when, note }: { id: number; approve: boolean; when?: 'now' | 'next_period'; note?: string }) =>
+            (await api.post<{ data: PlanChangeRequest }>(`/api/admin/plan-changes/${id}/${approve ? 'approve' : 'reject'}`, { when, note })).data.data,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [KEY] });
+            queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-alerts'] });
+        },
     });
 }

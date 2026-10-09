@@ -39,6 +39,6 @@ class Plan extends Model
 
     public static function defaultKey(): string
     {
-        return static::query()->active()->orderBy('sort')->value('key') ?? 'starter';
+        return static::query()->active()->orderBy('sort')->value('key') ?? 'basico';
     }
 }

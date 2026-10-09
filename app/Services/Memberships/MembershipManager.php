@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services\Memberships;
 
-use App\Enums\AlertSeverity;
 use App\Enums\Channel;
 use App\Enums\MembershipStatus;
 use App\Models\Membership;
+use App\Models\Plan;
 use App\Models\Scopes\TenantScope;
 use App\Models\Tenant;
-use App\Services\Alerts;
 use App\Services\AuditLogger;
 use App\Services\Billing\InvoiceManager;
+use App\Services\Modules\TenantModules;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -27,10 +27,7 @@ use Illuminate\Validation\ValidationException;
  */
 class MembershipManager
 {
-    public function __construct(
-        private readonly AuditLogger $audit,
-        private readonly Alerts $alerts,
-    ) {}
+    public function __construct(private readonly AuditLogger $audit) {}
 
     /** @return Builder<Membership> */
     public function queryFor(int $tenantId): Builder
@@ -94,10 +91,59 @@ class MembershipManager
         });
     }
 
+    /**
+     * Solo se cancela una membresía PROGRAMADA. La vigente no: un cliente
+     * siempre tiene membresía; para cambiarla se crea otra (cambio de plan).
+     */
+    /**
+     * Membresía con las condiciones del catálogo para el plan $planKey, por
+     * 12 meses desde $startsAt. Se usa al dar de alta un cliente y al aprobar
+     * un cambio de plan.
+     */
+    public function startFromCatalog(Tenant $tenant, string $planKey, ?CarbonImmutable $startsAt = null, ?string $billingCycle = null, ?string $notes = null): Membership
+    {
+        $plan = Plan::query()->where('key', $planKey)->firstOrFail();
+        $startsAt ??= CarbonImmutable::today();
+
+        return $this->create($tenant, [
+            'plan' => $plan->key,
+            'billing_cycle' => $billingCycle ?? 'monthly',
+            'price' => (string) (($billingCycle === 'yearly' ? 12 : 1) * (float) ($plan->monthly_price ?? 0)),
+            'starts_at' => $startsAt->toDateString(),
+            'ends_at' => $startsAt->addYear()->subDay()->toDateString(),
+            'quotas' => $plan->quotas ?? [],
+            'notes' => $notes,
+        ]);
+    }
+
+    /** Renovación automática: mismas condiciones, mismo plazo, sin cortes. */
+    public function renew(Membership $previous): Membership
+    {
+        $start = CarbonImmutable::parse($previous->ends_at)->addDay();
+        $months = max(1, (int) round(CarbonImmutable::parse($previous->starts_at)->diffInMonths($start)));
+
+        $renewal = $this->create(Tenant::query()->findOrFail($previous->tenant_id), [
+            'plan' => $previous->plan,
+            'billing_cycle' => $previous->billing_cycle->value,
+            'price' => (string) $previous->price,
+            'starts_at' => $start->toDateString(),
+            'ends_at' => $start->addMonthsNoOverflow($months)->subDay()->toDateString(),
+            'quotas' => $previous->quotas ?? [],
+            'contract_reference' => $previous->contract_reference,
+            'notes' => "Renovación automática de la membresía #{$previous->id}.",
+        ]);
+
+        $this->audit->record('membership.renewed', $previous->tenant_id, $renewal, ['from' => $previous->id]);
+
+        return $renewal;
+    }
+
     public function cancel(Membership $membership, ?string $reason): Membership
     {
-        if (in_array($membership->status, [MembershipStatus::Expired, MembershipStatus::Cancelled], true)) {
-            throw ValidationException::withMessages(['membership' => 'La membresía ya no está vigente.']);
+        if ($membership->status !== MembershipStatus::Scheduled) {
+            throw ValidationException::withMessages([
+                'membership' => 'Solo se cancela una membresía programada. La vigente se reemplaza con un cambio de plan.',
+            ]);
         }
 
         $membership->update(['status' => MembershipStatus::Cancelled, 'cancelled_at' => now(), 'cancel_reason' => $reason]);
@@ -107,8 +153,8 @@ class MembershipManager
     }
 
     /**
-     * Tarea diaria: activa las que empiezan, vence las que terminaron y avisa
-     * lo que está por vencer o quedó sin membresía.
+     * Tarea diaria: activa las que empiezan y renueva las que terminaron sin
+     * sucesora (un cliente nunca queda sin membresía).
      *
      * @return array{activated: int, expired: int}
      */
@@ -127,6 +173,8 @@ class MembershipManager
                 $activated++;
             });
 
+        // Un cliente siempre tiene membresía: la que vence sin sucesora se
+        // renueva sola con las mismas condiciones y el mismo plazo.
         Membership::query()->withoutGlobalScope(TenantScope::class)
             ->where('status', MembershipStatus::Active)
             ->where('ends_at', '<', $today)
@@ -134,33 +182,12 @@ class MembershipManager
                 $membership->update(['status' => MembershipStatus::Expired]);
                 $expired++;
 
-                if ($this->current($membership->tenant_id) === null) {
-                    $this->alerts->raise(
-                        tenantId: $membership->tenant_id,
-                        type: 'membership.expired',
-                        severity: AlertSeverity::Warning,
-                        title: 'Membresía vencida sin renovación',
-                        message: "La membresía venció el {$membership->ends_at->toDateString()} y no hay otra vigente. Renueva o decide si suspender al cliente.",
-                        subjectKey: "membership-{$membership->id}",
-                    );
-                }
-            });
+                $hasSuccessor = $this->queryFor($membership->tenant_id)
+                    ->whereIn('status', [MembershipStatus::Active, MembershipStatus::Scheduled])
+                    ->exists();
 
-        $warnUntil = $today->addDays((int) config('memberships.expiry_warning_days', 7));
-        Membership::query()->withoutGlobalScope(TenantScope::class)
-            ->where('status', MembershipStatus::Active)
-            ->whereBetween('ends_at', [$today, $warnUntil])
-            ->each(function (Membership $membership) {
-                $renewed = $this->queryFor($membership->tenant_id)->where('status', MembershipStatus::Scheduled)->exists();
-                if (! $renewed) {
-                    $this->alerts->raise(
-                        tenantId: $membership->tenant_id,
-                        type: 'membership.expiring',
-                        severity: AlertSeverity::Info,
-                        title: 'Membresía por vencer',
-                        message: "Vence el {$membership->ends_at->toDateString()} y no tiene renovación programada.",
-                        subjectKey: "membership-{$membership->id}",
-                    );
+                if (! $hasSuccessor) {
+                    $this->renew($membership);
                 }
             });
 
@@ -214,6 +241,8 @@ class MembershipManager
     private function activate(Membership $membership): void
     {
         DB::transaction(function () use ($membership) {
+            $previousPlan = $this->current($membership->tenant_id)?->plan;
+
             $this->queryFor($membership->tenant_id)
                 ->where('status', MembershipStatus::Active)
                 ->whereKeyNot($membership->id)
@@ -223,6 +252,12 @@ class MembershipManager
             Tenant::query()->whereKey($membership->tenant_id)->update(['plan' => $membership->plan]);
 
             $this->audit->record('membership.activated', $membership->tenant_id, $membership, ['plan' => $membership->plan]);
+
+            // Cambio de plan: el cliente pasa a los módulos de su nuevo plan.
+            if ($previousPlan !== null && $previousPlan !== $membership->plan) {
+                $tenant = Tenant::query()->findOrFail($membership->tenant_id);
+                app(TenantModules::class)->sync($tenant, app(TenantModules::class)->defaultsFor($membership->plan));
+            }
         });
 
         // Primer comprobante del período, sin esperar a la tarea diaria.

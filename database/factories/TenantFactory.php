@@ -20,7 +20,7 @@ class TenantFactory extends Factory
         return [
             'name' => fake()->company().' SAC',
             'type' => TenantType::Company,
-            'plan' => 'starter',
+            'plan' => 'basico',
             'status' => TenantStatus::Active,
             'settings' => [
                 'timezone' => 'America/Lima',

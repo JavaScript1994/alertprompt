@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Admin\InvoiceController;
 use App\Http\Controllers\Api\Admin\MembershipController as AdminMembershipController;
 use App\Http\Controllers\Api\Admin\ModuleController;
 use App\Http\Controllers\Api\Admin\PermissionTreeController;
+use App\Http\Controllers\Api\Admin\PlanChangeRequestController;
 use App\Http\Controllers\Api\Admin\PlanController;
 use App\Http\Controllers\Api\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Api\Admin\RoleController;
@@ -94,6 +95,8 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         Route::get('/membership', [MembershipController::class, 'show'])->middleware('permission:membership.view');
+        Route::post('/membership/plan-change', [MembershipController::class, 'requestChange'])->middleware(['permission:membership.request_change', 'not-impersonating']);
+        Route::delete('/membership/plan-change', [MembershipController::class, 'cancelChange'])->middleware(['permission:membership.request_change', 'not-impersonating']);
 
         Route::get('/settings/account', [TenantSettingsController::class, 'show'])->middleware('permission:settings.view');
         Route::put('/settings/account', [TenantSettingsController::class, 'update'])->middleware('permission:settings.manage');
@@ -144,6 +147,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/plans/{plan}', [PlanController::class, 'update'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
         Route::post('/plans/{plan}/deactivate', [PlanController::class, 'deactivate'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
         Route::post('/plans/{plan}/activate', [PlanController::class, 'activate'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
+
+        Route::get('/plan-changes', [PlanChangeRequestController::class, 'index'])->middleware('permission:admin.memberships.view');
+        Route::post('/plan-changes/{planChange}/approve', [PlanChangeRequestController::class, 'approve'])->whereNumber('planChange')->middleware('permission:admin.memberships.manage');
+        Route::post('/plan-changes/{planChange}/reject', [PlanChangeRequestController::class, 'reject'])->whereNumber('planChange')->middleware('permission:admin.memberships.manage');
 
         Route::get('/clients/{client}/memberships', [AdminMembershipController::class, 'index'])->middleware('permission:admin.memberships.view');
         Route::post('/clients/{client}/memberships', [AdminMembershipController::class, 'store'])->middleware('permission:admin.memberships.manage');

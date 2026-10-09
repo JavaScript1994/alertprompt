@@ -34,6 +34,7 @@ export interface CreateClientInput extends ClientProfileInput {
     type: TenantType;
     admin_name: string;
     admin_email: string;
+    plan: string;
 }
 
 export function useClients(filters: ClientFilters) {

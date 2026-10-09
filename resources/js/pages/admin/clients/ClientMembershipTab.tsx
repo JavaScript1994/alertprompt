@@ -219,8 +219,8 @@ export default function ClientMembershipTab({ clientId }: { clientId: number }) 
                             {data.data.map((membership) => (
                                 <div key={membership.id} className="flex flex-wrap items-start justify-between gap-3 px-6 py-4 text-sm">
                                     <div className="space-y-0.5">
-                                        <p className="flex items-center gap-2 font-medium capitalize">
-                                            Plan {membership.plan} <MembershipStatusBadge status={membership.status} />
+                                        <p className="flex items-center gap-2 font-medium">
+                                            Plan {membership.plan_name} <MembershipStatusBadge status={membership.status} />
                                         </p>
                                         <p className="text-muted-foreground">
                                             {formatDate(membership.starts_at)} – {formatDate(membership.ends_at)} · {formatPrice(membership)}
@@ -229,7 +229,7 @@ export default function ClientMembershipTab({ clientId }: { clientId: number }) 
                                         {membership.cancel_reason && <p className="text-xs text-error">Cancelada: {membership.cancel_reason}</p>}
                                         {membership.notes && <p className="text-xs text-muted-foreground italic">{membership.notes}</p>}
                                     </div>
-                                    {canManage && (membership.status === 'active' || membership.status === 'scheduled') && (
+                                    {canManage && membership.status === 'scheduled' && (
                                         <Button variant="ghost" size="sm" className="text-error hover:text-error" onClick={() => setCancelling(membership)}>
                                             <Ban />
                                             Cancelar
@@ -249,7 +249,7 @@ export default function ClientMembershipTab({ clientId }: { clientId: number }) 
             <ConfirmDialog
                 open={cancelling !== null}
                 title="Cancelar membresía"
-                description="El cliente se queda sin esta membresía. No se suspende automáticamente: decide aparte si suspenderlo."
+                description="Se cancela esta membresía programada; la vigente sigue igual."
                 confirmLabel="Cancelar membresía"
                 destructive
                 loading={cancel.isPending}
