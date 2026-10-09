@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\Campaigns;
 
 use App\Enums\TemplateStatus;
+use App\Support\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,7 +18,8 @@ class StoreCampaignRequest extends FormRequest
 
     public function rules(): array
     {
-        $tenantId = $this->user()->tenant_id;
+        // Tenant activo (en modo soporte es el cliente, no el del usuario).
+        $tenantId = TenantContext::id();
 
         return [
             'name' => ['required', 'string', 'max:255'],

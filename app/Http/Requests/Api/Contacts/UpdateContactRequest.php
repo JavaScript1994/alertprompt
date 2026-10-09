@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\Contacts;
 
+use App\Support\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +17,8 @@ class UpdateContactRequest extends FormRequest
 
     public function rules(): array
     {
-        $tenantId = $this->user()->tenant_id;
+        // Tenant activo (en modo soporte es el cliente, no el del usuario).
+        $tenantId = TenantContext::id();
         $contactId = $this->route('contact')->id;
 
         return [

@@ -7,6 +7,7 @@ namespace App\Http\Requests\Api\Templates;
 use App\Enums\Channel;
 use App\Enums\TemplateCategory;
 use App\Enums\TemplateStatus;
+use App\Support\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
@@ -20,7 +21,8 @@ class UpdateTemplateRequest extends FormRequest
 
     public function rules(): array
     {
-        $tenantId = $this->user()->tenant_id;
+        // Tenant activo (en modo soporte es el cliente, no el del usuario).
+        $tenantId = TenantContext::id();
         $templateId = $this->route('template')->id;
 
         return [
