@@ -1,10 +1,16 @@
 export type TenantType = 'company' | 'individual';
 export type TenantStatus = 'active' | 'trial' | 'suspended';
+export type DocumentType = 'ruc' | 'dni' | 'ce';
 
 export interface Tenant {
     id: number;
     name: string;
     type: TenantType;
+    document_type: DocumentType | null;
+    document_number: string | null;
+    contact_email: string | null;
+    contact_phone: string | null;
+    address: string | null;
     plan: string;
     status: TenantStatus;
     /** true solo para AlertPrompt: su usuario ve el panel de administración. */
@@ -61,6 +67,35 @@ export interface User {
     roles: UserRoleSummary[];
     permissions: PermissionName[];
     tenant: Tenant;
+    /** Modo soporte: el panel muestra los datos de este cliente. */
+    impersonating: Tenant | null;
+}
+
+/** Cliente visto desde el panel de la plataforma. */
+export interface Client extends Tenant {
+    users_count: number;
+    contacts_count: number;
+    campaigns_count: number;
+    created_at: string;
+}
+
+export interface TenantUser {
+    id: number;
+    name: string;
+    email: string;
+    roles: { id: number; name: string; label: string }[];
+    email_verified_at: string | null;
+    deactivated_at: string | null;
+    created_at: string;
+}
+
+export interface AuditLogEntry {
+    id: number;
+    action: string;
+    metadata: Record<string, unknown>;
+    user: { id: number; name: string; email: string } | null;
+    ip: string | null;
+    created_at: string;
 }
 
 export interface Contact {

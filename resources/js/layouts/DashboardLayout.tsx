@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import Header from './partials/Header';
+import ImpersonationBanner from './partials/ImpersonationBanner';
 import Sidebar from './partials/Sidebar';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -29,6 +30,7 @@ export default function DashboardLayout() {
             </Sheet>
 
             <div className="flex min-h-screen flex-col lg:pl-[270px]">
+                <ImpersonationBanner />
                 <Header onOpenSidebar={() => setIsSidebarOpen(true)} />
 
                 <main className="flex-1 px-4 pt-4 pb-10 sm:px-6 lg:pt-6">

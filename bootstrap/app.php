@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Middleware\AuditImpersonatedWrites;
 use App\Http\Middleware\BindTenantFromAuth;
+use App\Http\Middleware\BlockWhenImpersonating;
 use App\Http\Middleware\EnsurePlatformTenant;
+use App\Http\Middleware\SuperviseClient;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -29,11 +32,14 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureFrontendRequestsAreStateful::class,
             BindTenantFromAuth::class,
             SubstituteBindings::class,
+            AuditImpersonatedWrites::class,
         ]);
 
         $middleware->alias([
             'permission' => PermissionMiddleware::class,
             'platform' => EnsurePlatformTenant::class,
+            'supervise' => SuperviseClient::class,
+            'not-impersonating' => BlockWhenImpersonating::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

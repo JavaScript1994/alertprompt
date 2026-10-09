@@ -3,9 +3,13 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import RequirePermission from '@/components/RequirePermission';
 import AuthLayout from '@/layouts/AuthLayout';
 import DashboardLayout from '@/layouts/DashboardLayout';
+import ClientDetail from '@/pages/admin/clients/ClientDetail';
+import Clients from '@/pages/admin/clients/Clients';
 import RoleEditor from '@/pages/admin/roles/RoleEditor';
 import Roles from '@/pages/admin/roles/Roles';
+import ForgotPassword from '@/pages/auth/ForgotPassword';
 import Login from '@/pages/auth/Login';
+import ResetPassword from '@/pages/auth/ResetPassword';
 import Campaigns from '@/pages/campaigns/Campaigns';
 import Contacts from '@/pages/contacts/Contacts';
 import Dashboard from '@/pages/dashboard/Dashboard';
@@ -17,6 +21,8 @@ export default function Root() {
             <Routes>
                 <Route element={<AuthLayout />}>
                     <Route path="/login" element={<Login />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                 </Route>
 
                 <Route element={<ProtectedRoute />}>
@@ -34,6 +40,11 @@ export default function Root() {
                             <Route path="/campaigns" element={<Campaigns />} />
                         </Route>
 
+                        <Route element={<RequirePermission permission="admin.clients.view" />}>
+                            <Route path="/admin/clients/companies" element={<Clients key="company" type="company" />} />
+                            <Route path="/admin/clients/individuals" element={<Clients key="individual" type="individual" />} />
+                            <Route path="/admin/clients/:id" element={<ClientDetail />} />
+                        </Route>
                         <Route element={<RequirePermission permission="admin.roles.view" />}>
                             <Route path="/admin/roles" element={<Roles />} />
                             <Route path="/admin/roles/:id" element={<RoleEditor />} />

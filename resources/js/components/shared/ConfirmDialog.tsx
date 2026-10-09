@@ -19,6 +19,7 @@ export default function ConfirmDialog({
     loading = false,
     onConfirm,
     onCancel,
+    children,
 }: {
     open: boolean;
     title: string;
@@ -28,6 +29,8 @@ export default function ConfirmDialog({
     loading?: boolean;
     onConfirm: () => void;
     onCancel: () => void;
+    /** Campos extra (p. ej. un motivo) entre la descripción y los botones. */
+    children?: ReactNode;
 }) {
     return (
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
@@ -36,6 +39,7 @@ export default function ConfirmDialog({
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
+                {children}
                 <DialogFooter>
                     <Button variant="outline" onClick={onCancel}>
                         Cancelar

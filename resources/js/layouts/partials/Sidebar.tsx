@@ -9,7 +9,9 @@ import { navigationFor } from './navigation';
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     const { data: user } = useAuthUser();
     const sections = navigationFor(user);
-    const isPlatform = user?.tenant.is_platform ?? false;
+    // En modo soporte la tarjeta muestra el cliente que se está atendiendo.
+    const tenant = user?.impersonating ?? user?.tenant;
+    const isPlatform = tenant?.is_platform ?? false;
 
     return (
         <div className="flex h-full flex-col">
@@ -74,9 +76,9 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                         )}
                     </div>
                     <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-foreground">{user?.tenant.name ?? '—'}</p>
+                        <p className="truncate text-sm font-semibold text-foreground">{tenant?.name ?? '—'}</p>
                         <p className={cn('truncate text-xs text-muted-foreground', !isPlatform && 'capitalize')}>
-                            {isPlatform ? 'Plataforma' : `Plan ${user?.tenant.plan ?? '—'}`}
+                            {isPlatform ? 'Plataforma' : `Plan ${tenant?.plan ?? '—'}`}
                         </p>
                     </div>
                 </div>

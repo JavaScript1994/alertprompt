@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\Impersonation;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,6 +40,7 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        $request->session()->forget(Impersonation::SESSION_KEY);
 
         // El middleware corrió antes del login (sin usuario): fijamos el
         // tenant aquí para que roles y permisos de la respuesta salgan bien.

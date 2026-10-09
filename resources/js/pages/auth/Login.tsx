@@ -3,7 +3,7 @@ import { AxiosError } from 'axios';
 import { AlertCircle, ArrowRight, ArrowUpRight, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { z } from 'zod';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -117,9 +117,12 @@ export default function Login() {
                             Recordar sesión
                         </Label>
                     </div>
-                    <ComingSoon className="text-sm font-semibold text-tenant-accent hover:underline dark:text-prompt-400">
+                    <Link
+                        to="/forgot-password"
+                        className="text-sm font-semibold text-tenant-accent hover:underline dark:text-prompt-400"
+                    >
                         ¿Olvidaste tu contraseña?
-                    </ComingSoon>
+                    </Link>
                 </div>
 
                 {invalidCredentials && (

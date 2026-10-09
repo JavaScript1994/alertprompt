@@ -2,17 +2,22 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\Admin\ClientController;
+use App\Http\Controllers\Api\Admin\ImpersonationController;
 use App\Http\Controllers\Api\Admin\PermissionTreeController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\ConsentController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\TemplateController;
 use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [PasswordController::class, 'forgot'])->middleware('throttle:5,1');
+Route::post('/reset-password', [PasswordController::class, 'reset'])->middleware('throttle:10,1');
 
 // Públicas: llegan de Twilio/SendGrid, no de un usuario autenticado.
 // La autenticidad se valida con la firma del proveedor, no con Sanctum.
@@ -42,7 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middlewareFor('update', 'permission:templates.update')
         ->middlewareFor('destroy', 'permission:templates.delete');
 
-    Route::post('/campaigns/{campaign}/dispatch', [CampaignController::class, 'dispatch'])->middleware('permission:campaigns.dispatch');
+    Route::post('/campaigns/{campaign}/dispatch', [CampaignController::class, 'dispatch'])->middleware(['permission:campaigns.dispatch', 'not-impersonating']);
     Route::apiResource('campaigns', CampaignController::class)->only(['index', 'store', 'show', 'update', 'destroy'])
         ->middlewareFor(['index', 'show'], 'permission:campaigns.view')
         ->middlewareFor('store', 'permission:campaigns.create')
@@ -52,6 +57,27 @@ Route::middleware('auth:sanctum')->group(function () {
     // Administración de la plataforma: solo el tenant de AlertPrompt.
     Route::prefix('admin')->middleware('platform')->group(function () {
         Route::get('/permissions', PermissionTreeController::class)->middleware('permission:admin.roles.view');
+
+        Route::get('/clients', [ClientController::class, 'index'])->middleware('permission:admin.clients.view');
+        Route::post('/clients', [ClientController::class, 'store'])->middleware('permission:admin.clients.create');
+        Route::get('/clients/{client}', [ClientController::class, 'show'])->middleware('permission:admin.clients.view');
+        Route::put('/clients/{client}', [ClientController::class, 'update'])->middleware('permission:admin.clients.update');
+        Route::post('/clients/{client}/suspend', [ClientController::class, 'suspend'])->middleware('permission:admin.clients.suspend');
+        Route::post('/clients/{client}/reactivate', [ClientController::class, 'reactivate'])->middleware('permission:admin.clients.suspend');
+        Route::get('/clients/{client}/users', [ClientController::class, 'users'])->middleware('permission:admin.clients.view');
+        Route::get('/clients/{client}/activity', [ClientController::class, 'activity'])->middleware('permission:admin.clients.view');
+
+        // Supervisión (solo lectura): los mismos listados del panel de cliente
+        // con los datos de {client}.
+        Route::prefix('/clients/{client}/supervision')->middleware(['permission:admin.supervision.view', 'supervise'])->group(function () {
+            Route::get('/contacts', [ContactController::class, 'index']);
+            Route::get('/templates', [TemplateController::class, 'index']);
+            Route::get('/campaigns', [CampaignController::class, 'index']);
+        });
+
+        // Soporte: entrar al panel del cliente (queda auditado).
+        Route::post('/clients/{client}/impersonate', [ImpersonationController::class, 'store'])->middleware('permission:admin.impersonate.use');
+        Route::delete('/impersonation', [ImpersonationController::class, 'destroy']);
 
         Route::apiResource('roles', RoleController::class)
             ->middlewareFor(['index', 'show'], 'permission:admin.roles.view')
