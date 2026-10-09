@@ -34,14 +34,14 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                                         >
                                             <item.icon className="size-5" strokeWidth={1.75} />
                                             <span className="truncate">{item.label}</span>
-                                            <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                                            <span className="ml-auto shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-muted-foreground uppercase">
                                                 Pronto
                                             </span>
                                         </span>
                                     ) : (
                                         <NavLink
                                             to={item.to}
-                                            end
+                                            end={item.to === '/'}
                                             onClick={onNavigate}
                                             className={({ isActive }) =>
                                                 cn(
@@ -75,8 +75,8 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     </div>
                     <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-foreground">{user?.tenant.name ?? '—'}</p>
-                        <p className="truncate text-xs text-muted-foreground capitalize">
-                            {isPlatform ? 'Administración de la plataforma' : `Plan ${user?.tenant.plan ?? '—'}`}
+                        <p className={cn('truncate text-xs text-muted-foreground', !isPlatform && 'capitalize')}>
+                            {isPlatform ? 'Plataforma' : `Plan ${user?.tenant.plan ?? '—'}`}
                         </p>
                     </div>
                 </div>

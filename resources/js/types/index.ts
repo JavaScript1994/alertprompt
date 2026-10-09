@@ -19,6 +19,41 @@ export interface UserRoleSummary {
 /** Nombre de permiso de config/permissions.php, p. ej. "campaigns.dispatch". */
 export type PermissionName = string;
 
+export type RoleScope = 'platform' | 'client';
+
+export interface Role {
+    id: number;
+    /** Clave estable que usa el código; no cambia al renombrar. */
+    name: string;
+    label: string;
+    description: string | null;
+    scope: RoleScope;
+    is_system: boolean;
+    /** Rol de dueño: siempre tiene todos los permisos y no se edita. */
+    is_locked: boolean;
+    users_count: number;
+    permissions_count: number;
+    permissions?: PermissionName[];
+}
+
+export interface PermissionTreeItem {
+    name: PermissionName;
+    label: string;
+}
+
+export interface PermissionTreeModule {
+    key: string;
+    label: string;
+    permissions: PermissionTreeItem[];
+}
+
+export interface PermissionTreeSection {
+    key: string;
+    label: string;
+    scope: RoleScope;
+    modules: PermissionTreeModule[];
+}
+
 export interface User {
     id: number;
     name: string;

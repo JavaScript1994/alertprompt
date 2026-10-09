@@ -56,13 +56,13 @@ const PLATFORM_NAV: NavSection[] = [
         heading: 'Clientes',
         items: [
             { to: '/admin/clients/companies', label: 'Empresas', icon: Building2, permission: 'admin.clients.view', comingSoon: true },
-            { to: '/admin/clients/individuals', label: 'Personas naturales', icon: UserIcon, permission: 'admin.clients.view', comingSoon: true },
+            { to: '/admin/clients/individuals', label: 'Naturales', icon: UserIcon, permission: 'admin.clients.view', comingSoon: true },
         ],
     },
     {
         heading: 'Configuración',
         items: [
-            { to: '/admin/roles', label: 'Roles y permisos', icon: ShieldCheck, permission: 'admin.roles.view', comingSoon: true },
+            { to: '/admin/roles', label: 'Roles y permisos', icon: ShieldCheck, permission: 'admin.roles.view' },
             { to: '/admin/modules', label: 'Módulos', icon: Blocks, permission: 'admin.modules.view', comingSoon: true },
             { to: '/admin/alerts', label: 'Alertas', icon: Bell, permission: 'admin.alerts.view', comingSoon: true },
             { to: '/admin/bulk-imports', label: 'Cargas masivas', icon: Upload, permission: 'admin.bulk_imports.view', comingSoon: true },
@@ -114,9 +114,14 @@ export function navigationFor(user: User | null | undefined): NavSection[] {
         .filter((section) => section.items.length > 0);
 }
 
+/** Coincide también con subrutas: /admin/roles/5 → "Roles y permisos". */
+export function isNavItemActive(item: NavItem, pathname: string): boolean {
+    return item.to === '/' ? pathname === '/' : pathname === item.to || pathname.startsWith(`${item.to}/`);
+}
+
 export function routeLabel(pathname: string, sections: NavSection[]): string {
     for (const section of sections) {
-        const item = section.items.find((i) => i.to === pathname);
+        const item = section.items.find((i) => isNavItemActive(i, pathname));
         if (item) return item.label;
     }
     return 'Panel';
