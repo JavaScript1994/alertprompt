@@ -15,6 +15,14 @@ export interface Tenant {
     status: TenantStatus;
     /** true solo para AlertPrompt: su usuario ve el panel de administración. */
     is_platform: boolean;
+    timezone: string;
+}
+
+export interface AssignableRole {
+    id: number;
+    name: string;
+    label: string;
+    description: string | null;
 }
 
 export interface UserRoleSummary {

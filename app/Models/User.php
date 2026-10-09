@@ -33,7 +33,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'deactivated_at' => 'datetime',
         ];
+    }
+
+    public function isActive(): bool
+    {
+        return $this->deactivated_at === null;
     }
 
     /** Reemplaza el correo en inglés de Laravel por el enlace a la SPA. */

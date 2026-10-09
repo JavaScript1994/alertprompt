@@ -22,6 +22,7 @@ import {
     useTemplates,
     useUpdateTemplate,
 } from '@/hooks/useTemplates';
+import { useCan } from '@/hooks/usePermissions';
 import { apiErrorMessage } from '@/lib/format';
 import type { Template } from '@/types';
 import TemplatesTable from './TemplatesTable';
@@ -36,6 +37,8 @@ const templateSchema = z.object({
 type TemplateFormValues = z.infer<typeof templateSchema>;
 
 export default function Templates() {
+    const can = useCan();
+    const canCreate = can('templates.create');
     const [page, setPage] = useState(1);
     const { data, isLoading } = useTemplates(page);
     const createTemplate = useCreateTemplate();
@@ -117,6 +120,7 @@ export default function Templates() {
             <PageHeader title="Plantillas" description="Definí el contenido de tus mensajes con variables dinámicas." />
 
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                {canCreate && (
                 <section className="space-y-6 xl:col-span-5">
                     <Card>
                         <CardHeader>
@@ -294,8 +298,9 @@ export default function Templates() {
                         </Card>
                     )}
                 </section>
+                )}
 
-                <section className="xl:col-span-7">
+                <section className={canCreate ? 'xl:col-span-7' : 'xl:col-span-12'}>
                     <h2 className="mb-3 text-base">Todas las plantillas</h2>
 
                     {deleteTemplate.isError && (
@@ -334,9 +339,9 @@ export default function Templates() {
                     {!isLoading && data && data.data.length > 0 && (
                         <TemplatesTable
                             data={data}
-                            onApprove={onApproveTemplate}
+                            onApprove={can('templates.update') ? onApproveTemplate : undefined}
                             approvePendingId={updateTemplate.isPending ? (updateTemplate.variables?.id ?? null) : null}
-                            onDelete={setDeleting}
+                            onDelete={can('templates.delete') ? setDeleting : undefined}
                             deletePendingId={deleteTemplate.isPending ? deleteTemplate.variables : null}
                             onPageChange={setPage}
                         />

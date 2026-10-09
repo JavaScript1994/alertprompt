@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\SetPasswordLink;
 use App\Services\AuditLogger;
+use App\Support\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -100,10 +101,7 @@ class ClientManager
             'password' => Str::random(64),
         ]);
 
-        $previousTeam = getPermissionsTeamId();
-        setPermissionsTeamId($tenant->id);
-        $user->assignRole($role);
-        setPermissionsTeamId($previousTeam);
+        TenantContext::withPermissionsOf($tenant->id, fn () => $user->assignRole($role));
 
         return $user;
     }

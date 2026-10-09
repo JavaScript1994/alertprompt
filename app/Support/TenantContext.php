@@ -25,4 +25,25 @@ final class TenantContext
     {
         return app('current_tenant_id');
     }
+
+    /**
+     * Ejecuta $callback con los roles/permisos de Spatie apuntando a
+     * $tenantId (p. ej. para asignar un rol en otro tenant) y restaura.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function withPermissionsOf(int $tenantId, callable $callback): mixed
+    {
+        $previous = getPermissionsTeamId();
+        setPermissionsTeamId($tenantId);
+
+        try {
+            return $callback();
+        } finally {
+            setPermissionsTeamId($previous);
+        }
+    }
 }

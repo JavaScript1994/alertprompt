@@ -155,7 +155,7 @@ export default function ClientFormDialog({
                                 control={control}
                                 name="document_type"
                                 render={({ field }) => (
-                                    <Select value={field.value} onValueChange={field.onChange} disabled={DOCUMENTS_FOR[type].length === 1}>
+                                    <Select value={field.value} onValueChange={(value) => value && field.onChange(value)} disabled={DOCUMENTS_FOR[type].length === 1}>
                                         <SelectTrigger id="client-document-type" className="w-full">
                                             <SelectValue />
                                         </SelectTrigger>

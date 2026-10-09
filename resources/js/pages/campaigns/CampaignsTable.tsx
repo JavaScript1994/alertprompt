@@ -49,10 +49,10 @@ export default function CampaignsTable({
     onPageChange,
 }: {
     data: PaginatedResponse<Campaign>;
-    onDispatch: (campaign: Campaign) => void;
+    onDispatch?: (campaign: Campaign) => void;
     dispatchPendingId: number | null;
-    onEdit: (campaign: Campaign) => void;
-    onDelete: (campaign: Campaign) => void;
+    onEdit?: (campaign: Campaign) => void;
+    onDelete?: (campaign: Campaign) => void;
     deletePendingId: number | null;
     onPageChange: (page: number) => void;
 }) {
@@ -96,9 +96,11 @@ export default function CampaignsTable({
                 cell: (info) => {
                     const campaign = info.row.original;
                     if (campaign.status !== 'draft' && campaign.status !== 'scheduled') return null;
+                    if (!onDispatch && !onEdit && !onDelete) return null;
 
                     return (
                         <div className="inline-flex flex-nowrap items-center gap-1">
+                            {onDispatch && (
                             <Button
                                 variant="success"
                                 size="sm"
@@ -108,6 +110,8 @@ export default function CampaignsTable({
                                 {dispatchPendingId !== campaign.id && <Play />}
                                 Iniciar
                             </Button>
+                            )}
+                            {onEdit && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -121,6 +125,8 @@ export default function CampaignsTable({
                                 </TooltipTrigger>
                                 <TooltipContent>Editar campaña</TooltipContent>
                             </Tooltip>
+                            )}
+                            {onDelete && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -135,6 +141,7 @@ export default function CampaignsTable({
                                 </TooltipTrigger>
                                 <TooltipContent>Eliminar campaña</TooltipContent>
                             </Tooltip>
+                            )}
                         </div>
                     );
                 },

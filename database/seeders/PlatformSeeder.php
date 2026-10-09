@@ -43,6 +43,7 @@ class PlatformSeeder extends Seeder
             'email' => 'dueno@alertprompt.pe',
             'password' => Hash::make('password'),
         ]);
+        $owner->forceFill(['email_verified_at' => now()])->save();
 
         $owner->assignRole('platform-owner');
     }

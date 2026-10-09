@@ -13,6 +13,8 @@ import ResetPassword from '@/pages/auth/ResetPassword';
 import Campaigns from '@/pages/campaigns/Campaigns';
 import Contacts from '@/pages/contacts/Contacts';
 import Dashboard from '@/pages/dashboard/Dashboard';
+import AccountSettings from '@/pages/settings/AccountSettings';
+import Users from '@/pages/settings/Users';
 import Templates from '@/pages/templates/Templates';
 
 export default function Root() {
@@ -38,6 +40,13 @@ export default function Root() {
                         </Route>
                         <Route element={<RequirePermission permission="campaigns.view" />}>
                             <Route path="/campaigns" element={<Campaigns />} />
+                        </Route>
+
+                        <Route element={<RequirePermission permission="settings.view" />}>
+                            <Route path="/settings" element={<AccountSettings />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="users.view" />}>
+                            <Route path="/settings/users" element={<Users />} />
                         </Route>
 
                         <Route element={<RequirePermission permission="admin.clients.view" />}>

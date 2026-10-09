@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useContacts, useImportContacts } from '@/hooks/useContacts';
+import { useCan } from '@/hooks/usePermissions';
 import { apiErrorMessage } from '@/lib/format';
 import type { Contact } from '@/types';
 import ConsentsModal from './ConsentsModal';
@@ -36,6 +37,7 @@ function downloadTemplate(): void {
 }
 
 export default function Contacts() {
+    const can = useCan();
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
     const [searchInput, setSearchInput] = useState('');
@@ -59,6 +61,8 @@ export default function Contacts() {
         if (!file) return;
         importContacts.mutate(file);
     };
+
+    const canUpdate = can('contacts.update');
 
     const columns = useMemo(
         () => [
@@ -99,6 +103,7 @@ export default function Contacts() {
                                 </TooltipTrigger>
                                 <TooltipContent>Consentimientos</TooltipContent>
                             </Tooltip>
+                            {canUpdate && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -112,12 +117,13 @@ export default function Contacts() {
                                 </TooltipTrigger>
                                 <TooltipContent>Editar contacto</TooltipContent>
                             </Tooltip>
+                            )}
                         </div>
                     );
                 },
             }),
         ],
-        [],
+        [canUpdate],
     );
 
     return (
@@ -127,10 +133,12 @@ export default function Contacts() {
                 description={data ? `${data.meta.total.toLocaleString('es-PE')} contactos en tu base` : 'Cargando…'}
                 actions={
                     <>
-                        <Button variant="outline" onClick={() => setIsManualModalOpen(true)}>
-                            <UserPlus />
-                            Registro manual
-                        </Button>
+                        {can('contacts.create') && (
+                            <Button variant="outline" onClick={() => setIsManualModalOpen(true)}>
+                                <UserPlus />
+                                Registro manual
+                            </Button>
+                        )}
                         <Button variant="outline" onClick={downloadTemplate}>
                             <Download />
                             Descargar plantilla
@@ -142,10 +150,12 @@ export default function Contacts() {
                             className="hidden"
                             onChange={onFileSelected}
                         />
-                        <Button onClick={() => fileInputRef.current?.click()} loading={importContacts.isPending}>
-                            {!importContacts.isPending && <Upload />}
-                            {importContacts.isPending ? 'Subiendo…' : 'Importar CSV'}
-                        </Button>
+                        {can('contacts.import') && (
+                            <Button onClick={() => fileInputRef.current?.click()} loading={importContacts.isPending}>
+                                {!importContacts.isPending && <Upload />}
+                                {importContacts.isPending ? 'Subiendo…' : 'Importar CSV'}
+                            </Button>
+                        )}
                     </>
                 }
             />
@@ -229,6 +239,7 @@ export default function Contacts() {
                 contactId={consentsContact?.id ?? null}
                 contactName={consentsContact?.name}
                 onClose={() => setConsentsContact(null)}
+                canManage={can('contacts.consents')}
             />
         </div>
     );

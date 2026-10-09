@@ -27,6 +27,7 @@ class TenantResource extends JsonResource
             'plan' => $this->plan,
             'status' => $this->status,
             'is_platform' => $this->is_platform,
+            'timezone' => $this->settings['timezone'] ?? 'America/Lima',
         ];
     }
 }
