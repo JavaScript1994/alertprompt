@@ -16,8 +16,9 @@ declare(strict_types=1);
 | Después de editar este archivo: `php artisan permissions:sync`.
 |
 | `scope` indica a qué panel pertenece la sección: un rol de cliente solo
-| puede contener permisos `client`; un rol de plataforma puede contener ambos,
-| porque AlertPrompt también usa el panel de cliente para sus propias campañas.
+| puede contener permisos `client`; un rol de plataforma puede contener ambos:
+| los de cliente se usan en modo soporte (la plataforma no tiene panel de
+| mensajería propio).
 |
 */
 
@@ -27,7 +28,7 @@ return [
             'label' => 'Administración de la plataforma',
             'scope' => 'platform',
             'modules' => [
-                'admin.dashboard' => ['label' => 'Dashboard global', 'actions' => [
+                'admin.dashboard' => ['label' => 'Dashboard general', 'actions' => [
                     'view' => 'Ver',
                 ]],
                 'admin.clients' => ['label' => 'Clientes', 'actions' => [
@@ -167,8 +168,8 @@ return [
 
     'system_roles' => [
         'platform-owner' => [
-            'label' => 'Dueño de la plataforma',
-            'description' => 'Acceso total a la administración y al panel propio de AlertPrompt.',
+            'label' => 'Administrador general',
+            'description' => 'Acceso total a la administración de la plataforma y al modo soporte de los clientes.',
             'scope' => 'platform',
             'permissions' => '*',
         ],
