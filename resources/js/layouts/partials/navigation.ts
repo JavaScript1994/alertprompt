@@ -70,7 +70,7 @@ const PLATFORM_NAV: NavSection[] = [
             { to: '/admin/roles', label: 'Roles y permisos', icon: ShieldCheck, permission: 'admin.roles.view' },
             { to: '/admin/modules', label: 'Módulos', icon: Blocks, permission: 'admin.modules.view' },
             { to: '/admin/alerts', label: 'Alertas', icon: Bell, permission: 'admin.alerts.view' },
-            { to: '/admin/bulk-imports', label: 'Cargas masivas', icon: Upload, permission: 'admin.bulk_imports.view', comingSoon: true },
+            { to: '/admin/bulk-imports', label: 'Cargas masivas', icon: Upload, permission: 'admin.bulk_imports.view' },
         ],
     },
     {

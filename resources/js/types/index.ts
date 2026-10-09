@@ -296,3 +296,27 @@ export interface AdminReportSummary extends ReportSummary {
     clients: { active: number; suspended: number };
     open_alerts: number;
 }
+
+export interface BulkImport {
+    id: number;
+    tenant: { id: number; name: string } | null;
+    uploaded_by: string | null;
+    original_filename: string;
+    declared_source: string;
+    attestation_text: string;
+    status: 'queued' | 'processing' | 'completed' | 'failed';
+    totals: {
+        rows: number;
+        created: number;
+        updated: number;
+        consents_recorded: number;
+        without_consent: number;
+        consents_blocked: number;
+        invalid: number;
+    };
+    errors?: { line: number; message: string }[];
+    errors_count: number;
+    started_at: string | null;
+    finished_at: string | null;
+    created_at: string;
+}

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\Admin\AlertController as AdminAlertController;
+use App\Http\Controllers\Api\Admin\BulkImportController;
 use App\Http\Controllers\Api\Admin\ClientChannelAccountController;
 use App\Http\Controllers\Api\Admin\ClientController;
 use App\Http\Controllers\Api\Admin\ImpersonationController;
@@ -113,6 +114,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/reports', [AdminReportController::class, 'index'])->middleware('permission:admin.reports.view');
         Route::get('/reports/export', [AdminReportController::class, 'export'])->middleware('permission:admin.reports.export');
+
+        Route::get('/bulk-imports', [BulkImportController::class, 'index'])->middleware('permission:admin.bulk_imports.view');
+        Route::get('/bulk-imports/attestation', [BulkImportController::class, 'attestation'])->middleware('permission:admin.bulk_imports.view');
+        Route::get('/bulk-imports/{bulkImport}', [BulkImportController::class, 'show'])->whereNumber('bulkImport')->middleware('permission:admin.bulk_imports.view');
+        Route::post('/bulk-imports', [BulkImportController::class, 'store'])->middleware('permission:admin.bulk_imports.create');
 
         // Supervisión (solo lectura): los mismos listados del panel de cliente
         // con los datos de {client}.

@@ -4,6 +4,7 @@ import RequirePermission from '@/components/RequirePermission';
 import AuthLayout from '@/layouts/AuthLayout';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import Alerts from '@/pages/admin/alerts/Alerts';
+import BulkImports from '@/pages/admin/bulk-imports/BulkImports';
 import ClientDetail from '@/pages/admin/clients/ClientDetail';
 import Clients from '@/pages/admin/clients/Clients';
 import Modules from '@/pages/admin/modules/Modules';
@@ -64,6 +65,9 @@ export default function Root() {
                             <Route path="/admin/clients/companies" element={<Clients key="company" type="company" />} />
                             <Route path="/admin/clients/individuals" element={<Clients key="individual" type="individual" />} />
                             <Route path="/admin/clients/:id" element={<ClientDetail />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="admin.bulk_imports.view" />}>
+                            <Route path="/admin/bulk-imports" element={<BulkImports />} />
                         </Route>
                         <Route element={<RequirePermission permission="admin.alerts.view" />}>
                             <Route path="/admin/alerts" element={<Alerts />} />
