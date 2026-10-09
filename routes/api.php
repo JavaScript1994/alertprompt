@@ -2,18 +2,22 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\Admin\AlertController as AdminAlertController;
 use App\Http\Controllers\Api\Admin\ClientChannelAccountController;
 use App\Http\Controllers\Api\Admin\ClientController;
 use App\Http\Controllers\Api\Admin\ImpersonationController;
 use App\Http\Controllers\Api\Admin\ModuleController;
 use App\Http\Controllers\Api\Admin\PermissionTreeController;
+use App\Http\Controllers\Api\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Api\Admin\RoleController;
+use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\ChannelAccountController;
 use App\Http\Controllers\Api\ConsentController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\PasswordController;
+use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TemplateController;
 use App\Http\Controllers\Api\TenantSettingsController;
 use App\Http\Controllers\Api\UserController;
@@ -71,6 +75,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/users/{user}/reactivate', [UserController::class, 'reactivate'])->middleware('permission:users.manage');
     Route::post('/users/{user}/resend-invitation', [UserController::class, 'resendInvitation'])->middleware('permission:users.manage');
 
+    Route::get('/alerts', [AlertController::class, 'index'])->middleware('permission:dashboard.view');
+
+    Route::middleware('module:reports')->group(function () {
+        Route::get('/reports', [ReportController::class, 'index'])->middleware('permission:reports.view');
+        Route::get('/reports/export', [ReportController::class, 'export'])->middleware('permission:reports.export');
+    });
+
     Route::get('/channel-accounts', [ChannelAccountController::class, 'index'])->middleware('permission:whatsapp_account.view');
     Route::post('/channel-accounts/request', [ChannelAccountController::class, 'request'])->middleware('permission:whatsapp_account.manage');
 
@@ -96,6 +107,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/clients/{client}/channel-accounts', [ClientChannelAccountController::class, 'index'])->middleware('permission:admin.clients.view');
         Route::put('/clients/{client}/channel-accounts/{channel}', [ClientChannelAccountController::class, 'update'])->middleware('permission:admin.clients.update');
+
+        Route::get('/alerts', [AdminAlertController::class, 'index'])->middleware('permission:admin.alerts.view');
+        Route::post('/alerts/{alert}/resolve', [AdminAlertController::class, 'resolve'])->whereNumber('alert')->middleware('permission:admin.alerts.manage');
+
+        Route::get('/reports', [AdminReportController::class, 'index'])->middleware('permission:admin.reports.view');
+        Route::get('/reports/export', [AdminReportController::class, 'export'])->middleware('permission:admin.reports.export');
 
         // Supervisión (solo lectura): los mismos listados del panel de cliente
         // con los datos de {client}.

@@ -22,3 +22,8 @@ export function apiErrorMessage(error: unknown, fields: string[], fallback: stri
     }
     return data?.message ?? fallback;
 }
+
+/** Fecha local como YYYY-MM-DD (sin pasar por UTC, que corre el día en Lima). */
+export function isoDate(date: Date): string {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}

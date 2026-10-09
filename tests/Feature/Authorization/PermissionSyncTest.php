@@ -63,3 +63,15 @@ it('gives client roles only client permissions', function () {
 it('rejects a system role that references an unknown permission', function () {
     app(PermissionRegistry::class)->resolve(['contacts.view', 'contacts.fly']);
 })->throws(InvalidArgumentException::class, 'contacts.fly');
+
+it('adds brand-new permissions to the system roles whose definition includes them', function () {
+    $admin = Role::query()->where('name', 'client-admin')->firstOrFail();
+    $admin->revokePermissionTo('contacts.delete'); // edición del dueño: se respeta
+    Permission::query()->where('name', 'reports.export')->delete(); // simula permiso aún no sincronizado
+
+    $this->artisan('permissions:sync')->assertSuccessful();
+
+    $admin = $admin->fresh();
+    expect($admin->hasPermissionTo('reports.export'))->toBeTrue()
+        ->and($admin->hasPermissionTo('contacts.delete'))->toBeFalse();
+});

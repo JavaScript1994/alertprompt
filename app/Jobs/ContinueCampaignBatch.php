@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Enums\AlertSeverity;
 use App\Enums\CampaignStatus;
 use App\Models\Campaign;
 use App\Models\CampaignRecipient;
+use App\Services\Alerts;
 use App\Services\CampaignPacer;
 use Illuminate\Bus\Batch;
 
@@ -51,6 +53,17 @@ class ContinueCampaignBatch
 
         if (app(CampaignPacer::class)->shouldPause($sent, $failed)) {
             $campaign->transitionTo(CampaignStatus::Paused);
+
+            $rate = $sent > 0 ? round($failed / $sent * 100, 1) : 0.0;
+            app(Alerts::class)->raise(
+                tenantId: $campaign->tenant_id,
+                type: 'campaign.auto_paused',
+                severity: AlertSeverity::Warning,
+                title: "Campaña «{$campaign->name}» pausada automáticamente",
+                message: "Los fallos llegaron al {$rate}% de lo enviado (umbral ".(config('campaigns.failure_threshold') * 100).'%). Revisa la base y la plantilla antes de reanudar.',
+                data: ['sent' => $sent, 'failed' => $failed, 'failure_rate' => $rate],
+                campaignId: $campaign->id,
+            );
 
             return;
         }

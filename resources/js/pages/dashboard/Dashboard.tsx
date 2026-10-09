@@ -1,8 +1,9 @@
-import { ArrowRight, Megaphone, MessageSquareText, Send, Users, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Megaphone, MessageSquareText, Send, TriangleAlert, Users, type LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ChannelBadge from '@/components/shared/ChannelBadge';
 import EmptyState from '@/components/shared/EmptyState';
 import { CampaignStatusBadge } from '@/components/shared/StatusBadge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthUser } from '@/hooks/useAuth';
 import { useCampaigns } from '@/hooks/useCampaigns';
 import { useContacts } from '@/hooks/useContacts';
+import { useMyAlerts } from '@/hooks/useReports';
 import { initials } from '@/lib/format';
 
 // Tarjetas de métricas al estilo "TopCards" de la plantilla: fondo tenue del
@@ -56,6 +58,7 @@ export default function Dashboard() {
     const { data: user } = useAuthUser();
     const { data: campaigns } = useCampaigns(1);
     const { data: contacts } = useContacts({ page: 1, search: '' });
+    const { data: alerts } = useMyAlerts();
 
     const recent = campaigns?.data.slice(0, 5) ?? [];
     const runningCount = campaigns?.data.filter((c) => c.status === 'running').length;
@@ -72,6 +75,18 @@ export default function Dashboard() {
                     <p className="text-muted-foreground">Así está {(user?.impersonating ?? user?.tenant)?.name ?? 'tu cuenta'} hoy.</p>
                 </div>
             </div>
+
+            {alerts && alerts.length > 0 && (
+                <div className="col-span-12 space-y-2">
+                    {alerts.map((alert) => (
+                        <Alert key={alert.id} variant={alert.severity === 'critical' ? 'error' : 'warning'}>
+                            <TriangleAlert />
+                            <AlertTitle>{alert.title}</AlertTitle>
+                            <AlertDescription>{alert.message}</AlertDescription>
+                        </Alert>
+                    ))}
+                </div>
+            )}
 
             <div className="col-span-12 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
                 <StatCard icon={Users} label="Contactos" value={contacts?.meta.total} to="/contacts" tone="primary" />

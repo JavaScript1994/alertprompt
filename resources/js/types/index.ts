@@ -245,3 +245,54 @@ export interface AdminChannelAccountSlot {
     providers: string[];
     account: ChannelAccount | null;
 }
+
+export type AlertSeverity = 'info' | 'warning' | 'critical';
+
+export interface AppAlert {
+    id: number;
+    type: string;
+    severity: AlertSeverity;
+    title: string;
+    message: string;
+    details: Record<string, unknown>;
+    occurrences: number;
+    campaign: { id: number; name: string } | null;
+    /** Solo en /api/admin/*. */
+    tenant?: { id: number; name: string } | null;
+    resolved_at: string | null;
+    resolved_by: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface DeliveryCounts {
+    attempted: number;
+    sent: number;
+    delivered: number;
+    read: number;
+    failed: number;
+    skipped: number;
+    delivery_rate: number;
+}
+
+export interface ReportSummary {
+    range: { from: string; to: string };
+    totals: DeliveryCounts;
+    daily: (DeliveryCounts & { day: string })[];
+    by_channel: (DeliveryCounts & { channel: TemplateChannel })[];
+    by_category: (DeliveryCounts & { category: string })[];
+    campaigns: (DeliveryCounts & {
+        id: number;
+        name: string;
+        channel: TemplateChannel;
+        status: string;
+        category: string;
+        tenant_name: string;
+    })[];
+}
+
+export interface AdminReportSummary extends ReportSummary {
+    by_tenant: (DeliveryCounts & { tenant_id: number; tenant_name: string; tenant_type: TenantType })[];
+    clients: { active: number; suspended: number };
+    open_alerts: number;
+}
