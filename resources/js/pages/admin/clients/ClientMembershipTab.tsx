@@ -12,12 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { useCancelMembership, useClientMemberships, useCreateMembership } from '@/hooks/useMemberships';
+import { useCancelMembership, useClientMemberships, useCreateMembership, usePlans } from '@/hooks/useMemberships';
 import { useCan } from '@/hooks/usePermissions';
 import { apiErrorMessage, isoDate } from '@/lib/format';
-import type { Membership } from '@/types';
-
-const PLANS = ['starter', 'growth', 'scale', 'enterprise'] as const;
+import type { Membership, Plan } from '@/types';
 
 function addCycle(start: string, cycle: string): string {
     const [y, m, d] = start.split('-').map(Number);
@@ -30,23 +28,39 @@ function addCycle(start: string, cycle: string): string {
 
 const quota = (value: string) => (value.trim() === '' ? null : Number(value));
 
-function NewMembershipDialog({ clientId, open, onClose }: { clientId: number; open: boolean; onClose: () => void }) {
+function NewMembershipDialog({ clientId, open, onClose, plans }: { clientId: number; open: boolean; onClose: () => void; plans: Plan[] }) {
     const create = useCreateMembership(clientId);
     const [form, setForm] = useState(() => {
         const today = isoDate(new Date());
+        const first = plans[0];
         return {
-            plan: 'starter',
+            plan: first?.key ?? 'starter',
             billing_cycle: 'monthly',
-            price: '',
+            price: first?.monthly_price ?? '',
             starts_at: today,
             ends_at: addCycle(today, 'monthly'),
-            whatsapp: '',
-            sms: '',
-            email: '',
+            whatsapp: first?.quotas.whatsapp?.toString() ?? '',
+            sms: first?.quotas.sms?.toString() ?? '',
+            email: first?.quotas.email?.toString() ?? '',
             contract_reference: '',
             notes: '',
         };
     });
+
+    // Propone precio y cuotas del catálogo; se pueden ajustar para este cliente.
+    const applyPlan = (key: string) => {
+        const plan = plans.find((p) => p.key === key);
+        setForm((current) => ({
+            ...current,
+            plan: key,
+            ...(plan && {
+                price: plan.monthly_price === null ? '' : String(current.billing_cycle === 'yearly' ? Number(plan.monthly_price) * 12 : Number(plan.monthly_price)),
+                whatsapp: plan.quotas.whatsapp?.toString() ?? '',
+                sms: plan.quotas.sms?.toString() ?? '',
+                email: plan.quotas.email?.toString() ?? '',
+            }),
+        }));
+    };
 
     const set = (key: keyof typeof form, value: string) =>
         setForm((current) => {
@@ -94,14 +108,14 @@ function NewMembershipDialog({ clientId, open, onClose }: { clientId: number; op
                     )}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <Field label="Plan" htmlFor="m-plan">
-                            <Select value={form.plan} onValueChange={(v) => v && set('plan', v)}>
-                                <SelectTrigger id="m-plan" className="w-full capitalize">
+                            <Select value={form.plan} onValueChange={(v) => v && applyPlan(v)}>
+                                <SelectTrigger id="m-plan" className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {PLANS.map((plan) => (
-                                        <SelectItem key={plan} value={plan} className="capitalize">
-                                            {plan}
+                                    {plans.map((plan) => (
+                                        <SelectItem key={plan.key} value={plan.key}>
+                                            {plan.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -162,6 +176,7 @@ function NewMembershipDialog({ clientId, open, onClose }: { clientId: number; op
 
 export default function ClientMembershipTab({ clientId }: { clientId: number }) {
     const { data, isLoading } = useClientMemberships(clientId);
+    const { data: plans } = usePlans();
     const cancel = useCancelMembership(clientId);
     const canManage = useCan()('admin.memberships.manage');
     const [isCreating, setIsCreating] = useState(false);
@@ -227,7 +242,7 @@ export default function ClientMembershipTab({ clientId }: { clientId: number }) 
                 )}
             </div>
 
-            {isCreating && <NewMembershipDialog clientId={clientId} open onClose={() => setIsCreating(false)} />}
+            {isCreating && plans && <NewMembershipDialog clientId={clientId} open plans={plans} onClose={() => setIsCreating(false)} />}
 
             <ConfirmDialog
                 open={cancelling !== null}

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { ChannelUsage, Membership, MembershipOverview } from '@/types';
+import type { ChannelUsage, Membership, MembershipOverview, Plan } from '@/types';
 
 const KEY = 'memberships';
 
@@ -58,5 +58,30 @@ export function useCancelMembership(clientId: number) {
             await api.post(`/api/admin/clients/${clientId}/memberships/${id}/cancel`, { reason });
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEY, 'client', clientId] }),
+    });
+}
+
+export function usePlans() {
+    return useQuery({
+        queryKey: [KEY, 'plans'],
+        queryFn: async () => (await api.get<{ data: Plan[] }>('/api/admin/plans')).data.data,
+    });
+}
+
+export interface PlanInput {
+    name: string;
+    description: string | null;
+    monthly_price: string | null;
+    quotas: Record<string, number | null>;
+    is_public: boolean;
+}
+
+export function useUpdatePlan() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, ...input }: PlanInput & { id: number }) =>
+            (await api.put<{ data: Plan }>(`/api/admin/plans/${id}`, input)).data.data,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEY] }),
     });
 }

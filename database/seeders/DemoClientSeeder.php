@@ -12,6 +12,7 @@ use App\Enums\TenantType;
 use App\Models\Campaign;
 use App\Models\Consent;
 use App\Models\Contact;
+use App\Models\Plan;
 use App\Models\Template;
 use App\Models\Tenant;
 use App\Services\CampaignAudienceService;
@@ -128,14 +129,16 @@ class DemoClientSeeder extends Seeder
         ]);
         app(CampaignAudienceService::class)->enroll($campaign, $contacts);
 
-        // Membresía vigente: activa el plan Growth y emite su primera proforma.
+        // Membresía vigente con las condiciones del catálogo (plan Growth):
+        // activa el plan y emite su primera proforma.
+        $growth = Plan::query()->where('key', 'growth')->firstOrFail();
         app(MembershipManager::class)->create($tenant, [
             'plan' => 'growth',
             'billing_cycle' => 'monthly',
-            'price' => '450',
+            'price' => (string) $growth->monthly_price,
             'starts_at' => now()->toDateString(),
             'ends_at' => now()->addYear()->subDay()->toDateString(),
-            'quotas' => ['whatsapp' => 1000, 'sms' => 500, 'email' => null],
+            'quotas' => $growth->quotas,
             'contract_reference' => 'CTR-PRUEBA-001',
         ]);
 

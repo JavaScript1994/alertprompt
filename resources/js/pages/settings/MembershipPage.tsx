@@ -2,6 +2,7 @@ import { FileText } from 'lucide-react';
 import { MembershipStatusBadge, UsageMeters, formatDate, formatPrice } from '@/components/shared/MembershipBits';
 import EmptyState from '@/components/shared/EmptyState';
 import PageHeader from '@/components/shared/PageHeader';
+import PlanCards from '@/components/shared/PlanCards';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,11 +13,21 @@ export default function MembershipPage() {
 
     if (isLoading || !data) return <Skeleton className="h-96 w-full rounded-xl" />;
 
-    const { current, next, usage, history } = data;
+    const { current, next, usage, history, plans } = data;
 
     return (
         <div>
             <PageHeader title="Membresía" description="Tu contrato con AlertPrompt y el consumo del mes." />
+
+            {plans.length > 0 && (
+                <section className="mb-8">
+                    <h2 className="mb-1 text-lg">Planes</h2>
+                    <p className="mb-4 text-sm text-muted-foreground">
+                        Mensajes incluidos por mes en cada canal. Para cambiar de plan, comunícate con AlertPrompt.
+                    </p>
+                    <PlanCards plans={plans} currentKey={data.current_plan} />
+                </section>
+            )}
 
             {!current ? (
                 <EmptyState

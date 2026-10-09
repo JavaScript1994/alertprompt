@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Api;
 use App\Enums\MembershipStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MembershipResource;
+use App\Http\Resources\PlanResource;
+use App\Models\Plan;
 use App\Services\Memberships\MembershipManager;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
@@ -27,6 +29,12 @@ class MembershipController extends Controller
             'usage' => $memberships->usage($tenantId),
             'quotas_enforced' => (bool) config('memberships.enforce_quotas'),
             'history' => MembershipResource::collection($all),
+            // Planes para comparar; el vigente se marca aunque no sea público.
+            'plans' => PlanResource::collection(Plan::query()
+                ->where(fn ($q) => $q->where('is_public', true)->when($current, fn ($q) => $q->orWhere('key', $current->plan)))
+                ->orderBy('sort')
+                ->get()),
+            'current_plan' => $current?->plan,
         ]]);
     }
 }

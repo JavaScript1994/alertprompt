@@ -343,12 +343,26 @@ export interface Membership {
 
 export type ChannelUsage = Record<TemplateChannel, { used: number; quota: number | null }>;
 
+export interface Plan {
+    id: number;
+    key: string;
+    name: string;
+    description: string | null;
+    /** Mensual sin IGV; null = a medida. */
+    monthly_price: string | null;
+    quotas: Record<TemplateChannel, number | null>;
+    is_public: boolean;
+    sort: number;
+}
+
 export interface MembershipOverview {
     current: Membership | null;
     next: Membership | null;
     usage: ChannelUsage;
     quotas_enforced: boolean;
     history: Membership[];
+    plans: Plan[];
+    current_plan: string | null;
 }
 
 export type InvoiceStatus = 'issued' | 'paid' | 'void';

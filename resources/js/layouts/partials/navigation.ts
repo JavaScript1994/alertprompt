@@ -6,6 +6,7 @@ import {
     CreditCard,
     FileText,
     LayoutDashboard,
+    Layers,
     Megaphone,
     MessageCircle,
     MessageSquareText,
@@ -67,7 +68,10 @@ const PLATFORM_NAV: NavSection[] = [
     },
     {
         heading: 'Facturación',
-        items: [{ to: '/admin/invoices', label: 'Comprobantes', icon: Receipt, permission: 'admin.billing.view' }],
+        items: [
+            { to: '/admin/plans', label: 'Planes', icon: Layers, permission: 'admin.memberships.view' },
+            { to: '/admin/invoices', label: 'Comprobantes', icon: Receipt, permission: 'admin.billing.view' },
+        ],
     },
     {
         heading: 'Configuración',

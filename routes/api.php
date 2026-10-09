@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Admin\InvoiceController;
 use App\Http\Controllers\Api\Admin\MembershipController as AdminMembershipController;
 use App\Http\Controllers\Api\Admin\ModuleController;
 use App\Http\Controllers\Api\Admin\PermissionTreeController;
+use App\Http\Controllers\Api\Admin\PlanController;
 use App\Http\Controllers\Api\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\AlertController;
@@ -137,6 +138,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/bulk-imports/attestation', [BulkImportController::class, 'attestation'])->middleware('permission:admin.bulk_imports.view');
         Route::get('/bulk-imports/{bulkImport}', [BulkImportController::class, 'show'])->whereNumber('bulkImport')->middleware('permission:admin.bulk_imports.view');
         Route::post('/bulk-imports', [BulkImportController::class, 'store'])->middleware('permission:admin.bulk_imports.create');
+
+        Route::get('/plans', [PlanController::class, 'index'])->middleware('permission:admin.memberships.view');
+        Route::put('/plans/{plan}', [PlanController::class, 'update'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
 
         Route::get('/clients/{client}/memberships', [AdminMembershipController::class, 'index'])->middleware('permission:admin.memberships.view');
         Route::post('/clients/{client}/memberships', [AdminMembershipController::class, 'store'])->middleware('permission:admin.memberships.manage');

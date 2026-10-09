@@ -10,6 +10,7 @@ import BulkImports from '@/pages/admin/bulk-imports/BulkImports';
 import ClientDetail from '@/pages/admin/clients/ClientDetail';
 import Clients from '@/pages/admin/clients/Clients';
 import Modules from '@/pages/admin/modules/Modules';
+import Plans from '@/pages/admin/plans/Plans';
 import AdminReports from '@/pages/admin/reports/AdminReports';
 import RoleEditor from '@/pages/admin/roles/RoleEditor';
 import Roles from '@/pages/admin/roles/Roles';
@@ -84,6 +85,9 @@ export default function Root() {
                             <Route path="/admin/clients/companies" element={<Clients key="company" type="company" />} />
                             <Route path="/admin/clients/individuals" element={<Clients key="individual" type="individual" />} />
                             <Route path="/admin/clients/:id" element={<ClientDetail />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="admin.memberships.view" />}>
+                            <Route path="/admin/plans" element={<Plans />} />
                         </Route>
                         <Route element={<RequirePermission permission="admin.billing.view" />}>
                             <Route path="/admin/invoices" element={<AdminInvoices />} />
