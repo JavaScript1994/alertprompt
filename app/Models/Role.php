@@ -19,11 +19,22 @@ use Spatie\Permission\Models\Role as SpatieRole;
  */
 class Role extends SpatieRole
 {
+    public const OWNER = 'platform-owner';
+
     protected function casts(): array
     {
         return [
             'scope' => RoleScope::class,
             'is_system' => 'boolean',
         ];
+    }
+
+    /**
+     * El rol de dueño no se edita ni se elimina: `permissions:sync` lo
+     * mantiene siempre con todos los permisos.
+     */
+    public function isLocked(): bool
+    {
+        return $this->name === self::OWNER;
     }
 }

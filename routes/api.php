@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\Admin\PermissionTreeController;
+use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\ConsentController;
@@ -51,5 +52,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Administración de la plataforma: solo el tenant de AlertPrompt.
     Route::prefix('admin')->middleware('platform')->group(function () {
         Route::get('/permissions', PermissionTreeController::class)->middleware('permission:admin.roles.view');
+
+        Route::apiResource('roles', RoleController::class)
+            ->middlewareFor(['index', 'show'], 'permission:admin.roles.view')
+            ->middlewareFor(['store', 'update', 'destroy'], 'permission:admin.roles.manage');
     });
 });
