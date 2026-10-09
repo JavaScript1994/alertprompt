@@ -6,7 +6,6 @@ namespace App\Models;
 
 use App\Enums\BillingCycle;
 use App\Enums\MembershipStatus;
-use App\Enums\TenantPlan;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,7 +28,6 @@ class Membership extends Model
     protected function casts(): array
     {
         return [
-            'plan' => TenantPlan::class,
             'status' => MembershipStatus::class,
             'billing_cycle' => BillingCycle::class,
             'price' => 'decimal:2',

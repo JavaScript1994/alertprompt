@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\Admin\Clients;
 
 use App\Enums\DocumentType;
-use App\Enums\TenantPlan;
 use App\Enums\TenantType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 class StoreClientRequest extends FormRequest
@@ -33,7 +33,7 @@ class StoreClientRequest extends FormRequest
         return [
             'type' => ['required', new Enum(TenantType::class)],
             ...ClientRules::profile($type, $documentType),
-            'plan' => ['sometimes', new Enum(TenantPlan::class)],
+            'plan' => ['sometimes', Rule::exists('plans', 'key')->where(fn ($query) => $query->where('is_active', true))],
             'admin_name' => ['required', 'string', 'max:120'],
             'admin_email' => ['required', 'email', 'max:255', 'unique:users,email'],
         ];

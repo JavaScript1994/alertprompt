@@ -351,7 +351,13 @@ export interface Plan {
     /** Mensual sin IGV; null = a medida. */
     monthly_price: string | null;
     quotas: Record<TemplateChannel, number | null>;
+    /** Módulos con los que nace un cliente del plan. */
+    modules: ModuleKey[];
     is_public: boolean;
+    /** Inactivo: no se ofrece en altas nuevas; quien lo tiene lo conserva. */
+    is_active: boolean;
+    /** Solo en /api/admin/plans. */
+    clients_count?: number;
     sort: number;
 }
 

@@ -7,7 +7,6 @@ namespace App\Services\Memberships;
 use App\Enums\AlertSeverity;
 use App\Enums\Channel;
 use App\Enums\MembershipStatus;
-use App\Enums\TenantPlan;
 use App\Models\Membership;
 use App\Models\Scopes\TenantScope;
 use App\Models\Tenant;
@@ -67,7 +66,7 @@ class MembershipManager
         return DB::transaction(function () use ($tenant, $data, $startsAt, $endsAt) {
             $membership = Membership::query()->create([
                 'tenant_id' => $tenant->id,
-                'plan' => TenantPlan::from($data['plan']),
+                'plan' => $data['plan'],
                 'status' => MembershipStatus::Scheduled,
                 'billing_cycle' => $data['billing_cycle'],
                 'price' => $data['price'],
@@ -81,7 +80,7 @@ class MembershipManager
             ]);
 
             $this->audit->record('membership.created', $tenant->id, $membership, [
-                'plan' => $membership->plan->value,
+                'plan' => $membership->plan,
                 'price' => (string) $membership->price,
                 'starts_at' => $startsAt->toDateString(),
                 'ends_at' => $endsAt->toDateString(),
@@ -221,9 +220,9 @@ class MembershipManager
                 ->update(['status' => MembershipStatus::Expired]);
 
             $membership->update(['status' => MembershipStatus::Active]);
-            Tenant::query()->whereKey($membership->tenant_id)->update(['plan' => $membership->plan->value]);
+            Tenant::query()->whereKey($membership->tenant_id)->update(['plan' => $membership->plan]);
 
-            $this->audit->record('membership.activated', $membership->tenant_id, $membership, ['plan' => $membership->plan->value]);
+            $this->audit->record('membership.activated', $membership->tenant_id, $membership, ['plan' => $membership->plan]);
         });
 
         // Primer comprobante del período, sin esperar a la tarea diaria.

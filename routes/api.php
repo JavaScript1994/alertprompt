@@ -140,7 +140,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/bulk-imports', [BulkImportController::class, 'store'])->middleware('permission:admin.bulk_imports.create');
 
         Route::get('/plans', [PlanController::class, 'index'])->middleware('permission:admin.memberships.view');
+        Route::post('/plans', [PlanController::class, 'store'])->middleware('permission:admin.memberships.manage');
         Route::put('/plans/{plan}', [PlanController::class, 'update'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
+        Route::post('/plans/{plan}/deactivate', [PlanController::class, 'deactivate'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
+        Route::post('/plans/{plan}/activate', [PlanController::class, 'activate'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
 
         Route::get('/clients/{client}/memberships', [AdminMembershipController::class, 'index'])->middleware('permission:admin.memberships.view');
         Route::post('/clients/{client}/memberships', [AdminMembershipController::class, 'store'])->middleware('permission:admin.memberships.manage');

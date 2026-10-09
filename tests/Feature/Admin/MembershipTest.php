@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Enums\CampaignRecipientStatus;
 use App\Enums\Channel;
 use App\Enums\MembershipStatus;
-use App\Enums\TenantPlan;
 use App\Models\Alert;
 use App\Models\Campaign;
 use App\Models\CampaignRecipient;
@@ -47,7 +46,7 @@ it('activates a membership that starts today and moves the client to its plan', 
         ->assertJsonPath('data.quotas.whatsapp', 1000)
         ->assertJsonPath('data.quotas.email', null);
 
-    expect($client->fresh()->plan)->toBe(TenantPlan::Growth);
+    expect($client->fresh()->plan)->toBe('growth');
 });
 
 it('schedules a future membership and activates it when it starts, expiring the previous one', function () {
@@ -66,7 +65,7 @@ it('schedules a future membership and activates it when it starts, expiring the 
 
     expect(membershipsOf($client)->find($next->json('data.id'))->status)->toBe(MembershipStatus::Active)
         ->and(membershipsOf($client)->where('status', MembershipStatus::Active)->count())->toBe(1)
-        ->and($client->fresh()->plan)->toBe(TenantPlan::Scale);
+        ->and($client->fresh()->plan)->toBe('scale');
 });
 
 it('expires a membership without renewal and alerts the platform', function () {

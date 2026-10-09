@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Enums\TenantPlan;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\TenantContext;
@@ -17,7 +16,7 @@ class TenantSeeder extends Seeder
     {
         $tenant = Tenant::create([
             'name' => 'Demo Empresa SAC',
-            'plan' => TenantPlan::Growth,
+            'plan' => 'growth',
             'settings' => [
                 'timezone' => 'America/Lima',
                 'whatsapp_daily_limit' => 1000,

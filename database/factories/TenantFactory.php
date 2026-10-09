@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\TenantType;
 use App\Models\Tenant;
@@ -21,7 +20,7 @@ class TenantFactory extends Factory
         return [
             'name' => fake()->company().' SAC',
             'type' => TenantType::Company,
-            'plan' => TenantPlan::Starter,
+            'plan' => 'starter',
             'status' => TenantStatus::Active,
             'settings' => [
                 'timezone' => 'America/Lima',

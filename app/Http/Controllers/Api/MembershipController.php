@@ -31,7 +31,8 @@ class MembershipController extends Controller
             'history' => MembershipResource::collection($all),
             // Planes para comparar; el vigente se marca aunque no sea público.
             'plans' => PlanResource::collection(Plan::query()
-                ->where(fn ($q) => $q->where('is_public', true)->when($current, fn ($q) => $q->orWhere('key', $current->plan)))
+                ->where(fn ($q) => $q->where(fn ($q) => $q->where('is_public', true)->where('is_active', true))
+                    ->when($current, fn ($q) => $q->orWhere('key', $current->plan)))
                 ->orderBy('sort')
                 ->get()),
             'current_plan' => $current?->plan,

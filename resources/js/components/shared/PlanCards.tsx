@@ -40,6 +40,7 @@ export default function PlanCards({
                             'relative gap-5 p-6',
                             isCurrent && 'ring-2 ring-primary dark:ring-brand-300',
                             !plan.is_public && 'border-dashed',
+                            !plan.is_active && 'bg-muted/40',
                         )}
                     >
                         <div className="flex items-start justify-between gap-3">
@@ -53,6 +54,7 @@ export default function PlanCards({
                                     Plan actual
                                 </Badge>
                             )}
+                            {!plan.is_active && <Badge variant="neutral">Inactivo</Badge>}
                         </div>
 
                         <p>

@@ -73,7 +73,27 @@ export interface PlanInput {
     description: string | null;
     monthly_price: string | null;
     quotas: Record<string, number | null>;
+    modules: string[];
     is_public: boolean;
+}
+
+export function useCreatePlan() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (input: PlanInput) => (await api.post<{ data: Plan }>('/api/admin/plans', input)).data.data,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEY] }),
+    });
+}
+
+export function useSetPlanActive() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, active }: { id: number; active: boolean }) =>
+            (await api.post<{ data: Plan }>(`/api/admin/plans/${id}/${active ? 'activate' : 'deactivate'}`)).data.data,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEY] }),
+    });
 }
 
 export function useUpdatePlan() {

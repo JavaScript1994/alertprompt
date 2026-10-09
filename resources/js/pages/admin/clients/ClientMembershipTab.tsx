@@ -242,7 +242,9 @@ export default function ClientMembershipTab({ clientId }: { clientId: number }) 
                 )}
             </div>
 
-            {isCreating && plans && <NewMembershipDialog clientId={clientId} open plans={plans} onClose={() => setIsCreating(false)} />}
+            {isCreating && plans && (
+                <NewMembershipDialog clientId={clientId} open plans={plans.filter((plan) => plan.is_active)} onClose={() => setIsCreating(false)} />
+            )}
 
             <ConfirmDialog
                 open={cancelling !== null}

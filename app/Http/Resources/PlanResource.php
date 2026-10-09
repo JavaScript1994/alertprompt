@@ -26,7 +26,10 @@ class PlanResource extends JsonResource
                 'sms' => $this->quotas['sms'] ?? null,
                 'email' => $this->quotas['email'] ?? null,
             ],
+            'modules' => $this->modules ?? [],
             'is_public' => $this->is_public,
+            'is_active' => $this->is_active,
+            'clients_count' => $this->when(isset($this->clients_count), fn () => (int) $this->clients_count),
             'sort' => $this->sort,
         ];
     }

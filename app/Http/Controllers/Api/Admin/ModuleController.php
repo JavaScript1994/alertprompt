@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Admin\Modules\UpdateClientModulesRequest;
+use App\Models\Plan;
 use App\Models\Tenant;
 use App\Services\Modules\TenantModules;
 use Illuminate\Http\JsonResponse;
@@ -25,14 +26,14 @@ class ModuleController extends Controller
             ->selectRaw('module, count(*) as total')
             ->pluck('total', 'module');
 
-        $plans = config('modules.plans', []);
+        $plans = Plan::query()->active()->orderBy('sort')->get(['key', 'name', 'modules']);
 
         return response()->json(['data' => collect($this->modules->catalog())->map(fn (array $module, string $key) => [
             'key' => $key,
             'label' => $module['label'],
             'description' => $module['description'],
             'clients_count' => (int) ($usage[$key] ?? 0),
-            'included_in_plans' => array_keys(array_filter($plans, fn (array $included) => in_array($key, $included, true))),
+            'included_in_plans' => $plans->filter(fn (Plan $plan) => in_array($key, $plan->modules ?? [], true))->pluck('name')->values(),
         ])->values()]);
     }
 

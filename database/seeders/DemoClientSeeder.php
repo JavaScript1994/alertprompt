@@ -6,7 +6,6 @@ namespace Database\Seeders;
 
 use App\Enums\CampaignStatus;
 use App\Enums\TemplateStatus;
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\TenantType;
 use App\Models\Campaign;
@@ -65,7 +64,7 @@ class DemoClientSeeder extends Seeder
             'contact_email' => 'contacto@empresaprueba.pe',
             'contact_phone' => '+51 1 4000000',
             'address' => 'Av. Javier Prado Este 1000, San Isidro, Lima',
-            'plan' => TenantPlan::Starter,
+            'plan' => 'starter',
             'status' => TenantStatus::Active,
             'settings' => ['timezone' => 'America/Lima'],
         ]);
@@ -74,7 +73,7 @@ class DemoClientSeeder extends Seeder
         $admin = app(ClientManager::class)->createUser($tenant, 'Admin Empresa de Prueba', 'admin@empresaprueba.pe', 'client-admin');
         $admin->forceFill(['password' => Hash::make('password'), 'email_verified_at' => now()])->save();
 
-        app(TenantModules::class)->sync($tenant, app(TenantModules::class)->defaultsFor(TenantPlan::Growth));
+        app(TenantModules::class)->sync($tenant, app(TenantModules::class)->defaultsFor('growth'));
 
         TenantContext::set($tenant->id);
 

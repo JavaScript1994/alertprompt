@@ -11,8 +11,8 @@ declare(strict_types=1);
 | backend (middleware `module:` y validaciones) y el panel oculta lo que no
 | está activo. El tenant de la plataforma tiene todos siempre.
 |
-| `plans`: módulos que un cliente recibe al crearse según su plan. Después el
-| dueño de la plataforma puede activarlos o desactivarlos uno a uno.
+| Los módulos con los que nace un cliente los define su plan (tabla plans,
+| Administración > Planes). Después se activan o desactivan uno a uno.
 |
 */
 
@@ -26,10 +26,4 @@ return [
         'reports' => ['label' => 'Reportes', 'description' => 'Métricas de entrega y exportación.'],
     ],
 
-    'plans' => [
-        'starter' => ['sms', 'email', 'csv_import'],
-        'growth' => ['whatsapp', 'sms', 'email', 'csv_import', 'scheduling', 'reports'],
-        'scale' => ['whatsapp', 'sms', 'email', 'csv_import', 'scheduling', 'reports'],
-        'enterprise' => ['whatsapp', 'sms', 'email', 'csv_import', 'scheduling', 'reports'],
-    ],
 ];
