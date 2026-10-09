@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             PlatformSeeder::class,
             TenantSeeder::class,
             ContactSeeder::class,
+            DemoClientSeeder::class,
         ]);
     }
 }

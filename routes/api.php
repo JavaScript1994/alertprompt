@@ -44,34 +44,61 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
 
-    // Panel de cliente. Cada acción exige su permiso de config/permissions.php;
-    // el tenant de la plataforma también lo usa para sus propias campañas.
-    Route::post('/contacts/import', [ContactController::class, 'import'])->middleware(['permission:contacts.import', 'module:csv_import']);
-    Route::apiResource('contacts', ContactController::class)->except(['show'])
-        ->middlewareFor('index', 'permission:contacts.view')
-        ->middlewareFor('store', 'permission:contacts.create')
-        ->middlewareFor('update', 'permission:contacts.update')
-        ->middlewareFor('destroy', 'permission:contacts.delete');
+    // Panel de cliente. Cada acción exige su permiso de config/permissions.php.
+    // La administración general solo entra aquí en modo soporte (client-panel).
+    Route::middleware('client-panel')->group(function () {
+        Route::post('/contacts/import', [ContactController::class, 'import'])->middleware(['permission:contacts.import', 'module:csv_import']);
+        Route::apiResource('contacts', ContactController::class)->except(['show'])
+            ->middlewareFor('index', 'permission:contacts.view')
+            ->middlewareFor('store', 'permission:contacts.create')
+            ->middlewareFor('update', 'permission:contacts.update')
+            ->middlewareFor('destroy', 'permission:contacts.delete');
 
-    Route::get('/contacts/{contact}/consents', [ConsentController::class, 'index'])->middleware('permission:contacts.view');
-    Route::post('/contacts/{contact}/consents', [ConsentController::class, 'store'])->middleware('permission:contacts.consents');
-    Route::patch('/contacts/{contact}/consents/{consent}/revoke', [ConsentController::class, 'revoke'])->middleware('permission:contacts.consents');
+        Route::get('/contacts/{contact}/consents', [ConsentController::class, 'index'])->middleware('permission:contacts.view');
+        Route::post('/contacts/{contact}/consents', [ConsentController::class, 'store'])->middleware('permission:contacts.consents');
+        Route::patch('/contacts/{contact}/consents/{consent}/revoke', [ConsentController::class, 'revoke'])->middleware('permission:contacts.consents');
 
-    Route::post('/templates/preview', [TemplateController::class, 'preview'])->middleware('permission:templates.view');
-    Route::apiResource('templates', TemplateController::class)->except(['show'])
-        ->middlewareFor('index', 'permission:templates.view')
-        ->middlewareFor('store', 'permission:templates.create')
-        ->middlewareFor('update', 'permission:templates.update')
-        ->middlewareFor('destroy', 'permission:templates.delete');
+        Route::post('/templates/preview', [TemplateController::class, 'preview'])->middleware('permission:templates.view');
+        Route::apiResource('templates', TemplateController::class)->except(['show'])
+            ->middlewareFor('index', 'permission:templates.view')
+            ->middlewareFor('store', 'permission:templates.create')
+            ->middlewareFor('update', 'permission:templates.update')
+            ->middlewareFor('destroy', 'permission:templates.delete');
 
-    Route::post('/campaigns/{campaign}/dispatch', [CampaignController::class, 'dispatch'])->middleware(['permission:campaigns.dispatch', 'not-impersonating']);
-    Route::apiResource('campaigns', CampaignController::class)->only(['index', 'store', 'show', 'update', 'destroy'])
-        ->middlewareFor(['index', 'show'], 'permission:campaigns.view')
-        ->middlewareFor('store', 'permission:campaigns.create')
-        ->middlewareFor('update', 'permission:campaigns.update')
-        ->middlewareFor('destroy', 'permission:campaigns.delete');
+        Route::post('/campaigns/{campaign}/dispatch', [CampaignController::class, 'dispatch'])->middleware(['permission:campaigns.dispatch', 'not-impersonating']);
+        Route::apiResource('campaigns', CampaignController::class)->only(['index', 'store', 'show', 'update', 'destroy'])
+            ->middlewareFor(['index', 'show'], 'permission:campaigns.view')
+            ->middlewareFor('store', 'permission:campaigns.create')
+            ->middlewareFor('update', 'permission:campaigns.update')
+            ->middlewareFor('destroy', 'permission:campaigns.delete');
 
-    // Usuarios y configuración de la cuenta (también en modo soporte).
+        Route::get('/alerts', [AlertController::class, 'index'])->middleware('permission:dashboard.view');
+
+        Route::middleware('module:reports')->group(function () {
+            Route::get('/reports', [ReportController::class, 'index'])->middleware('permission:reports.view');
+            Route::get('/reports/export', [ReportController::class, 'export'])->middleware('permission:reports.export');
+        });
+
+        Route::get('/channel-accounts', [ChannelAccountController::class, 'index'])->middleware('permission:whatsapp_account.view');
+        Route::post('/channel-accounts/request', [ChannelAccountController::class, 'request'])->middleware('permission:whatsapp_account.manage');
+
+        Route::prefix('billing')->group(function () {
+            Route::get('/summary', [BillingController::class, 'summary'])->middleware('permission:billing.view');
+            Route::get('/invoices', [BillingController::class, 'invoices'])->middleware('permission:billing.view');
+            Route::get('/invoices/{invoice}', [BillingController::class, 'invoice'])->middleware('permission:billing.view');
+            Route::get('/payments', [BillingController::class, 'payments'])->middleware('permission:billing.view');
+            Route::get('/payment-methods', [BillingController::class, 'paymentMethods'])->middleware('permission:payment_methods.view');
+            Route::post('/payment-methods', [BillingController::class, 'addPaymentMethod'])->middleware('permission:payment_methods.manage');
+            Route::delete('/payment-methods/{paymentMethod}', [BillingController::class, 'removePaymentMethod'])->middleware('permission:payment_methods.manage');
+        });
+
+        Route::get('/membership', [MembershipController::class, 'show'])->middleware('permission:membership.view');
+
+        Route::get('/settings/account', [TenantSettingsController::class, 'show'])->middleware('permission:settings.view');
+        Route::put('/settings/account', [TenantSettingsController::class, 'update'])->middleware('permission:settings.manage');
+    });
+
+    // Equipo de la cuenta: también lo usa la plataforma para su propio equipo.
     Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view');
     Route::get('/users/roles', [UserController::class, 'roles'])->middleware('permission:users.view');
     Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.manage');
@@ -79,31 +106,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->middleware('permission:users.manage');
     Route::post('/users/{user}/reactivate', [UserController::class, 'reactivate'])->middleware('permission:users.manage');
     Route::post('/users/{user}/resend-invitation', [UserController::class, 'resendInvitation'])->middleware('permission:users.manage');
-
-    Route::get('/alerts', [AlertController::class, 'index'])->middleware('permission:dashboard.view');
-
-    Route::middleware('module:reports')->group(function () {
-        Route::get('/reports', [ReportController::class, 'index'])->middleware('permission:reports.view');
-        Route::get('/reports/export', [ReportController::class, 'export'])->middleware('permission:reports.export');
-    });
-
-    Route::get('/channel-accounts', [ChannelAccountController::class, 'index'])->middleware('permission:whatsapp_account.view');
-    Route::post('/channel-accounts/request', [ChannelAccountController::class, 'request'])->middleware('permission:whatsapp_account.manage');
-
-    Route::prefix('billing')->group(function () {
-        Route::get('/summary', [BillingController::class, 'summary'])->middleware('permission:billing.view');
-        Route::get('/invoices', [BillingController::class, 'invoices'])->middleware('permission:billing.view');
-        Route::get('/invoices/{invoice}', [BillingController::class, 'invoice'])->middleware('permission:billing.view');
-        Route::get('/payments', [BillingController::class, 'payments'])->middleware('permission:billing.view');
-        Route::get('/payment-methods', [BillingController::class, 'paymentMethods'])->middleware('permission:payment_methods.view');
-        Route::post('/payment-methods', [BillingController::class, 'addPaymentMethod'])->middleware('permission:payment_methods.manage');
-        Route::delete('/payment-methods/{paymentMethod}', [BillingController::class, 'removePaymentMethod'])->middleware('permission:payment_methods.manage');
-    });
-
-    Route::get('/membership', [MembershipController::class, 'show'])->middleware('permission:membership.view');
-
-    Route::get('/settings/account', [TenantSettingsController::class, 'show'])->middleware('permission:settings.view');
-    Route::put('/settings/account', [TenantSettingsController::class, 'update'])->middleware('permission:settings.manage');
 
     // Administración de la plataforma: solo el tenant de AlertPrompt.
     Route::prefix('admin')->middleware('platform')->group(function () {

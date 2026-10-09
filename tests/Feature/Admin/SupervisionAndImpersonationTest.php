@@ -71,7 +71,8 @@ it('enters a client panel, works on its data with audit, and leaves', function (
     $this->deleteJson('/api/admin/impersonation')->assertNoContent();
 
     $this->getJson('/api/user')->assertJsonPath('data.impersonating', null);
-    expect($this->getJson('/api/contacts')->json('data'))->toHaveCount(1);
+    // Fuera del modo soporte, la administración general no tiene panel de mensajería.
+    $this->getJson('/api/contacts')->assertForbidden();
 
     expect(AuditLog::query()->where('tenant_id', $client->id)->pluck('action')->all())
         ->toContain('impersonation.started', 'impersonation.request', 'impersonation.stopped');
@@ -88,6 +89,8 @@ it('never dispatches campaigns on behalf of a client', function () {
 });
 
 it('ignores a stale impersonation session when the permission is gone', function () {
+    // Sin permiso de soporte la sesión no cuenta: no ve datos del cliente y,
+    // como plataforma, tampoco tiene panel propio.
     $platform = Tenant::platform() ?? Tenant::factory()->platform()->create();
     $operator = User::factory()->for($platform)->withRole('client-user')->create();
     $client = Tenant::factory()->create();
@@ -96,8 +99,7 @@ it('ignores a stale impersonation session when the permission is gone', function
     $this->actingAs($operator)
         ->withSession([Impersonation::SESSION_KEY => $client->id])
         ->getJson('/api/contacts')
-        ->assertOk()
-        ->assertJsonCount(0, 'data');
+        ->assertForbidden();
 });
 
 it('does not let client users impersonate', function () {

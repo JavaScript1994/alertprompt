@@ -47,10 +47,30 @@ it('requires the specific admin permission inside the platform tenant', function
     $this->actingAs($operator)->getJson('/api/admin/permissions')->assertForbidden();
 });
 
-it('lets the platform tenant use the client panel for its own campaigns', function () {
+it('gives the general administrator no messaging panel of its own', function () {
     $owner = User::factory()->for(Tenant::factory()->platform())->create();
 
-    $this->actingAs($owner)->getJson('/api/campaigns')->assertOk();
+    foreach (['/api/campaigns', '/api/contacts', '/api/templates', '/api/reports', '/api/billing/invoices', '/api/membership'] as $url) {
+        $this->actingAs($owner)->getJson($url)->assertForbidden();
+    }
+
+    // Su equipo sí lo gestiona desde la cuenta de la plataforma.
+    $this->actingAs($owner)->getJson('/api/users')->assertOk();
+});
+
+it('reaches the client panel only in support mode', function () {
+    $owner = User::factory()->for(Tenant::factory()->platform())->create();
+    $client = Tenant::factory()->create();
+
+    $this->actingAs($owner)->postJson("/api/admin/clients/{$client->id}/impersonate")->assertNoContent();
+
+    $this->getJson('/api/campaigns')->assertOk();
+});
+
+it('names the owner role "Administrador general"', function () {
+    $owner = User::factory()->for(Tenant::factory()->platform())->create();
+
+    $this->actingAs($owner)->getJson('/api/user')->assertJsonPath('data.roles.0.label', 'Administrador general');
 });
 
 it('allows only one platform tenant', function () {

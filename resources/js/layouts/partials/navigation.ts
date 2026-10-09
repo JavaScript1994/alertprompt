@@ -49,13 +49,15 @@ const MESSAGING: NavSection = {
     ],
 };
 
-/** Panel del dueño de la plataforma (tenant AlertPrompt). */
+/**
+ * Administración general (tenant AlertPrompt). Sin mensajería propia: a los
+ * datos de un cliente se llega por supervisión o modo soporte.
+ */
 const PLATFORM_NAV: NavSection[] = [
     {
         heading: 'Inicio',
-        items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard.view' }],
+        items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboard, permission: 'admin.dashboard.view' }],
     },
-    MESSAGING,
     {
         heading: 'Clientes',
         items: [

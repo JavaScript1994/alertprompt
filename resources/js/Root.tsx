@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import RequireClientPanel from '@/components/RequireClientPanel';
 import RequirePermission from '@/components/RequirePermission';
 import AuthLayout from '@/layouts/AuthLayout';
 import DashboardLayout from '@/layouts/DashboardLayout';
@@ -20,7 +21,7 @@ import Login from '@/pages/auth/Login';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import Campaigns from '@/pages/campaigns/Campaigns';
 import Contacts from '@/pages/contacts/Contacts';
-import Dashboard from '@/pages/dashboard/Dashboard';
+import Home from '@/pages/dashboard/Home';
 import Reports from '@/pages/reports/Reports';
 import AccountSettings from '@/pages/settings/AccountSettings';
 import ChannelAccounts from '@/pages/settings/ChannelAccounts';
@@ -41,36 +42,39 @@ export default function Root() {
                 <Route element={<ProtectedRoute />}>
                     <Route element={<DashboardLayout />}>
                         <Route element={<RequirePermission permission="dashboard.view" />}>
-                            <Route path="/" element={<Dashboard />} />
+                            <Route path="/" element={<Home />} />
                         </Route>
-                        <Route element={<RequirePermission permission="contacts.view" />}>
-                            <Route path="/contacts" element={<Contacts />} />
-                        </Route>
-                        <Route element={<RequirePermission permission="templates.view" />}>
-                            <Route path="/templates" element={<Templates />} />
-                        </Route>
-                        <Route element={<RequirePermission permission="campaigns.view" />}>
-                            <Route path="/campaigns" element={<Campaigns />} />
-                        </Route>
+                        {/* Panel de cliente: la administración general solo lo ve en modo soporte. */}
+                        <Route element={<RequireClientPanel />}>
+                            <Route element={<RequirePermission permission="contacts.view" />}>
+                                <Route path="/contacts" element={<Contacts />} />
+                            </Route>
+                            <Route element={<RequirePermission permission="templates.view" />}>
+                                <Route path="/templates" element={<Templates />} />
+                            </Route>
+                            <Route element={<RequirePermission permission="campaigns.view" />}>
+                                <Route path="/campaigns" element={<Campaigns />} />
+                            </Route>
 
-                        <Route element={<RequirePermission permission="reports.view" />}>
-                            <Route path="/reports" element={<Reports />} />
-                        </Route>
-                        <Route element={<RequirePermission permission="billing.view" />}>
-                            <Route path="/billing/payments" element={<Payments />} />
-                            <Route path="/billing/invoices/:id" element={<InvoicePrint scope="client" />} />
-                        </Route>
-                        <Route element={<RequirePermission permission="payment_methods.view" />}>
-                            <Route path="/billing/payment-methods" element={<PaymentMethods />} />
-                        </Route>
-                        <Route element={<RequirePermission permission="settings.view" />}>
-                            <Route path="/settings" element={<AccountSettings />} />
-                        </Route>
-                        <Route element={<RequirePermission permission="membership.view" />}>
-                            <Route path="/settings/membership" element={<MembershipPage />} />
-                        </Route>
-                        <Route element={<RequirePermission permission="whatsapp_account.view" />}>
-                            <Route path="/settings/whatsapp" element={<ChannelAccounts />} />
+                            <Route element={<RequirePermission permission="reports.view" />}>
+                                <Route path="/reports" element={<Reports />} />
+                            </Route>
+                            <Route element={<RequirePermission permission="billing.view" />}>
+                                <Route path="/billing/payments" element={<Payments />} />
+                                <Route path="/billing/invoices/:id" element={<InvoicePrint scope="client" />} />
+                            </Route>
+                            <Route element={<RequirePermission permission="payment_methods.view" />}>
+                                <Route path="/billing/payment-methods" element={<PaymentMethods />} />
+                            </Route>
+                            <Route element={<RequirePermission permission="settings.view" />}>
+                                <Route path="/settings" element={<AccountSettings />} />
+                            </Route>
+                            <Route element={<RequirePermission permission="membership.view" />}>
+                                <Route path="/settings/membership" element={<MembershipPage />} />
+                            </Route>
+                            <Route element={<RequirePermission permission="whatsapp_account.view" />}>
+                                <Route path="/settings/whatsapp" element={<ChannelAccounts />} />
+                            </Route>
                         </Route>
                         <Route element={<RequirePermission permission="users.view" />}>
                             <Route path="/settings/users" element={<Users />} />

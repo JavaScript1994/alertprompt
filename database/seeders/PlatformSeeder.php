@@ -39,7 +39,7 @@ class PlatformSeeder extends Seeder
 
         $owner = User::create([
             'tenant_id' => $tenant->id,
-            'name' => 'Dueño AlertPrompt',
+            'name' => 'Administrador General',
             'email' => 'dueno@alertprompt.pe',
             'password' => Hash::make('password'),
         ]);

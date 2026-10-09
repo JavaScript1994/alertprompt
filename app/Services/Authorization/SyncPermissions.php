@@ -67,6 +67,8 @@ class SyncPermissions
                 // El dueño siempre conserva todos los permisos, incluidos los
                 // que se agreguen al árbol en el futuro.
                 if ($definition['permissions'] === '*') {
+                    // Bloqueado (no editable): nombre y descripción siguen al config.
+                    $role->update(['label' => $definition['label'], 'description' => $definition['description'] ?? null]);
                     $role->syncPermissions($this->registry->all());
 
                     continue;

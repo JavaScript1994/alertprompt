@@ -3,6 +3,7 @@
 use App\Http\Middleware\AuditImpersonatedWrites;
 use App\Http\Middleware\BindTenantFromAuth;
 use App\Http\Middleware\BlockWhenImpersonating;
+use App\Http\Middleware\EnsureClientPanel;
 use App\Http\Middleware\EnsureModuleEnabled;
 use App\Http\Middleware\EnsurePlatformTenant;
 use App\Http\Middleware\SuperviseClient;
@@ -39,6 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => PermissionMiddleware::class,
             'platform' => EnsurePlatformTenant::class,
+            'client-panel' => EnsureClientPanel::class,
             'supervise' => SuperviseClient::class,
             'module' => EnsureModuleEnabled::class,
             'not-impersonating' => BlockWhenImpersonating::class,
