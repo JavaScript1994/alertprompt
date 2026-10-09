@@ -1,16 +1,30 @@
-export type UserRole = 'owner' | 'admin' | 'member' | 'viewer';
+export type TenantType = 'company' | 'individual';
+export type TenantStatus = 'active' | 'trial' | 'suspended';
 
 export interface Tenant {
     id: number;
     name: string;
+    type: TenantType;
     plan: string;
+    status: TenantStatus;
+    /** true solo para AlertPrompt: su usuario ve el panel de administración. */
+    is_platform: boolean;
 }
+
+export interface UserRoleSummary {
+    name: string;
+    label: string;
+}
+
+/** Nombre de permiso de config/permissions.php, p. ej. "campaigns.dispatch". */
+export type PermissionName = string;
 
 export interface User {
     id: number;
     name: string;
     email: string;
-    role: UserRole;
+    roles: UserRoleSummary[];
+    permissions: PermissionName[];
     tenant: Tenant;
 }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Services\Authorization\PermissionRegistry;
 use App\Services\CampaignPacer;
 use App\Services\Channels\ChannelManager;
 use Illuminate\Support\Facades\URL;
@@ -22,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind('current_tenant_id', fn () => null);
 
         $this->app->singleton(ChannelManager::class);
+
+        $this->app->singleton(PermissionRegistry::class, fn () => PermissionRegistry::fromConfig());
 
         // Bindeados por interfaz/clase para que los tests de drivers puedan
         // sustituirlos con mocks vía $this->instance() sin tocar credenciales reales.

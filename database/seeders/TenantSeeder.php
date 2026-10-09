@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Enums\TenantPlan;
-use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\TenantContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -24,14 +24,15 @@ class TenantSeeder extends Seeder
             ],
         ]);
 
-        app()->instance('current_tenant_id', $tenant->id);
+        TenantContext::set($tenant->id);
 
-        User::create([
+        $admin = User::create([
             'tenant_id' => $tenant->id,
             'name' => 'Admin Demo',
             'email' => 'admin@demo.pe',
             'password' => Hash::make('password'),
-            'role' => UserRole::Owner,
         ]);
+
+        $admin->assignRole('client-admin');
     }
 }

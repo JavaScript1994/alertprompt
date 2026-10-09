@@ -1,9 +1,34 @@
-import { LayoutDashboard, Megaphone, MessageSquareText, Users, type LucideIcon } from 'lucide-react';
+import {
+    BarChart3,
+    Bell,
+    Blocks,
+    Building2,
+    CreditCard,
+    FileText,
+    LayoutDashboard,
+    Megaphone,
+    MessageCircle,
+    MessageSquareText,
+    Receipt,
+    Settings2,
+    ShieldCheck,
+    Upload,
+    User as UserIcon,
+    UserCog,
+    Users,
+    type LucideIcon,
+} from 'lucide-react';
+import { userCan } from '@/hooks/usePermissions';
+import type { PermissionName, User } from '@/types';
 
 export interface NavItem {
     to: string;
     label: string;
     icon: LucideIcon;
+    /** Si el usuario no lo tiene, el item no se muestra. */
+    permission: PermissionName;
+    /** Pantalla aún no construida: se muestra deshabilitada con "Pronto". */
+    comingSoon?: boolean;
 }
 
 export interface NavSection {
@@ -11,23 +36,86 @@ export interface NavSection {
     items: NavItem[];
 }
 
-export const NAV_SECTIONS: NavSection[] = [
+const MESSAGING: NavSection = {
+    heading: 'Mensajería',
+    items: [
+        { to: '/contacts', label: 'Contactos', icon: Users, permission: 'contacts.view' },
+        { to: '/templates', label: 'Plantillas', icon: MessageSquareText, permission: 'templates.view' },
+        { to: '/campaigns', label: 'Campañas', icon: Megaphone, permission: 'campaigns.view' },
+    ],
+};
+
+/** Panel del dueño de la plataforma (tenant AlertPrompt). */
+const PLATFORM_NAV: NavSection[] = [
     {
         heading: 'Inicio',
-        items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboard }],
+        items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard.view' }],
+    },
+    MESSAGING,
+    {
+        heading: 'Clientes',
+        items: [
+            { to: '/admin/clients/companies', label: 'Empresas', icon: Building2, permission: 'admin.clients.view', comingSoon: true },
+            { to: '/admin/clients/individuals', label: 'Personas naturales', icon: UserIcon, permission: 'admin.clients.view', comingSoon: true },
+        ],
     },
     {
-        heading: 'Mensajería',
+        heading: 'Configuración',
         items: [
-            { to: '/contacts', label: 'Contactos', icon: Users },
-            { to: '/templates', label: 'Plantillas', icon: MessageSquareText },
-            { to: '/campaigns', label: 'Campañas', icon: Megaphone },
+            { to: '/admin/roles', label: 'Roles y permisos', icon: ShieldCheck, permission: 'admin.roles.view', comingSoon: true },
+            { to: '/admin/modules', label: 'Módulos', icon: Blocks, permission: 'admin.modules.view', comingSoon: true },
+            { to: '/admin/alerts', label: 'Alertas', icon: Bell, permission: 'admin.alerts.view', comingSoon: true },
+            { to: '/admin/bulk-imports', label: 'Cargas masivas', icon: Upload, permission: 'admin.bulk_imports.view', comingSoon: true },
+        ],
+    },
+    {
+        heading: 'Reportes',
+        items: [{ to: '/admin/reports', label: 'Reportes', icon: BarChart3, permission: 'admin.reports.view', comingSoon: true }],
+    },
+];
+
+/** Panel de una empresa o persona natural. */
+const CLIENT_NAV: NavSection[] = [
+    {
+        heading: 'Inicio',
+        items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard.view' }],
+    },
+    MESSAGING,
+    {
+        heading: 'Reportes',
+        items: [{ to: '/reports', label: 'Reportes', icon: BarChart3, permission: 'reports.view', comingSoon: true }],
+    },
+    {
+        heading: 'Facturación',
+        items: [
+            { to: '/billing/payments', label: 'Pagos', icon: Receipt, permission: 'billing.view', comingSoon: true },
+            { to: '/billing/payment-methods', label: 'Métodos de pago', icon: CreditCard, permission: 'payment_methods.view', comingSoon: true },
+        ],
+    },
+    {
+        heading: 'Configuración',
+        items: [
+            { to: '/settings', label: 'Panel', icon: Settings2, permission: 'settings.view', comingSoon: true },
+            { to: '/settings/users', label: 'Usuarios', icon: UserCog, permission: 'users.view', comingSoon: true },
+            { to: '/settings/membership', label: 'Membresía', icon: FileText, permission: 'membership.view', comingSoon: true },
+            { to: '/settings/whatsapp', label: 'Cuenta de WhatsApp', icon: MessageCircle, permission: 'whatsapp_account.view', comingSoon: true },
         ],
     },
 ];
 
-export function routeLabel(pathname: string): string {
-    for (const section of NAV_SECTIONS) {
+/** Menú según el tipo de tenant, filtrado por los permisos del usuario. */
+export function navigationFor(user: User | null | undefined): NavSection[] {
+    if (!user) return [];
+
+    const sections = user.tenant.is_platform ? PLATFORM_NAV : CLIENT_NAV;
+
+    return sections
+        .map((section) => ({ ...section, items: section.items.filter((item) => userCan(user, item.permission)) }))
+        .filter((section) => section.items.length > 0);
+}
+
+export function routeLabel(pathname: string, sections: NavSection[]): string {
+    for (const section of sections) {
         const item = section.items.find((i) => i.to === pathname);
         if (item) return item.label;
     }
