@@ -28,6 +28,10 @@ Servicios que arrancan:
     docker compose exec app php artisan key:generate     # solo si APP_KEY está vacío
     docker compose exec app php artisan migrate --seed
 
+Cada vez que cambie config/permissions.php (árbol de permisos):
+    docker compose exec app php artisan permissions:sync
+(las migraciones ya lo corren una vez; es idempotente)
+
 IMPORTANTE: todos los comandos artisan se corren DENTRO del contenedor
 (docker compose exec app ...), porque el .env usa DB_HOST=postgres y
 REDIS_HOST=redis, que solo existen en la red de Docker.
@@ -47,9 +51,19 @@ Dejar esta terminal abierta mientras se trabaja.
 4. ENTRAR A LA APP
 ------------------
     URL:        http://localhost:8000
+
+    Dueño de la plataforma (panel de administración):
+    Usuario:    dueno@alertprompt.pe
+    Contraseña: password
+    Tenant:     AlertPrompt (tenant de la plataforma)
+
+    Cliente de ejemplo (panel de cliente):
     Usuario:    admin@demo.pe
     Contraseña: password
     Tenant:     Demo Empresa SAC (con contactos de prueba)
+
+Si la base ya existía antes de los roles, crear el dueño con:
+    docker compose exec app php artisan db:seed --class=PlatformSeeder
 
 
 5. VERIFICAR QUE TODO CORRE

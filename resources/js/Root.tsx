@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import RequirePermission from '@/components/RequirePermission';
 import AuthLayout from '@/layouts/AuthLayout';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import Login from '@/pages/auth/Login';
@@ -18,10 +19,18 @@ export default function Root() {
 
                 <Route element={<ProtectedRoute />}>
                     <Route element={<DashboardLayout />}>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/contacts" element={<Contacts />} />
-                        <Route path="/templates" element={<Templates />} />
-                        <Route path="/campaigns" element={<Campaigns />} />
+                        <Route element={<RequirePermission permission="dashboard.view" />}>
+                            <Route path="/" element={<Dashboard />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="contacts.view" />}>
+                            <Route path="/contacts" element={<Contacts />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="templates.view" />}>
+                            <Route path="/templates" element={<Templates />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="campaigns.view" />}>
+                            <Route path="/campaigns" element={<Campaigns />} />
+                        </Route>
                     </Route>
                 </Route>
             </Routes>

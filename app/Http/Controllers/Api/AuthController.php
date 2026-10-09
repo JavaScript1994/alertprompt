@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,10 +27,22 @@ class AuthController extends Controller
             ]);
         }
 
-        $request->session()->regenerate();
-
         /** @var User $user */
         $user = Auth::user()->load('tenant');
+
+        if (! $user->tenant->status->canSignIn()) {
+            Auth::guard('web')->logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'La cuenta de tu empresa está suspendida. Comunícate con soporte.',
+            ]);
+        }
+
+        $request->session()->regenerate();
+
+        // El middleware corrió antes del login (sin usuario): fijamos el
+        // tenant aquí para que roles y permisos de la respuesta salgan bien.
+        TenantContext::set($user->tenant_id);
 
         return new UserResource($user);
     }

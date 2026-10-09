@@ -19,7 +19,11 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'role' => $this->role,
+            'roles' => $this->roles->map(fn ($role) => [
+                'name' => $role->name,
+                'label' => $role->label,
+            ])->values(),
+            'permissions' => $this->getAllPermissions()->pluck('name')->sort()->values(),
             'tenant' => new TenantResource($this->whenLoaded('tenant')),
         ];
     }

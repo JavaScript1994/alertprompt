@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -24,9 +23,28 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-            'role' => UserRole::Member,
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Por defecto: dueño si el tenant es la plataforma, administrador si es
+     * un cliente. Usa withRole() para probar roles con menos permisos.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            setPermissionsTeamId($user->tenant_id);
+            $user->assignRole($user->tenant->is_platform ? 'platform-owner' : 'client-admin');
+        });
+    }
+
+    public function withRole(string $role): static
+    {
+        return $this->afterCreating(function (User $user) use ($role) {
+            setPermissionsTeamId($user->tenant_id);
+            $user->syncRoles([$role]);
+        });
     }
 
     public function unverified(): static

@@ -3,14 +3,16 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Logo from '@/components/shared/Logo';
 import { Button } from '@/components/ui/button';
+import { useAuthUser } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-import { routeLabel } from './navigation';
+import { navigationFor, routeLabel } from './navigation';
 import ProfileMenu from './ProfileMenu';
 import ThemeToggle from './ThemeToggle';
 
 /** Header sticky de Tailwindadmin: transparente arriba, con fondo y sombra al hacer scroll. */
 export default function Header({ onOpenSidebar }: { onOpenSidebar: () => void }) {
     const { pathname } = useLocation();
+    const { data: user } = useAuthUser();
     const [isScrolled, setIsScrolled] = useState(false);
 
     useEffect(() => {
@@ -41,7 +43,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar: () => void })
                     <Logo className="lg:hidden" />
                     <p className="hidden truncate text-sm text-muted-foreground lg:block">
                         AlertPrompt <span className="mx-1.5">/</span>
-                        <span className="font-medium text-foreground">{routeLabel(pathname)}</span>
+                        <span className="font-medium text-foreground">{routeLabel(pathname, navigationFor(user))}</span>
                     </p>
                 </div>
 
