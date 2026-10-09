@@ -170,7 +170,7 @@ export default function RoleEditor() {
                                     control={control}
                                     name="scope"
                                     render={({ field }) => (
-                                        <Select value={field.value} onValueChange={field.onChange} disabled={!isNew || readOnly}>
+                                        <Select value={field.value} onValueChange={(value) => value && field.onChange(value)} disabled={!isNew || readOnly}>
                                             <SelectTrigger id="role-scope" className="w-full">
                                                 <SelectValue />
                                             </SelectTrigger>

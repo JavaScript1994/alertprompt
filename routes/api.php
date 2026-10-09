@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\ConsentController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\TemplateController;
+use App\Http\Controllers\Api\TenantSettingsController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,6 +55,18 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middlewareFor('store', 'permission:campaigns.create')
         ->middlewareFor('update', 'permission:campaigns.update')
         ->middlewareFor('destroy', 'permission:campaigns.delete');
+
+    // Usuarios y configuración de la cuenta (también en modo soporte).
+    Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view');
+    Route::get('/users/roles', [UserController::class, 'roles'])->middleware('permission:users.view');
+    Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.manage');
+    Route::put('/users/{user}', [UserController::class, 'update'])->middleware('permission:users.manage');
+    Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->middleware('permission:users.manage');
+    Route::post('/users/{user}/reactivate', [UserController::class, 'reactivate'])->middleware('permission:users.manage');
+    Route::post('/users/{user}/resend-invitation', [UserController::class, 'resendInvitation'])->middleware('permission:users.manage');
+
+    Route::get('/settings/account', [TenantSettingsController::class, 'show'])->middleware('permission:settings.view');
+    Route::put('/settings/account', [TenantSettingsController::class, 'update'])->middleware('permission:settings.manage');
 
     // Administración de la plataforma: solo el tenant de AlertPrompt.
     Route::prefix('admin')->middleware('platform')->group(function () {

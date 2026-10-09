@@ -22,21 +22,25 @@ class AuthController extends Controller
         $remember = $request->boolean('remember', true);
         $credentials = $request->safe()->only(['email', 'password']);
 
-        if (! Auth::attempt($credentials, remember: $remember)) {
+        if (! Auth::guard('web')->attempt($credentials, remember: $remember)) {
             throw ValidationException::withMessages([
                 'email' => 'El correo o la contraseña son incorrectos.',
             ]);
         }
 
         /** @var User $user */
-        $user = Auth::user()->load('tenant');
+        $user = Auth::guard('web')->user()->load('tenant');
 
-        if (! $user->tenant->status->canSignIn()) {
+        $blocked = match (true) {
+            ! $user->tenant->status->canSignIn() => 'La cuenta de tu empresa está suspendida. Comunícate con soporte.',
+            ! $user->isActive() => 'Tu usuario fue desactivado. Pide acceso al administrador de tu cuenta.',
+            default => null,
+        };
+
+        if ($blocked !== null) {
             Auth::guard('web')->logout();
 
-            throw ValidationException::withMessages([
-                'email' => 'La cuenta de tu empresa está suspendida. Comunícate con soporte.',
-            ]);
+            throw ValidationException::withMessages(['email' => $blocked]);
         }
 
         $request->session()->regenerate();

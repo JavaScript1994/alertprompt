@@ -29,6 +29,8 @@ export interface NavItem {
     permission: PermissionName;
     /** Pantalla aún no construida: se muestra deshabilitada con "Pronto". */
     comingSoon?: boolean;
+    /** Activo solo en su ruta exacta (cuando otro item cuelga de ella). */
+    exact?: boolean;
 }
 
 export interface NavSection {
@@ -62,6 +64,7 @@ const PLATFORM_NAV: NavSection[] = [
     {
         heading: 'Configuración',
         items: [
+            { to: '/settings/users', label: 'Equipo', icon: UserCog, permission: 'users.view' },
             { to: '/admin/roles', label: 'Roles y permisos', icon: ShieldCheck, permission: 'admin.roles.view' },
             { to: '/admin/modules', label: 'Módulos', icon: Blocks, permission: 'admin.modules.view', comingSoon: true },
             { to: '/admin/alerts', label: 'Alertas', icon: Bell, permission: 'admin.alerts.view', comingSoon: true },
@@ -95,8 +98,8 @@ const CLIENT_NAV: NavSection[] = [
     {
         heading: 'Configuración',
         items: [
-            { to: '/settings', label: 'Panel', icon: Settings2, permission: 'settings.view', comingSoon: true },
-            { to: '/settings/users', label: 'Usuarios', icon: UserCog, permission: 'users.view', comingSoon: true },
+            { to: '/settings', label: 'Panel', icon: Settings2, permission: 'settings.view', exact: true },
+            { to: '/settings/users', label: 'Usuarios', icon: UserCog, permission: 'users.view' },
             { to: '/settings/membership', label: 'Membresía', icon: FileText, permission: 'membership.view', comingSoon: true },
             { to: '/settings/whatsapp', label: 'Cuenta de WhatsApp', icon: MessageCircle, permission: 'whatsapp_account.view', comingSoon: true },
         ],
@@ -117,7 +120,8 @@ export function navigationFor(user: User | null | undefined): NavSection[] {
 
 /** Coincide también con subrutas: /admin/roles/5 → "Roles y permisos". */
 export function isNavItemActive(item: NavItem, pathname: string): boolean {
-    return item.to === '/' ? pathname === '/' : pathname === item.to || pathname.startsWith(`${item.to}/`);
+    if (item.to === '/' || item.exact) return pathname === item.to;
+    return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }
 
 /** Páginas de detalle que no son un item del menú. */

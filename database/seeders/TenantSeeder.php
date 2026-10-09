@@ -32,6 +32,7 @@ class TenantSeeder extends Seeder
             'email' => 'admin@demo.pe',
             'password' => Hash::make('password'),
         ]);
+        $admin->forceFill(['email_verified_at' => now()])->save();
 
         $admin->assignRole('client-admin');
     }

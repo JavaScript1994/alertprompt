@@ -24,6 +24,7 @@ class BindTenantFromAuth
         if ($user !== null) {
             // Un tenant suspendido pierde el acceso también en sesiones ya abiertas.
             abort_unless($user->tenant->status->canSignIn(), 403, 'La cuenta de tu empresa está suspendida.');
+            abort_unless($user->isActive(), 403, 'Tu usuario fue desactivado.');
 
             // Primero el tenant propio: el chequeo de permiso de soporte se
             // hace con los roles del usuario en la plataforma.
