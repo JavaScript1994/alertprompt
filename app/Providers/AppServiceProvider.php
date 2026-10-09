@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Tenant;
+use App\Services\Authorization\PermissionRegistry;
 use App\Services\CampaignPacer;
 use App\Services\Channels\ChannelManager;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use SendGrid;
@@ -22,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind('current_tenant_id', fn () => null);
 
         $this->app->singleton(ChannelManager::class);
+
+        $this->app->singleton(PermissionRegistry::class, fn () => PermissionRegistry::fromConfig());
 
         // Bindeados por interfaz/clase para que los tests de drivers puedan
         // sustituirlos con mocks vía $this->instance() sin tocar credenciales reales.
@@ -40,6 +45,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // {client} en /api/admin/*: cualquier tenant salvo la propia plataforma.
+        Route::bind('client', fn (string $value) => Tenant::query()
+            ->where('is_platform', false)
+            ->findOrFail((int) $value));
+
         // Detrás de un proxy TLS-terminating (túnel, load balancer) Laravel
         // ve la request como HTTP plano y genera URLs de assets con http://,
         // causando mixed-content en el navegador. Forzamos el scheme según

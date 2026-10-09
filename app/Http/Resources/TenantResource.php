@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\Tenant;
+use App\Services\Modules\TenantModules;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,7 +19,17 @@ class TenantResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'type' => $this->type,
+            'document_type' => $this->document_type,
+            'document_number' => $this->document_number,
+            'contact_email' => $this->contact_email,
+            'contact_phone' => $this->contact_phone,
+            'address' => $this->address,
             'plan' => $this->plan,
+            'status' => $this->status,
+            'is_platform' => $this->is_platform,
+            'timezone' => $this->settings['timezone'] ?? 'America/Lima',
+            'modules' => app(TenantModules::class)->enabledFor($this->resource),
         ];
     }
 }

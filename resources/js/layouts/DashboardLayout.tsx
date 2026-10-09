@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import Header from './partials/Header';
+import ImpersonationBanner from './partials/ImpersonationBanner';
 import Sidebar from './partials/Sidebar';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -13,7 +14,7 @@ export default function DashboardLayout() {
 
     return (
         <div className="min-h-screen">
-            <aside className="fixed inset-y-0 left-0 z-40 hidden w-[270px] border-r bg-sidebar lg:block">
+            <aside className="fixed inset-y-0 left-0 z-40 hidden w-[270px] border-r bg-sidebar lg:block print:hidden">
                 <Sidebar />
             </aside>
 
@@ -28,8 +29,11 @@ export default function DashboardLayout() {
                 </SheetContent>
             </Sheet>
 
-            <div className="flex min-h-screen flex-col lg:pl-[270px]">
-                <Header onOpenSidebar={() => setIsSidebarOpen(true)} />
+            <div className="flex min-h-screen flex-col lg:pl-[270px] print:pl-0">
+                <div className="print:hidden">
+                    <ImpersonationBanner />
+                    <Header onOpenSidebar={() => setIsSidebarOpen(true)} />
+                </div>
 
                 <main className="flex-1 px-4 pt-4 pb-10 sm:px-6 lg:pt-6">
                     <div className="mx-auto max-w-7xl">
@@ -37,7 +41,7 @@ export default function DashboardLayout() {
                     </div>
                 </main>
 
-                <footer className="px-6 pb-6 text-center text-xs text-muted-foreground">
+                <footer className="px-6 pb-6 text-center text-xs text-muted-foreground print:hidden">
                     © {CURRENT_YEAR} AlertPrompt · Mensajería con consentimiento (Ley N° 32323)
                 </footer>
             </div>

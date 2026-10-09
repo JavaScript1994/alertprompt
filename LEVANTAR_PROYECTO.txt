@@ -28,6 +28,10 @@ Servicios que arrancan:
     docker compose exec app php artisan key:generate     # solo si APP_KEY está vacío
     docker compose exec app php artisan migrate --seed
 
+Cada vez que cambie config/permissions.php (árbol de permisos):
+    docker compose exec app php artisan permissions:sync
+(las migraciones ya lo corren una vez; es idempotente)
+
 IMPORTANTE: todos los comandos artisan se corren DENTRO del contenedor
 (docker compose exec app ...), porque el .env usa DB_HOST=postgres y
 REDIS_HOST=redis, que solo existen en la red de Docker.
@@ -47,9 +51,26 @@ Dejar esta terminal abierta mientras se trabaja.
 4. ENTRAR A LA APP
 ------------------
     URL:        http://localhost:8000
+
+    Administrador general (panel de administración, sin mensajería propia;
+    a los clientes se entra por supervisión o "Entrar al panel"):
+    Usuario:    dueno@alertprompt.pe
+    Contraseña: password
+    Tenant:     AlertPrompt (tenant de la plataforma)
+
+    Empresa de prueba (cliente con datos para recorrer el panel):
+    Usuario:    admin@empresaprueba.pe
+    Contraseña: password
+    Crear en una base existente:
+        docker compose exec app php artisan db:seed --class=DemoClientSeeder
+
+    Cliente de ejemplo (panel de cliente):
     Usuario:    admin@demo.pe
     Contraseña: password
     Tenant:     Demo Empresa SAC (con contactos de prueba)
+
+Si la base ya existía antes de los roles, crear el dueño con:
+    docker compose exec app php artisan db:seed --class=PlatformSeeder
 
 
 5. VERIFICAR QUE TODO CORRE
@@ -78,11 +99,29 @@ Después de cambiar el .env:
 ---------------------------------
     docker compose exec app ./vendor/bin/pint
     docker compose exec app ./vendor/bin/pest
+
+    # Los tests usan SQLite en memoria. Para correrlos contra Postgres
+    # (atrapa diferencias de SQL), una vez: CREATE DATABASE comms_test; luego:
+    docker compose exec -e DB_CONNECTION=pgsql -e DB_DATABASE=comms_test -e DB_HOST=postgres app ./vendor/bin/pest
     npm run typecheck
     npm run lint                     # oxlint (config en .oxlintrc.json)
 
 
-8. APAGAR
+8. TAREAS PROGRAMADAS (contenedor scheduler)
+---------------------------------------------
+    campaigns:dispatch-scheduled   cada minuto
+    memberships:refresh            diario 00:10 (Lima): activa/vence membresías
+    billing:daily                  diario 00:30 (Lima): emite comprobantes del período
+                                   y alerta los vencidos
+
+Variables nuevas (ver .env.example):
+    CHANNELS_SHARED_SENDER       true = clientes sin número propio usan el de la plataforma
+    MEMBERSHIPS_ENFORCE_QUOTAS   true = rechaza disparos que superen la cuota mensual
+    BILLING_EINVOICE_DRIVER      none (proforma) | nubefact (pendiente de implementar)
+    BILLING_GATEWAY              manual | culqi (pendiente de implementar)
+
+
+9. APAGAR
 ---------
     docker compose down          # apaga, conserva datos
     docker compose down -v       # apaga y BORRA volúmenes (base de datos incluida)

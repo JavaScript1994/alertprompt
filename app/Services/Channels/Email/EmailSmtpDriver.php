@@ -6,6 +6,7 @@ namespace App\Services\Channels\Email;
 
 use App\Services\Channels\ChannelDriver;
 use App\Services\Channels\OutboundMessage;
+use App\Services\Channels\SenderIdentity;
 use App\Services\Channels\SendResult;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Message;
@@ -42,7 +43,7 @@ class EmailSmtpDriver implements ChannelDriver
         return SendResult::success((string) Str::uuid(), 'accepted');
     }
 
-    public function verifyWebhookSignature(Request $request): bool
+    public function verifyWebhookSignature(Request $request, ?SenderIdentity $sender = null): bool
     {
         // Un servidor SMTP genérico no llama de vuelta a ningún webhook —
         // no hay nada que verificar porque nunca va a llegar nada acá.

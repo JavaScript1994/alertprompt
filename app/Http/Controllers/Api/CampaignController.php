@@ -14,6 +14,9 @@ use App\Jobs\DispatchCampaign;
 use App\Models\Campaign;
 use App\Models\Template;
 use App\Services\CampaignAudienceService;
+use App\Services\Channels\ChannelManager;
+use App\Services\Memberships\MembershipManager;
+use App\Services\Modules\TenantModules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -89,12 +92,30 @@ class CampaignController extends Controller
         return new CampaignResource($campaign->load('template')->loadCount($this->recipientCountsByStatus()));
     }
 
-    public function dispatch(Campaign $campaign): CampaignResource
+    public function dispatch(Campaign $campaign, TenantModules $modules, ChannelManager $channels, MembershipManager $memberships): CampaignResource
     {
         abort_unless(
             in_array($campaign->status, [CampaignStatus::Draft, CampaignStatus::Scheduled], true),
             422,
             'La campaña no se puede iniciar desde su estado actual.',
+        );
+
+        abort_unless(
+            $modules->channelEnabled($campaign->channel),
+            422,
+            "Tu plan no incluye el canal {$campaign->channel->label()}.",
+        );
+
+        $memberships->ensureWithinQuota(
+            $campaign->tenant_id,
+            $campaign->channel,
+            $campaign->recipients()->where('status', CampaignRecipientStatus::Pending)->count(),
+        );
+
+        abort_unless(
+            $channels->canSend($campaign->tenant_id, $campaign->channel),
+            422,
+            "Conecta tu número de {$campaign->channel->label()} antes de enviar (Configuración > Cuenta de WhatsApp).",
         );
 
         DispatchCampaign::dispatch($campaign->id);

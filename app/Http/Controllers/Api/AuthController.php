@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\Impersonation;
+use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,16 +22,33 @@ class AuthController extends Controller
         $remember = $request->boolean('remember', true);
         $credentials = $request->safe()->only(['email', 'password']);
 
-        if (! Auth::attempt($credentials, remember: $remember)) {
+        if (! Auth::guard('web')->attempt($credentials, remember: $remember)) {
             throw ValidationException::withMessages([
                 'email' => 'El correo o la contraseña son incorrectos.',
             ]);
         }
 
-        $request->session()->regenerate();
-
         /** @var User $user */
-        $user = Auth::user()->load('tenant');
+        $user = Auth::guard('web')->user()->load('tenant');
+
+        $blocked = match (true) {
+            ! $user->tenant->status->canSignIn() => 'La cuenta de tu empresa está suspendida. Comunícate con soporte.',
+            ! $user->isActive() => 'Tu usuario fue desactivado. Pide acceso al administrador de tu cuenta.',
+            default => null,
+        };
+
+        if ($blocked !== null) {
+            Auth::guard('web')->logout();
+
+            throw ValidationException::withMessages(['email' => $blocked]);
+        }
+
+        $request->session()->regenerate();
+        $request->session()->forget(Impersonation::SESSION_KEY);
+
+        // El middleware corrió antes del login (sin usuario): fijamos el
+        // tenant aquí para que roles y permisos de la respuesta salgan bien.
+        TenantContext::set($user->tenant_id);
 
         return new UserResource($user);
     }

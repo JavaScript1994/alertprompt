@@ -10,14 +10,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuthUser, useLogout } from '@/hooks/useAuth';
 import { initials } from '@/lib/format';
-import type { UserRole } from '@/types';
-
-const ROLE_LABELS: Record<UserRole, string> = {
-    owner: 'Propietario',
-    admin: 'Administrador',
-    member: 'Miembro',
-    viewer: 'Lector',
-};
 
 export default function ProfileMenu() {
     const { data: user } = useAuthUser();
@@ -43,7 +35,11 @@ export default function ProfileMenu() {
                     <div className="min-w-0">
                         <p className="truncate font-semibold text-foreground">{user?.name}</p>
                         <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
-                        {user && <p className="text-xs text-muted-foreground">{ROLE_LABELS[user.role]}</p>}
+                        {user && user.roles.length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                                {user.roles.map((role) => role.label).join(' · ')}
+                            </p>
+                        )}
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="mx-0 my-0" />

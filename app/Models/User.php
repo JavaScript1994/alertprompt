@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\UserRole;
 use App\Models\Concerns\BelongsToTenant;
+use App\Notifications\SetPasswordLink;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use BelongsToTenant, HasApiTokens, HasFactory, Notifiable;
+    use BelongsToTenant, HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
         'tenant_id',
         'name',
         'email',
         'password',
-        'role',
     ];
 
     protected $hidden = [
@@ -33,7 +33,18 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'role' => UserRole::class,
+            'deactivated_at' => 'datetime',
         ];
+    }
+
+    public function isActive(): bool
+    {
+        return $this->deactivated_at === null;
+    }
+
+    /** Reemplaza el correo en inglés de Laravel por el enlace a la SPA. */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new SetPasswordLink($token));
     }
 }

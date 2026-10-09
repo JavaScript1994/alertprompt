@@ -18,5 +18,9 @@ final class OutboundMessage
         public readonly array $variables = [],
         public readonly ?string $providerTemplateId = null,
         public readonly ?string $subject = null,
+        // Remitente propio del tenant; null = remitente compartido de config.
+        public readonly ?SenderIdentity $sender = null,
+        // URL a la que el proveedor debe reportar estados (cuentas propias).
+        public readonly ?string $statusCallbackUrl = null,
     ) {}
 }

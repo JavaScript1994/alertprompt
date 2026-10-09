@@ -12,7 +12,10 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuthUser } from '@/hooks/useAuth';
 import { useCampaigns, useCreateCampaign, useDeleteCampaign, useDispatchCampaign } from '@/hooks/useCampaigns';
+import { useHasModule } from '@/hooks/useModules';
+import { useCan } from '@/hooks/usePermissions';
 import { useApprovedTemplates } from '@/hooks/useTemplates';
 import { apiErrorMessage } from '@/lib/format';
 import type { Campaign } from '@/types';
@@ -29,6 +32,12 @@ const campaignSchema = z.object({
 type CampaignFormValues = z.infer<typeof campaignSchema>;
 
 export default function Campaigns() {
+    const can = useCan();
+    const canCreate = can('campaigns.create');
+    const canSchedule = useHasModule()('scheduling');
+    // En modo soporte el backend rechaza disparos: ni se ofrece el botón.
+    const { data: authUser } = useAuthUser();
+    const canDispatch = can('campaigns.dispatch') && !authUser?.impersonating;
     const [page, setPage] = useState(1);
     const { data, isLoading } = useCampaigns(page);
     const { data: templates } = useApprovedTemplates();
@@ -86,6 +95,7 @@ export default function Campaigns() {
             <PageHeader title="Campañas" description="Lanzá y seguí el progreso de tus campañas en vivo." />
 
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                {canCreate && (
                 <section className="xl:col-span-5">
                     <Card>
                         <CardHeader>
@@ -134,18 +144,20 @@ export default function Campaigns() {
                                 error={audienceError}
                             />
 
-                            <Field
-                                label="Programar para (opcional)"
-                                htmlFor="campaign-scheduled-at"
-                                hint="Si lo dejás vacío, la campaña queda como borrador y la iniciás vos manualmente."
-                            >
-                                <Input
-                                    id="campaign-scheduled-at"
-                                    type="datetime-local"
-                                    value={scheduledAt}
-                                    onChange={(event) => setScheduledAt(event.target.value)}
-                                />
-                            </Field>
+                            {canSchedule && (
+                                <Field
+                                    label="Programar para (opcional)"
+                                    htmlFor="campaign-scheduled-at"
+                                    hint="Si lo dejás vacío, la campaña queda como borrador y la iniciás vos manualmente."
+                                >
+                                    <Input
+                                        id="campaign-scheduled-at"
+                                        type="datetime-local"
+                                        value={scheduledAt}
+                                        onChange={(event) => setScheduledAt(event.target.value)}
+                                    />
+                                </Field>
+                            )}
 
                             {createCampaign.isError && (
                                 <Alert variant="error">
@@ -166,8 +178,9 @@ export default function Campaigns() {
                         </form>
                     </Card>
                 </section>
+                )}
 
-                <section className="xl:col-span-7">
+                <section className={canCreate ? 'xl:col-span-7' : 'xl:col-span-12'}>
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="text-base">Todas las campañas</h2>
                         <span className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
@@ -204,10 +217,10 @@ export default function Campaigns() {
                     {!isLoading && data && data.data.length > 0 && (
                         <CampaignsTable
                             data={data}
-                            onDispatch={(campaign) => dispatchCampaign.mutate(campaign.id)}
+                            onDispatch={canDispatch ? (campaign) => dispatchCampaign.mutate(campaign.id) : undefined}
                             dispatchPendingId={dispatchCampaign.isPending ? dispatchCampaign.variables : null}
-                            onEdit={(campaign) => setEditingCampaignId(campaign.id)}
-                            onDelete={setDeleting}
+                            onEdit={can('campaigns.update') ? (campaign) => setEditingCampaignId(campaign.id) : undefined}
+                            onDelete={can('campaigns.delete') ? setDeleting : undefined}
                             deletePendingId={deleteCampaign.isPending ? deleteCampaign.variables : null}
                             onPageChange={setPage}
                         />

@@ -63,3 +63,31 @@ export function useLogout() {
         },
     });
 }
+
+export function useForgotPassword() {
+    return useMutation({
+        mutationFn: async (email: string) => {
+            await ensureCsrfCookie();
+            const { data } = await api.post<{ message: string }>('/api/forgot-password', { email });
+            return data.message;
+        },
+    });
+}
+
+export interface ResetPasswordPayload {
+    token: string;
+    email: string;
+    password: string;
+    password_confirmation: string;
+    invite: boolean;
+}
+
+export function useResetPassword() {
+    return useMutation({
+        mutationFn: async (payload: ResetPasswordPayload) => {
+            await ensureCsrfCookie();
+            const { data } = await api.post<{ message: string }>('/api/reset-password', payload);
+            return data.message;
+        },
+    });
+}

@@ -30,10 +30,13 @@ export default function ConsentsModal({
     contactId,
     contactName,
     onClose,
+    canManage = true,
 }: {
     contactId: number | null;
     contactName?: string;
     onClose: () => void;
+    /** Sin permiso contacts.consents: solo se ven los consentimientos. */
+    canManage?: boolean;
 }) {
     const { data: consents, isLoading } = useConsents(contactId);
     const grantConsent = useGrantConsent(contactId);
@@ -121,7 +124,7 @@ export default function ConsentsModal({
                                                 {!consent && <Badge variant="neutral">Sin registrar</Badge>}
                                             </div>
 
-                                            {isActive && consent ? (
+                                            {!canManage ? null : isActive && consent ? (
                                                 <Button
                                                     variant="ghosterror"
                                                     size="sm"

@@ -20,9 +20,11 @@ export default function TemplatesTable({
     onPageChange,
 }: {
     data: PaginatedResponse<Template>;
-    onApprove: (template: Template) => void;
+    /** Sin permiso templates.update: no se muestra. */
+    onApprove?: (template: Template) => void;
     approvePendingId: number | null;
-    onDelete: (template: Template) => void;
+    /** Sin permiso templates.delete: no se muestra. */
+    onDelete?: (template: Template) => void;
     deletePendingId: number | null;
     onPageChange: (page: number) => void;
 }) {
@@ -68,7 +70,7 @@ export default function TemplatesTable({
                 meta: { className: 'w-24 text-right' },
                 cell: (info) => {
                     const template = info.row.original;
-                    const canApprove = template.status === 'draft' || template.status === 'pending_approval';
+                    const canApprove = onApprove !== undefined && (template.status === 'draft' || template.status === 'pending_approval');
 
                     return (
                         <div className="inline-flex gap-1">
@@ -79,7 +81,7 @@ export default function TemplatesTable({
                                             variant="ghostsuccess"
                                             size="icon-sm"
                                             aria-label="Aprobar plantilla"
-                                            onClick={() => onApprove(template)}
+                                            onClick={() => onApprove?.(template)}
                                             loading={approvePendingId === template.id}
                                         >
                                             {approvePendingId !== template.id && <ShieldCheck />}
@@ -88,6 +90,7 @@ export default function TemplatesTable({
                                     <TooltipContent>Aprobar plantilla</TooltipContent>
                                 </Tooltip>
                             )}
+                            {onDelete && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -102,6 +105,7 @@ export default function TemplatesTable({
                                 </TooltipTrigger>
                                 <TooltipContent>Eliminar plantilla</TooltipContent>
                             </Tooltip>
+                            )}
                         </div>
                     );
                 },
