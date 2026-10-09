@@ -103,7 +103,7 @@ const CLIENT_NAV: NavSection[] = [
             { to: '/settings', label: 'Panel', icon: Settings2, permission: 'settings.view', exact: true },
             { to: '/settings/users', label: 'Usuarios', icon: UserCog, permission: 'users.view' },
             { to: '/settings/membership', label: 'Membresía', icon: FileText, permission: 'membership.view', comingSoon: true },
-            { to: '/settings/whatsapp', label: 'Cuenta de WhatsApp', icon: MessageCircle, permission: 'whatsapp_account.view', comingSoon: true },
+            { to: '/settings/whatsapp', label: 'Cuenta de WhatsApp', icon: MessageCircle, permission: 'whatsapp_account.view' },
         ],
     },
 ];

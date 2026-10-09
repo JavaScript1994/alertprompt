@@ -212,3 +212,36 @@ export interface Campaign {
     /** Solo viene cargado en el detalle (GET /api/campaigns/{id}). */
     recipients?: CampaignRecipientContact[];
 }
+
+export type ChannelAccountStatus = 'pending' | 'active' | 'disabled';
+export type QualityRating = 'GREEN' | 'YELLOW' | 'RED' | 'UNKNOWN';
+export type AccountChannel = 'whatsapp' | 'sms';
+
+export interface ChannelAccount {
+    id: number;
+    channel: AccountChannel;
+    provider: string;
+    display_name: string | null;
+    sender: string;
+    status: ChannelAccountStatus;
+    quality_rating: QualityRating | null;
+    messaging_tier: string | null;
+    activated_at: string | null;
+    /** Solo en /api/admin/*. */
+    notes?: string | null;
+    credential_hints?: Record<string, string>;
+    webhook_url?: string;
+}
+
+export interface ChannelAccountSummary {
+    channel: AccountChannel;
+    account: ChannelAccount | null;
+    shared_sender_allowed: boolean;
+    can_send: boolean;
+}
+
+export interface AdminChannelAccountSlot {
+    channel: AccountChannel;
+    providers: string[];
+    account: ChannelAccount | null;
+}

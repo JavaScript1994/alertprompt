@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\Admin\ClientChannelAccountController;
 use App\Http\Controllers\Api\Admin\ClientController;
 use App\Http\Controllers\Api\Admin\ImpersonationController;
 use App\Http\Controllers\Api\Admin\ModuleController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Api\Admin\PermissionTreeController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CampaignController;
+use App\Http\Controllers\Api\ChannelAccountController;
 use App\Http\Controllers\Api\ConsentController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\PasswordController;
@@ -25,6 +27,9 @@ Route::post('/reset-password', [PasswordController::class, 'reset'])->middleware
 // Públicas: llegan de Twilio/SendGrid, no de un usuario autenticado.
 // La autenticidad se valida con la firma del proveedor, no con Sanctum.
 Route::post('/webhooks/{channel}', [WebhookController::class, 'handle'])->name('webhooks.handle');
+Route::post('/webhooks/{channel}/accounts/{account}', [WebhookController::class, 'handleAccount'])
+    ->whereNumber('account')
+    ->name('webhooks.account');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -66,6 +71,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/users/{user}/reactivate', [UserController::class, 'reactivate'])->middleware('permission:users.manage');
     Route::post('/users/{user}/resend-invitation', [UserController::class, 'resendInvitation'])->middleware('permission:users.manage');
 
+    Route::get('/channel-accounts', [ChannelAccountController::class, 'index'])->middleware('permission:whatsapp_account.view');
+    Route::post('/channel-accounts/request', [ChannelAccountController::class, 'request'])->middleware('permission:whatsapp_account.manage');
+
     Route::get('/settings/account', [TenantSettingsController::class, 'show'])->middleware('permission:settings.view');
     Route::put('/settings/account', [TenantSettingsController::class, 'update'])->middleware('permission:settings.manage');
 
@@ -85,6 +93,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/modules', [ModuleController::class, 'index'])->middleware('permission:admin.modules.view');
         Route::get('/clients/{client}/modules', [ModuleController::class, 'show'])->middleware('permission:admin.modules.view');
         Route::put('/clients/{client}/modules', [ModuleController::class, 'update'])->middleware('permission:admin.modules.manage');
+
+        Route::get('/clients/{client}/channel-accounts', [ClientChannelAccountController::class, 'index'])->middleware('permission:admin.clients.view');
+        Route::put('/clients/{client}/channel-accounts/{channel}', [ClientChannelAccountController::class, 'update'])->middleware('permission:admin.clients.update');
 
         // Supervisión (solo lectura): los mismos listados del panel de cliente
         // con los datos de {client}.
