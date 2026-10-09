@@ -350,3 +350,61 @@ export interface MembershipOverview {
     quotas_enforced: boolean;
     history: Membership[];
 }
+
+export type InvoiceStatus = 'issued' | 'paid' | 'void';
+
+export interface PaymentRecord {
+    id: number;
+    invoice_id: number;
+    invoice_code?: string;
+    amount: string;
+    method: 'transfer' | 'yape' | 'plin' | 'cash' | 'card';
+    method_label: string;
+    reference: string | null;
+    status: string;
+    paid_at: string;
+    notes?: string | null;
+}
+
+export interface Invoice {
+    id: number;
+    code: string;
+    document_type: 'factura' | 'boleta';
+    is_electronic: boolean;
+    sunat_status: 'not_sent' | 'pending' | 'accepted' | 'rejected';
+    issue_date: string;
+    due_date: string;
+    currency: string;
+    subtotal: string;
+    igv: string;
+    total: string;
+    paid: string;
+    balance: string;
+    description: string;
+    customer: { name: string; document_type: string | null; document_number: string | null; address: string | null };
+    status: InvoiceStatus;
+    is_overdue: boolean;
+    pdf_url: string | null;
+    paid_at: string | null;
+    voided_at: string | null;
+    void_reason: string | null;
+    tenant?: { id: number; name: string | null };
+    payments?: PaymentRecord[];
+}
+
+export interface BillingSummary {
+    balance: string;
+    overdue_count: number;
+    transfer_instructions: string;
+    cards_enabled: boolean;
+}
+
+export interface SavedPaymentMethod {
+    id: number;
+    provider: string;
+    brand: string | null;
+    last4: string | null;
+    exp_month: number | null;
+    exp_year: number | null;
+    is_default: boolean;
+}

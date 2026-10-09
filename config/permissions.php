@@ -46,6 +46,10 @@ return [
                     'view' => 'Ver',
                     'manage' => 'Crear, editar y eliminar',
                 ]],
+                'admin.billing' => ['label' => 'Facturación', 'actions' => [
+                    'view' => 'Ver comprobantes y pagos',
+                    'manage' => 'Emitir, anular y registrar pagos',
+                ]],
                 'admin.memberships' => ['label' => 'Membresías', 'actions' => [
                     'view' => 'Ver',
                     'manage' => 'Crear, renovar y cancelar',

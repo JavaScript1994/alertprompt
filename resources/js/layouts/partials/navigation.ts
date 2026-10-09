@@ -64,6 +64,10 @@ const PLATFORM_NAV: NavSection[] = [
         ],
     },
     {
+        heading: 'Facturación',
+        items: [{ to: '/admin/invoices', label: 'Comprobantes', icon: Receipt, permission: 'admin.billing.view' }],
+    },
+    {
         heading: 'Configuración',
         items: [
             { to: '/settings/users', label: 'Equipo', icon: UserCog, permission: 'users.view' },
@@ -93,8 +97,8 @@ const CLIENT_NAV: NavSection[] = [
     {
         heading: 'Facturación',
         items: [
-            { to: '/billing/payments', label: 'Pagos', icon: Receipt, permission: 'billing.view', comingSoon: true },
-            { to: '/billing/payment-methods', label: 'Métodos de pago', icon: CreditCard, permission: 'payment_methods.view', comingSoon: true },
+            { to: '/billing/payments', label: 'Pagos', icon: Receipt, permission: 'billing.view' },
+            { to: '/billing/payment-methods', label: 'Métodos de pago', icon: CreditCard, permission: 'payment_methods.view' },
         ],
     },
     {
@@ -134,7 +138,10 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
 }
 
 /** Páginas de detalle que no son un item del menú. */
-const DETAIL_LABELS: [prefix: string, label: string][] = [['/admin/clients/', 'Clientes']];
+const DETAIL_LABELS: [prefix: string, label: string][] = [
+    ['/admin/clients/', 'Clientes'],
+    ['/billing/invoices/', 'Comprobante'],
+];
 
 export function routeLabel(pathname: string, sections: NavSection[]): string {
     for (const section of sections) {

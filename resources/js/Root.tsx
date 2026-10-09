@@ -4,6 +4,7 @@ import RequirePermission from '@/components/RequirePermission';
 import AuthLayout from '@/layouts/AuthLayout';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import Alerts from '@/pages/admin/alerts/Alerts';
+import AdminInvoices from '@/pages/admin/billing/AdminInvoices';
 import BulkImports from '@/pages/admin/bulk-imports/BulkImports';
 import ClientDetail from '@/pages/admin/clients/ClientDetail';
 import Clients from '@/pages/admin/clients/Clients';
@@ -12,6 +13,9 @@ import AdminReports from '@/pages/admin/reports/AdminReports';
 import RoleEditor from '@/pages/admin/roles/RoleEditor';
 import Roles from '@/pages/admin/roles/Roles';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
+import InvoicePrint from '@/pages/billing/InvoicePrint';
+import PaymentMethods from '@/pages/billing/PaymentMethods';
+import Payments from '@/pages/billing/Payments';
 import Login from '@/pages/auth/Login';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import Campaigns from '@/pages/campaigns/Campaigns';
@@ -52,6 +56,13 @@ export default function Root() {
                         <Route element={<RequirePermission permission="reports.view" />}>
                             <Route path="/reports" element={<Reports />} />
                         </Route>
+                        <Route element={<RequirePermission permission="billing.view" />}>
+                            <Route path="/billing/payments" element={<Payments />} />
+                            <Route path="/billing/invoices/:id" element={<InvoicePrint scope="client" />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="payment_methods.view" />}>
+                            <Route path="/billing/payment-methods" element={<PaymentMethods />} />
+                        </Route>
                         <Route element={<RequirePermission permission="settings.view" />}>
                             <Route path="/settings" element={<AccountSettings />} />
                         </Route>
@@ -69,6 +80,10 @@ export default function Root() {
                             <Route path="/admin/clients/companies" element={<Clients key="company" type="company" />} />
                             <Route path="/admin/clients/individuals" element={<Clients key="individual" type="individual" />} />
                             <Route path="/admin/clients/:id" element={<ClientDetail />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="admin.billing.view" />}>
+                            <Route path="/admin/invoices" element={<AdminInvoices />} />
+                            <Route path="/admin/invoices/:id" element={<InvoicePrint scope="admin" />} />
                         </Route>
                         <Route element={<RequirePermission permission="admin.bulk_imports.view" />}>
                             <Route path="/admin/bulk-imports" element={<BulkImports />} />
