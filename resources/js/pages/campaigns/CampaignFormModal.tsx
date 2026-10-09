@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCampaign, useUpdateCampaign } from '@/hooks/useCampaigns';
 import { useApprovedTemplates } from '@/hooks/useTemplates';
+import { useHasModule } from '@/hooks/useModules';
 import { apiErrorMessage } from '@/lib/format';
 import ContactPicker from './ContactPicker';
 import TemplateSelect from './TemplateSelect';
@@ -32,6 +33,7 @@ function toDatetimeLocal(iso: string): string {
 }
 
 export default function CampaignFormModal({ campaignId, onClose }: { campaignId: number | null; onClose: () => void }) {
+    const canSchedule = useHasModule()('scheduling');
     const { data: campaign, isLoading } = useCampaign(campaignId);
     const { data: templates } = useApprovedTemplates();
     const updateCampaign = useUpdateCampaign();
@@ -150,18 +152,20 @@ export default function CampaignFormModal({ campaignId, onClose }: { campaignId:
                             error={audienceError}
                         />
 
-                        <Field
-                            label="Programar para (opcional)"
-                            htmlFor="edit-campaign-scheduled-at"
-                            hint="Si lo dejás vacío, la campaña queda como borrador."
-                        >
-                            <Input
-                                id="edit-campaign-scheduled-at"
-                                type="datetime-local"
-                                value={scheduledAt}
-                                onChange={(event) => setScheduledAt(event.target.value)}
-                            />
-                        </Field>
+                        {canSchedule && (
+                            <Field
+                                label="Programar para (opcional)"
+                                htmlFor="edit-campaign-scheduled-at"
+                                hint="Si lo dejás vacío, la campaña queda como borrador."
+                            >
+                                <Input
+                                    id="edit-campaign-scheduled-at"
+                                    type="datetime-local"
+                                    value={scheduledAt}
+                                    onChange={(event) => setScheduledAt(event.target.value)}
+                                />
+                            </Field>
+                        )}
 
                         {generalError && (
                             <Alert variant="error">

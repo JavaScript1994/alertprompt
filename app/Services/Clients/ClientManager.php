@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\SetPasswordLink;
 use App\Services\AuditLogger;
+use App\Services\Modules\TenantModules;
 use App\Support\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
@@ -22,7 +23,10 @@ use Illuminate\Support\Str;
  */
 class ClientManager
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(
+        private readonly AuditLogger $audit,
+        private readonly TenantModules $modules,
+    ) {}
 
     /**
      * Crea el tenant y su administrador inicial, y le envía la invitación para
@@ -47,6 +51,7 @@ class ClientManager
             ]);
 
             $admin = $this->createUser($tenant, $data['admin_name'], $data['admin_email'], 'client-admin');
+            $this->modules->sync($tenant, $this->modules->defaultsFor($tenant->plan));
 
             $this->audit->record('client.created', $tenant->id, $tenant, [
                 'admin_email' => $admin->email,

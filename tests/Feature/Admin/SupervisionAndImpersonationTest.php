@@ -3,13 +3,18 @@
 declare(strict_types=1);
 
 use App\Enums\RoleScope;
+use App\Jobs\ImportContactsCsv;
 use App\Models\AuditLog;
 use App\Models\Campaign;
 use App\Models\Contact;
 use App\Models\Role;
+use App\Models\Template;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Impersonation;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 
 it('lets the platform read a client contacts without mixing tenants', function () {
     $owner = platformOwner();
@@ -99,4 +104,28 @@ it('does not let client users impersonate', function () {
     $other = Tenant::factory()->create();
 
     $this->actingAs(User::factory()->create())->postJson("/api/admin/clients/{$other->id}/impersonate")->assertForbidden();
+});
+
+it('writes templates, campaigns and imports into the client tenant in support mode', function () {
+    Queue::fake();
+    Storage::fake('local');
+    $owner = platformOwner();
+    $client = Tenant::factory()->create();
+    $contact = Contact::factory()->for($client)->create();
+
+    $this->actingAs($owner)->postJson("/api/admin/clients/{$client->id}/impersonate")->assertNoContent();
+
+    $template = $this->postJson('/api/templates', [
+        'channel' => 'sms', 'category' => 'utility', 'name' => 'Aviso', 'body' => 'Hola {{nombre}}',
+    ])->assertCreated();
+    expect(Template::query()->forTenant($client->id)->whereKey($template->json('data.id'))->exists())->toBeTrue();
+
+    Template::query()->forTenant($client->id)->whereKey($template->json('data.id'))->update(['status' => 'approved']);
+    $this->postJson('/api/campaigns', [
+        'name' => 'Soporte', 'template_id' => $template->json('data.id'), 'contact_ids' => [$contact->id],
+    ])->assertCreated();
+
+    $csv = UploadedFile::fake()->createWithContent('c.csv', "name,phone\nAna,+51999111222\n");
+    $this->postJson('/api/contacts/import', ['file' => $csv])->assertSuccessful();
+    Queue::assertPushed(ImportContactsCsv::class, fn ($job) => $job->tenantId === $client->id);
 });

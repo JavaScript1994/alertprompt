@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\Tenant;
+use App\Services\Modules\TenantModules;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -28,6 +29,7 @@ class TenantResource extends JsonResource
             'status' => $this->status,
             'is_platform' => $this->is_platform,
             'timezone' => $this->settings['timezone'] ?? 'America/Lima',
+            'modules' => app(TenantModules::class)->enabledFor($this->resource),
         ];
     }
 }

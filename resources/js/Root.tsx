@@ -5,6 +5,7 @@ import AuthLayout from '@/layouts/AuthLayout';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import ClientDetail from '@/pages/admin/clients/ClientDetail';
 import Clients from '@/pages/admin/clients/Clients';
+import Modules from '@/pages/admin/modules/Modules';
 import RoleEditor from '@/pages/admin/roles/RoleEditor';
 import Roles from '@/pages/admin/roles/Roles';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
@@ -53,6 +54,9 @@ export default function Root() {
                             <Route path="/admin/clients/companies" element={<Clients key="company" type="company" />} />
                             <Route path="/admin/clients/individuals" element={<Clients key="individual" type="individual" />} />
                             <Route path="/admin/clients/:id" element={<ClientDetail />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="admin.modules.view" />}>
+                            <Route path="/admin/modules" element={<Modules />} />
                         </Route>
                         <Route element={<RequirePermission permission="admin.roles.view" />}>
                             <Route path="/admin/roles" element={<Roles />} />

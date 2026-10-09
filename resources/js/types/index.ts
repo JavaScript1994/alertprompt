@@ -16,6 +16,18 @@ export interface Tenant {
     /** true solo para AlertPrompt: su usuario ve el panel de administración. */
     is_platform: boolean;
     timezone: string;
+    /** Módulos contratados (config/modules.php). La plataforma tiene todos. */
+    modules: ModuleKey[];
+}
+
+export type ModuleKey = 'whatsapp' | 'sms' | 'email' | 'csv_import' | 'scheduling' | 'reports';
+
+export interface ModuleSummary {
+    key: ModuleKey;
+    label: string;
+    description: string;
+    clients_count: number;
+    included_in_plans: string[];
 }
 
 export interface AssignableRole {

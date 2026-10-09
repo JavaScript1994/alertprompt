@@ -11,6 +11,7 @@ use App\Http\Requests\Api\Contacts\UpdateContactRequest;
 use App\Http\Resources\ContactResource;
 use App\Jobs\ImportContactsCsv;
 use App\Models\Contact;
+use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -62,7 +63,7 @@ class ContactController extends Controller
     {
         $path = $request->file('file')->store('imports', 'local');
 
-        ImportContactsCsv::dispatch($request->user()->tenant_id, $path);
+        ImportContactsCsv::dispatch(TenantContext::id(), $path);
 
         return response()->json([
             'message' => 'Importación en proceso.',

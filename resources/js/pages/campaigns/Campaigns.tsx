@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthUser } from '@/hooks/useAuth';
 import { useCampaigns, useCreateCampaign, useDeleteCampaign, useDispatchCampaign } from '@/hooks/useCampaigns';
+import { useHasModule } from '@/hooks/useModules';
 import { useCan } from '@/hooks/usePermissions';
 import { useApprovedTemplates } from '@/hooks/useTemplates';
 import { apiErrorMessage } from '@/lib/format';
@@ -33,6 +34,7 @@ type CampaignFormValues = z.infer<typeof campaignSchema>;
 export default function Campaigns() {
     const can = useCan();
     const canCreate = can('campaigns.create');
+    const canSchedule = useHasModule()('scheduling');
     // En modo soporte el backend rechaza disparos: ni se ofrece el botón.
     const { data: authUser } = useAuthUser();
     const canDispatch = can('campaigns.dispatch') && !authUser?.impersonating;
@@ -142,18 +144,20 @@ export default function Campaigns() {
                                 error={audienceError}
                             />
 
-                            <Field
-                                label="Programar para (opcional)"
-                                htmlFor="campaign-scheduled-at"
-                                hint="Si lo dejás vacío, la campaña queda como borrador y la iniciás vos manualmente."
-                            >
-                                <Input
-                                    id="campaign-scheduled-at"
-                                    type="datetime-local"
-                                    value={scheduledAt}
-                                    onChange={(event) => setScheduledAt(event.target.value)}
-                                />
-                            </Field>
+                            {canSchedule && (
+                                <Field
+                                    label="Programar para (opcional)"
+                                    htmlFor="campaign-scheduled-at"
+                                    hint="Si lo dejás vacío, la campaña queda como borrador y la iniciás vos manualmente."
+                                >
+                                    <Input
+                                        id="campaign-scheduled-at"
+                                        type="datetime-local"
+                                        value={scheduledAt}
+                                        onChange={(event) => setScheduledAt(event.target.value)}
+                                    />
+                                </Field>
+                            )}
 
                             {createCampaign.isError && (
                                 <Alert variant="error">
