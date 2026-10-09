@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('campaigns:dispatch-scheduled')->everyMinute();
+Schedule::command('memberships:refresh')->dailyAt('00:10')->timezone('America/Lima');

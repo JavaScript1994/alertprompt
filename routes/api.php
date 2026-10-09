@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\BulkImportController;
 use App\Http\Controllers\Api\Admin\ClientChannelAccountController;
 use App\Http\Controllers\Api\Admin\ClientController;
 use App\Http\Controllers\Api\Admin\ImpersonationController;
+use App\Http\Controllers\Api\Admin\MembershipController as AdminMembershipController;
 use App\Http\Controllers\Api\Admin\ModuleController;
 use App\Http\Controllers\Api\Admin\PermissionTreeController;
 use App\Http\Controllers\Api\Admin\ReportController as AdminReportController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\ChannelAccountController;
 use App\Http\Controllers\Api\ConsentController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\MembershipController;
 use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TemplateController;
@@ -86,6 +88,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/channel-accounts', [ChannelAccountController::class, 'index'])->middleware('permission:whatsapp_account.view');
     Route::post('/channel-accounts/request', [ChannelAccountController::class, 'request'])->middleware('permission:whatsapp_account.manage');
 
+    Route::get('/membership', [MembershipController::class, 'show'])->middleware('permission:membership.view');
+
     Route::get('/settings/account', [TenantSettingsController::class, 'show'])->middleware('permission:settings.view');
     Route::put('/settings/account', [TenantSettingsController::class, 'update'])->middleware('permission:settings.manage');
 
@@ -119,6 +123,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/bulk-imports/attestation', [BulkImportController::class, 'attestation'])->middleware('permission:admin.bulk_imports.view');
         Route::get('/bulk-imports/{bulkImport}', [BulkImportController::class, 'show'])->whereNumber('bulkImport')->middleware('permission:admin.bulk_imports.view');
         Route::post('/bulk-imports', [BulkImportController::class, 'store'])->middleware('permission:admin.bulk_imports.create');
+
+        Route::get('/clients/{client}/memberships', [AdminMembershipController::class, 'index'])->middleware('permission:admin.memberships.view');
+        Route::post('/clients/{client}/memberships', [AdminMembershipController::class, 'store'])->middleware('permission:admin.memberships.manage');
+        Route::post('/clients/{client}/memberships/{membership}/cancel', [AdminMembershipController::class, 'cancel'])->whereNumber('membership')->middleware('permission:admin.memberships.manage');
 
         // Supervisión (solo lectura): los mismos listados del panel de cliente
         // con los datos de {client}.

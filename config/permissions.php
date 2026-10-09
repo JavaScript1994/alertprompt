@@ -46,6 +46,10 @@ return [
                     'view' => 'Ver',
                     'manage' => 'Crear, editar y eliminar',
                 ]],
+                'admin.memberships' => ['label' => 'Membresías', 'actions' => [
+                    'view' => 'Ver',
+                    'manage' => 'Crear, renovar y cancelar',
+                ]],
                 'admin.modules' => ['label' => 'Módulos', 'actions' => [
                     'view' => 'Ver',
                     'manage' => 'Activar y desactivar por cliente',
