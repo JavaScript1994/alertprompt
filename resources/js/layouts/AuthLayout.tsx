@@ -27,7 +27,7 @@ export default function AuthLayout() {
                     <LoginHero />
                 </div>
                 <div className="flex items-center justify-center py-6 sm:py-10 xl:py-0">
-                    <div className="w-full max-w-md">
+                    <div className="w-full max-w-sm">
                         <Outlet />
                     </div>
                 </div>
