@@ -65,10 +65,19 @@ class SyncPermissions
                 }
 
                 // El dueño siempre conserva todos los permisos, incluidos los
-                // que se agreguen al árbol en el futuro. Los demás roles de
-                // sistema se respetan tal como los haya editado el dueño.
+                // que se agreguen al árbol en el futuro.
                 if ($definition['permissions'] === '*') {
                     $role->syncPermissions($this->registry->all());
+
+                    continue;
+                }
+
+                // Los demás roles de sistema se respetan tal como los haya
+                // editado el dueño; solo reciben los permisos NUEVOS que su
+                // definición incluye (p. ej. un "exportar" recién agregado).
+                $newForRole = array_values(array_intersect($missing, $this->registry->resolve($definition['permissions'])));
+                if ($newForRole !== []) {
+                    $role->givePermissionTo($newForRole);
                 }
             }
 

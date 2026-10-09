@@ -69,13 +69,13 @@ const PLATFORM_NAV: NavSection[] = [
             { to: '/settings/users', label: 'Equipo', icon: UserCog, permission: 'users.view' },
             { to: '/admin/roles', label: 'Roles y permisos', icon: ShieldCheck, permission: 'admin.roles.view' },
             { to: '/admin/modules', label: 'Módulos', icon: Blocks, permission: 'admin.modules.view' },
-            { to: '/admin/alerts', label: 'Alertas', icon: Bell, permission: 'admin.alerts.view', comingSoon: true },
+            { to: '/admin/alerts', label: 'Alertas', icon: Bell, permission: 'admin.alerts.view' },
             { to: '/admin/bulk-imports', label: 'Cargas masivas', icon: Upload, permission: 'admin.bulk_imports.view', comingSoon: true },
         ],
     },
     {
         heading: 'Reportes',
-        items: [{ to: '/admin/reports', label: 'Reportes', icon: BarChart3, permission: 'admin.reports.view', comingSoon: true }],
+        items: [{ to: '/admin/reports', label: 'Reportes', icon: BarChart3, permission: 'admin.reports.view' }],
     },
 ];
 
@@ -88,7 +88,7 @@ const CLIENT_NAV: NavSection[] = [
     MESSAGING,
     {
         heading: 'Reportes',
-        items: [{ to: '/reports', label: 'Reportes', icon: BarChart3, permission: 'reports.view', module: 'reports', comingSoon: true }],
+        items: [{ to: '/reports', label: 'Reportes', icon: BarChart3, permission: 'reports.view', module: 'reports' }],
     },
     {
         heading: 'Facturación',

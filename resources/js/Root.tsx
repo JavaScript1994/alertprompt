@@ -3,9 +3,11 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import RequirePermission from '@/components/RequirePermission';
 import AuthLayout from '@/layouts/AuthLayout';
 import DashboardLayout from '@/layouts/DashboardLayout';
+import Alerts from '@/pages/admin/alerts/Alerts';
 import ClientDetail from '@/pages/admin/clients/ClientDetail';
 import Clients from '@/pages/admin/clients/Clients';
 import Modules from '@/pages/admin/modules/Modules';
+import AdminReports from '@/pages/admin/reports/AdminReports';
 import RoleEditor from '@/pages/admin/roles/RoleEditor';
 import Roles from '@/pages/admin/roles/Roles';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
@@ -14,6 +16,7 @@ import ResetPassword from '@/pages/auth/ResetPassword';
 import Campaigns from '@/pages/campaigns/Campaigns';
 import Contacts from '@/pages/contacts/Contacts';
 import Dashboard from '@/pages/dashboard/Dashboard';
+import Reports from '@/pages/reports/Reports';
 import AccountSettings from '@/pages/settings/AccountSettings';
 import ChannelAccounts from '@/pages/settings/ChannelAccounts';
 import Users from '@/pages/settings/Users';
@@ -44,6 +47,9 @@ export default function Root() {
                             <Route path="/campaigns" element={<Campaigns />} />
                         </Route>
 
+                        <Route element={<RequirePermission permission="reports.view" />}>
+                            <Route path="/reports" element={<Reports />} />
+                        </Route>
                         <Route element={<RequirePermission permission="settings.view" />}>
                             <Route path="/settings" element={<AccountSettings />} />
                         </Route>
@@ -58,6 +64,12 @@ export default function Root() {
                             <Route path="/admin/clients/companies" element={<Clients key="company" type="company" />} />
                             <Route path="/admin/clients/individuals" element={<Clients key="individual" type="individual" />} />
                             <Route path="/admin/clients/:id" element={<ClientDetail />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="admin.alerts.view" />}>
+                            <Route path="/admin/alerts" element={<Alerts />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="admin.reports.view" />}>
+                            <Route path="/admin/reports" element={<AdminReports />} />
                         </Route>
                         <Route element={<RequirePermission permission="admin.modules.view" />}>
                             <Route path="/admin/modules" element={<Modules />} />

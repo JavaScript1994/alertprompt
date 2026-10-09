@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\ChannelAccounts;
 
+use App\Enums\AlertSeverity;
 use App\Enums\Channel;
 use App\Enums\ChannelAccountStatus;
+use App\Enums\QualityRating;
 use App\Models\ChannelAccount;
 use App\Models\Scopes\TenantScope;
 use App\Models\Tenant;
+use App\Services\Alerts;
 use App\Services\AuditLogger;
 use Illuminate\Support\Facades\DB;
 
@@ -19,7 +22,10 @@ use Illuminate\Support\Facades\DB;
  */
 class ChannelAccountManager
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(
+        private readonly AuditLogger $audit,
+        private readonly Alerts $alerts,
+    ) {}
 
     public function find(Tenant $tenant, Channel $channel): ?ChannelAccount
     {
@@ -70,6 +76,7 @@ class ChannelAccountManager
         return DB::transaction(function () use ($tenant, $channel, $data) {
             $account = $this->find($tenant, $channel) ?? new ChannelAccount(['tenant_id' => $tenant->id, 'channel' => $channel]);
             $wasActive = $account->status === ChannelAccountStatus::Active;
+            $previousQuality = $account->quality_rating;
 
             $account->fill([
                 'provider' => $data['provider'],
@@ -100,7 +107,31 @@ class ChannelAccountManager
                 'fields' => array_values(array_map(fn ($field) => $field === 'credentials' ? 'credentials (actualizadas)' : $field, $changed)),
             ]);
 
+            $this->alertOnQualityDrop($tenant, $account, $previousQuality);
+
             return $account;
         });
+    }
+
+    /** Calidad amarilla o roja en Meta: es lo que tumba un número (CLAUDE.md §2.2). */
+    private function alertOnQualityDrop(Tenant $tenant, ChannelAccount $account, ?QualityRating $previous): void
+    {
+        $current = $account->quality_rating;
+
+        if ($current === $previous || ! in_array($current, [QualityRating::Yellow, QualityRating::Red], true)) {
+            return;
+        }
+
+        $this->alerts->raise(
+            tenantId: $tenant->id,
+            type: 'channel.quality_drop',
+            severity: $current === QualityRating::Red ? AlertSeverity::Critical : AlertSeverity::Warning,
+            title: "Calidad {$current->value} en el número {$account->sender}",
+            message: $current === QualityRating::Red
+                ? 'Meta puede limitar o bloquear el número. Pausa las campañas de marketing y revisa consentimientos y frecuencia.'
+                : 'La calidad bajó. Revisa bajas y reportes recientes antes de la próxima campaña.',
+            data: ['account_id' => $account->id, 'from' => $previous?->value, 'to' => $current->value],
+            subjectKey: "account-{$account->id}",
+        );
     }
 }

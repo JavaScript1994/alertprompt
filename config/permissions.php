@@ -52,6 +52,7 @@ return [
                 ]],
                 'admin.alerts' => ['label' => 'Alertas', 'actions' => [
                     'view' => 'Ver',
+                    'manage' => 'Marcar como resueltas',
                 ]],
                 'admin.bulk_imports' => ['label' => 'Cargas masivas', 'actions' => [
                     'view' => 'Ver',
@@ -59,6 +60,7 @@ return [
                 ]],
                 'admin.reports' => ['label' => 'Reportes globales', 'actions' => [
                     'view' => 'Ver',
+                    'export' => 'Exportar CSV',
                 ]],
             ],
         ],
@@ -100,6 +102,7 @@ return [
             'modules' => [
                 'reports' => ['label' => 'Reportes', 'actions' => [
                     'view' => 'Ver',
+                    'export' => 'Exportar CSV',
                 ]],
             ],
         ],
@@ -176,7 +179,7 @@ return [
                 'contacts.view', 'contacts.create', 'contacts.update', 'contacts.import', 'contacts.consents',
                 'templates.view', 'templates.create', 'templates.update',
                 'campaigns.view', 'campaigns.create', 'campaigns.update', 'campaigns.dispatch',
-                'reports.view',
+                'reports.view', 'reports.export',
             ],
         ],
         'client-viewer' => [

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Enums\AlertSeverity;
 use App\Enums\CampaignRecipientStatus;
 use App\Enums\CampaignStatus;
 use App\Enums\Channel;
 use App\Enums\SkipReason;
 use App\Enums\SuppressionReason;
 use App\Models\CampaignRecipient;
+use App\Services\Alerts;
 use App\Services\Channels\ChannelManager;
 use App\Services\Channels\OutboundMessage;
 use App\Services\SuppressionService;
@@ -120,6 +122,16 @@ class SendMessageJob implements ShouldQueue
                 'error_code' => $result->errorCode,
             ]);
             $campaign->transitionTo(CampaignStatus::Paused);
+
+            app(Alerts::class)->raise(
+                tenantId: $campaign->tenant_id,
+                type: 'account.blocked',
+                severity: AlertSeverity::Critical,
+                title: 'El proveedor bloqueó el envío: campaña detenida',
+                message: "Código {$result->errorCode} en «{$campaign->name}». La cuenta de {$channel->label()} puede estar restringida; revisa su estado antes de enviar de nuevo.",
+                data: ['error_code' => $result->errorCode, 'channel' => $channel->value],
+                campaignId: $campaign->id,
+            );
         }
 
         $recipient->update([
