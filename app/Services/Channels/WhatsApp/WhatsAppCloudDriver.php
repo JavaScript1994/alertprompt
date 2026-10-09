@@ -7,6 +7,7 @@ namespace App\Services\Channels\WhatsApp;
 use App\Exceptions\NotImplementedException;
 use App\Services\Channels\ChannelDriver;
 use App\Services\Channels\OutboundMessage;
+use App\Services\Channels\SenderIdentity;
 use App\Services\Channels\SendResult;
 use Illuminate\Http\Request;
 
@@ -25,7 +26,7 @@ class WhatsAppCloudDriver implements ChannelDriver
         );
     }
 
-    public function verifyWebhookSignature(Request $request): bool
+    public function verifyWebhookSignature(Request $request, ?SenderIdentity $sender = null): bool
     {
         throw new NotImplementedException('WhatsAppCloudDriver no está implementado todavía.');
     }

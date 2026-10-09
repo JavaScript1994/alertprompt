@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Enums\CampaignStatus;
 use App\Jobs\DispatchCampaign;
 use App\Models\Campaign;
+use App\Services\Channels\ChannelManager;
 use App\Services\Modules\TenantModules;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +18,7 @@ class DispatchScheduledCampaigns extends Command
 
     protected $description = 'Dispara las campañas programadas cuya fecha/hora ya llegó.';
 
-    public function handle(TenantModules $modules): int
+    public function handle(TenantModules $modules, ChannelManager $channels): int
     {
         $due = Campaign::query()
             ->where('status', CampaignStatus::Scheduled)
@@ -32,6 +33,12 @@ class DispatchScheduledCampaigns extends Command
             // desde que la agendó, no se envía: queda programada y se avisa.
             if (! $modules->channelEnabled($campaign->channel, $campaign->tenant_id) || ! $modules->isEnabled('scheduling', $campaign->tenant_id)) {
                 Log::warning('Campaña programada no disparada: módulo desactivado.', ['campaign_id' => $campaign->id]);
+
+                continue;
+            }
+
+            if (! $channels->canSend($campaign->tenant_id, $campaign->channel)) {
+                Log::warning('Campaña programada no disparada: el cliente no tiene número propio.', ['campaign_id' => $campaign->id]);
 
                 continue;
             }

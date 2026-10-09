@@ -11,6 +11,24 @@ use App\Services\Channels\WhatsApp\WhatsAppCloudDriver;
 use App\Services\Channels\WhatsApp\WhatsAppTwilioDriver;
 
 return [
+    /*
+    | Remitente compartido: un cliente sin cuenta propia activa envía con el
+    | número de la plataforma (variables TWILIO_*_FROM). Sirve para la demo;
+    | en producción conviene apagarlo para que cada cliente use su número
+    | (su calidad y su tier en Meta son suyos). Email siempre usa el
+    | remitente de la plataforma.
+    */
+    'shared_sender' => (bool) env('CHANNELS_SHARED_SENDER', true),
+
+    /*
+    | Canales en los que un cliente puede tener número propio y qué
+    | proveedores admite cada uno (claves de 'drivers').
+    */
+    'tenant_accounts' => [
+        'whatsapp' => ['twilio', 'cloud'],
+        'sms' => ['twilio'],
+    ],
+
     'whatsapp' => [
         'driver' => env('WHATSAPP_DRIVER', 'twilio'),
         'drivers' => [

@@ -6,6 +6,7 @@ namespace App\Services\Channels\Email;
 
 use App\Services\Channels\ChannelDriver;
 use App\Services\Channels\OutboundMessage;
+use App\Services\Channels\SenderIdentity;
 use App\Services\Channels\SendResult;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
@@ -53,7 +54,7 @@ class EmailTwilioDriver implements ChannelDriver
         return $this->mapErrorResponse($response);
     }
 
-    public function verifyWebhookSignature(Request $request): bool
+    public function verifyWebhookSignature(Request $request, ?SenderIdentity $sender = null): bool
     {
         // La Email API de Twilio es un endpoint nuevo (comms.twilio.com) y no
         // hay todavía un esquema de firma de webhook documentado/soportado

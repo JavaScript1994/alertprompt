@@ -7,7 +7,9 @@ namespace App\Services\Channels\Sms;
 use App\Services\Channels\ChannelDriver;
 use App\Services\Channels\MessageStatusUpdate;
 use App\Services\Channels\OutboundMessage;
+use App\Services\Channels\SenderIdentity;
 use App\Services\Channels\SendResult;
+use App\Services\Channels\Twilio\TwilioClientFactory;
 use Illuminate\Http\Request;
 use Twilio\Exceptions\RestException;
 use Twilio\Rest\Client;
@@ -15,18 +17,27 @@ use Twilio\Security\RequestValidator;
 
 class SmsTwilioDriver implements ChannelDriver
 {
-    public function __construct(private readonly Client $client) {}
+    private readonly TwilioClientFactory $clients;
+
+    public function __construct(Client $client, ?TwilioClientFactory $clients = null)
+    {
+        $this->clients = $clients ?? new TwilioClientFactory($client);
+    }
 
     public function send(OutboundMessage $message): SendResult
     {
         try {
-            $twilioMessage = $this->client->messages->create(
-                $message->to,
-                [
-                    'from' => config('services.twilio.sms_from'),
-                    'body' => $message->body,
-                ],
-            );
+            $params = [
+                // Cuenta propia del cliente o, si no tiene, el remitente compartido.
+                'from' => $message->sender !== null ? $message->sender->from : config('services.twilio.sms_from'),
+                'body' => $message->body,
+            ];
+
+            if ($message->statusCallbackUrl !== null) {
+                $params['statusCallback'] = $message->statusCallbackUrl;
+            }
+
+            $twilioMessage = $this->clients->for($message->sender)->messages->create($message->to, $params);
 
             return SendResult::success($twilioMessage->sid, $twilioMessage->status);
         } catch (RestException $exception) {
@@ -34,7 +45,7 @@ class SmsTwilioDriver implements ChannelDriver
         }
     }
 
-    public function verifyWebhookSignature(Request $request): bool
+    public function verifyWebhookSignature(Request $request, ?SenderIdentity $sender = null): bool
     {
         $signature = $request->header('X-Twilio-Signature');
 
@@ -42,7 +53,7 @@ class SmsTwilioDriver implements ChannelDriver
             return false;
         }
 
-        $validator = new RequestValidator(config('services.twilio.token'));
+        $validator = new RequestValidator((string) $this->clients->authTokenFor($sender));
 
         return $validator->validate($signature, $request->fullUrl(), $request->all());
     }

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Enums\Channel;
 use App\Services\Channels\OutboundMessage;
+use App\Services\Channels\SenderIdentity;
 use App\Services\Channels\Sms\SmsTwilioDriver;
+use App\Services\Channels\Twilio\TwilioClientFactory;
 use Twilio\Http\Client as TwilioHttpClient;
 use Twilio\Http\Response as TwilioHttpResponse;
 use Twilio\Rest\Client;
@@ -67,4 +69,28 @@ it('retries on 429 and 5xx', function () {
     ))->send(makeSmsOutboundMessage());
 
     expect($rateLimited->shouldRetry)->toBeTrue()->and($serverError->shouldRetry)->toBeTrue();
+});
+
+it('sends from the client number with its own sub-account and status callback', function () {
+    $httpClient = Mockery::mock(TwilioHttpClient::class);
+    $httpClient->shouldReceive('request')->once()->withArgs(function ($method, $url, $params, $data) {
+        return str_contains($url, '/Accounts/ACsub/Messages.json')
+            && $data['From'] === '+51900111222'
+            && $data['StatusCallback'] === 'https://app.test/hook';
+    })->andReturn(new TwilioHttpResponse(201, json_encode(['sid' => 'SM7', 'status' => 'queued'])));
+
+    $factory = Mockery::mock(TwilioClientFactory::class);
+    $factory->shouldReceive('for')->once()->andReturn(new Client('ACsub', 'tok', 'ACsub', null, $httpClient));
+
+    $message = new OutboundMessage(
+        channel: Channel::Sms,
+        to: '+51987654321',
+        body: 'Hola',
+        sender: new SenderIdentity('+51900111222', ['account_sid' => 'ACsub', 'auth_token' => 'tok'], 5),
+        statusCallbackUrl: 'https://app.test/hook',
+    );
+
+    $result = (new SmsTwilioDriver(new Client('ACmain', 'token-principal'), $factory))->send($message);
+
+    expect($result->success)->toBeTrue()->and($result->providerMessageId)->toBe('SM7');
 });

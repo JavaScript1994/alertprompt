@@ -7,6 +7,7 @@ namespace App\Services\Channels\Email;
 use App\Services\Channels\ChannelDriver;
 use App\Services\Channels\MessageStatusUpdate;
 use App\Services\Channels\OutboundMessage;
+use App\Services\Channels\SenderIdentity;
 use App\Services\Channels\SendResult;
 use Illuminate\Http\Request;
 use SendGrid;
@@ -50,7 +51,7 @@ class EmailSendGridDriver implements ChannelDriver
         return $this->mapErrorResponse($response);
     }
 
-    public function verifyWebhookSignature(Request $request): bool
+    public function verifyWebhookSignature(Request $request, ?SenderIdentity $sender = null): bool
     {
         $signature = $request->header('X-Twilio-Email-Event-Webhook-Signature');
         $timestamp = $request->header('X-Twilio-Email-Event-Webhook-Timestamp');

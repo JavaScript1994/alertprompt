@@ -72,9 +72,11 @@ it('blocks scheduling without the scheduling module', function () {
 it('refuses to dispatch a campaign whose channel was disabled afterwards', function () {
     Queue::fake();
     $user = clientWithModules(['email']);
-    $campaign = Campaign::factory()->for($user->tenant)->create(['channel' => 'sms']);
+    $campaign = Campaign::factory()->for($user->tenant)->create(['channel' => 'sms', 'status' => 'draft']);
 
-    $this->actingAs($user)->postJson("/api/campaigns/{$campaign->id}/dispatch")->assertStatus(422);
+    $this->actingAs($user)->postJson("/api/campaigns/{$campaign->id}/dispatch")
+        ->assertStatus(422)
+        ->assertJsonPath('message', 'Tu plan no incluye el canal SMS.');
     Queue::assertNothingPushed();
 });
 

@@ -71,6 +71,20 @@ class SendMessageJob implements ShouldQueue
             return;
         }
 
+        // Número propio del cliente o remitente compartido. Si no hay con
+        // qué enviar (sin cuenta y sin remitente compartido), falla sin
+        // reintento: reintentar no lo arregla.
+        $tenantChannel = $channels->forTenant($campaign->tenant_id, $channel);
+
+        if ($tenantChannel === null) {
+            $recipient->update([
+                'status' => CampaignRecipientStatus::Failed,
+                'error_code' => 'no_sender_account',
+            ]);
+
+            return;
+        }
+
         $body = $renderer->render($template->body, $contact->attributes ?? []);
 
         $message = new OutboundMessage(
@@ -78,9 +92,13 @@ class SendMessageJob implements ShouldQueue
             to: $identifier,
             body: $body,
             providerTemplateId: $template->provider_template_id,
+            sender: $tenantChannel->sender,
+            statusCallbackUrl: $tenantChannel->sender?->accountId !== null
+                ? route('webhooks.account', ['channel' => $channel->value, 'account' => $tenantChannel->sender->accountId])
+                : null,
         );
 
-        $result = $channels->driver($channel)->send($message);
+        $result = $tenantChannel->driver->send($message);
 
         if ($result->success) {
             $recipient->update([

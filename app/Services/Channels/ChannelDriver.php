@@ -10,7 +10,11 @@ interface ChannelDriver
 {
     public function send(OutboundMessage $message): SendResult;
 
-    public function verifyWebhookSignature(Request $request): bool;
+    /**
+     * $sender: cuenta propia del tenant a la que corresponde el webhook (su
+     * firma se valida con SUS credenciales); null = cuenta por defecto.
+     */
+    public function verifyWebhookSignature(Request $request, ?SenderIdentity $sender = null): bool;
 
     /**
      * @return list<MessageStatusUpdate>
