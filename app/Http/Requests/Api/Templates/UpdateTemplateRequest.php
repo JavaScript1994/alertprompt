@@ -7,6 +7,7 @@ namespace App\Http\Requests\Api\Templates;
 use App\Enums\Channel;
 use App\Enums\TemplateCategory;
 use App\Enums\TemplateStatus;
+use App\Rules\ChannelModuleEnabled;
 use App\Support\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -26,7 +27,7 @@ class UpdateTemplateRequest extends FormRequest
         $templateId = $this->route('template')->id;
 
         return [
-            'channel' => ['required', new Enum(Channel::class)],
+            'channel' => ['required', new Enum(Channel::class), new ChannelModuleEnabled],
             'category' => ['required', new Enum(TemplateCategory::class)],
             'name' => [
                 'required',

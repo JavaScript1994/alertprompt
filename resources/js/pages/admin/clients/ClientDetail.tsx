@@ -16,10 +16,11 @@ import { useCan } from '@/hooks/usePermissions';
 import { apiErrorMessage, formatDateTime } from '@/lib/format';
 import type { Client } from '@/types';
 import ClientFormDialog from './ClientFormDialog';
+import ClientModulesTab from './ClientModulesTab';
 import { ClientActivityTab, ClientCampaignsTab, ClientContactsTab, ClientTemplatesTab, ClientUsersTab } from './ClientSupervision';
 import { CLIENT_STATUS, CLIENT_TYPE_LABELS, DOCUMENT_LABELS } from './clientLabels';
 
-type TabKey = 'summary' | 'users' | 'contacts' | 'templates' | 'campaigns' | 'activity';
+type TabKey = 'summary' | 'users' | 'modules' | 'contacts' | 'templates' | 'campaigns' | 'activity';
 
 function Summary({ client }: { client: Client }) {
     const rows: [string, string | null][] = [
@@ -85,6 +86,7 @@ export default function ClientDetail() {
     const tabs: TabItem<TabKey>[] = [
         { key: 'summary', label: 'Resumen' },
         { key: 'users', label: 'Usuarios' },
+        ...(can('admin.modules.view') ? ([{ key: 'modules', label: 'Módulos' }] as TabItem<TabKey>[]) : []),
         ...(can('admin.supervision.view')
             ? ([
                   { key: 'contacts', label: 'Contactos' },
@@ -149,6 +151,7 @@ export default function ClientDetail() {
 
             {tab === 'summary' && <Summary client={client} />}
             {tab === 'users' && <ClientUsersTab clientId={client.id} />}
+            {tab === 'modules' && <ClientModulesTab clientId={client.id} />}
             {tab === 'contacts' && <ClientContactsTab clientId={client.id} />}
             {tab === 'templates' && <ClientTemplatesTab clientId={client.id} />}
             {tab === 'campaigns' && <ClientCampaignsTab clientId={client.id} />}

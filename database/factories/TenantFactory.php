@@ -9,6 +9,7 @@ use App\Enums\TenantStatus;
 use App\Enums\TenantType;
 use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\DB;
 
 /** @extends Factory<Tenant> */
 class TenantFactory extends Factory
@@ -26,6 +27,26 @@ class TenantFactory extends Factory
                 'timezone' => 'America/Lima',
             ],
         ];
+    }
+
+    /**
+     * Por defecto un cliente de prueba tiene todos los módulos, para que los
+     * tests que no tratan de módulos no dependan del plan.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (Tenant $tenant) {
+            if ($tenant->is_platform) {
+                return;
+            }
+
+            DB::table('tenant_modules')->insert(array_map(fn (string $module) => [
+                'tenant_id' => $tenant->id,
+                'module' => $module,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ], array_keys(config('modules.catalog'))));
+        });
     }
 
     public function platform(): static

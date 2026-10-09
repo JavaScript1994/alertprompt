@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\Campaigns;
 
 use App\Enums\TemplateStatus;
+use App\Models\Template;
+use App\Services\Modules\TenantModules;
 use App\Support\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreCampaignRequest extends FormRequest
 {
@@ -40,6 +43,30 @@ class StoreCampaignRequest extends FormRequest
             // Envío único a futuro. Recurrencia (cada hora/día/semana) queda
             // fuera del MVP — ver CLAUDE.md §10.
             'scheduled_at' => ['nullable', 'date', 'after:now'],
+        ];
+    }
+
+    /**
+     * Módulos contratados: el canal de la plantilla y, si se programa, el
+     * módulo de envíos programados.
+     *
+     * @return list<callable>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator) {
+                $modules = app(TenantModules::class);
+
+                if ($this->filled('scheduled_at') && ! $modules->isEnabled('scheduling')) {
+                    $validator->errors()->add('scheduled_at', 'Tu plan no incluye envíos programados.');
+                }
+
+                $template = Template::query()->find($this->input('template_id'));
+                if ($template !== null && ! $modules->channelEnabled($template->channel)) {
+                    $validator->errors()->add('template_id', "Tu plan no incluye el canal {$template->channel->label()}.");
+                }
+            },
         ];
     }
 }

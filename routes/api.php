@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\Admin\ClientController;
 use App\Http\Controllers\Api\Admin\ImpersonationController;
+use App\Http\Controllers\Api\Admin\ModuleController;
 use App\Http\Controllers\Api\Admin\PermissionTreeController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\AuthController;
@@ -31,7 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Panel de cliente. Cada acción exige su permiso de config/permissions.php;
     // el tenant de la plataforma también lo usa para sus propias campañas.
-    Route::post('/contacts/import', [ContactController::class, 'import'])->middleware('permission:contacts.import');
+    Route::post('/contacts/import', [ContactController::class, 'import'])->middleware(['permission:contacts.import', 'module:csv_import']);
     Route::apiResource('contacts', ContactController::class)->except(['show'])
         ->middlewareFor('index', 'permission:contacts.view')
         ->middlewareFor('store', 'permission:contacts.create')
@@ -80,6 +81,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/clients/{client}/reactivate', [ClientController::class, 'reactivate'])->middleware('permission:admin.clients.suspend');
         Route::get('/clients/{client}/users', [ClientController::class, 'users'])->middleware('permission:admin.clients.view');
         Route::get('/clients/{client}/activity', [ClientController::class, 'activity'])->middleware('permission:admin.clients.view');
+
+        Route::get('/modules', [ModuleController::class, 'index'])->middleware('permission:admin.modules.view');
+        Route::get('/clients/{client}/modules', [ModuleController::class, 'show'])->middleware('permission:admin.modules.view');
+        Route::put('/clients/{client}/modules', [ModuleController::class, 'update'])->middleware('permission:admin.modules.manage');
 
         // Supervisión (solo lectura): los mismos listados del panel de cliente
         // con los datos de {client}.

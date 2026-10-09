@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useContacts, useImportContacts } from '@/hooks/useContacts';
+import { useHasModule } from '@/hooks/useModules';
 import { useCan } from '@/hooks/usePermissions';
 import { apiErrorMessage } from '@/lib/format';
 import type { Contact } from '@/types';
@@ -38,6 +39,7 @@ function downloadTemplate(): void {
 
 export default function Contacts() {
     const can = useCan();
+    const hasModule = useHasModule();
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
     const [searchInput, setSearchInput] = useState('');
@@ -150,7 +152,7 @@ export default function Contacts() {
                             className="hidden"
                             onChange={onFileSelected}
                         />
-                        {can('contacts.import') && (
+                        {can('contacts.import') && hasModule('csv_import') && (
                             <Button onClick={() => fileInputRef.current?.click()} loading={importContacts.isPending}>
                                 {!importContacts.isPending && <Upload />}
                                 {importContacts.isPending ? 'Subiendo…' : 'Importar CSV'}
