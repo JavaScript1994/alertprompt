@@ -320,3 +320,33 @@ export interface BulkImport {
     finished_at: string | null;
     created_at: string;
 }
+
+export type MembershipStatus = 'scheduled' | 'active' | 'expired' | 'cancelled';
+
+export interface Membership {
+    id: number;
+    plan: string;
+    status: MembershipStatus;
+    billing_cycle: 'monthly' | 'yearly';
+    price: string;
+    currency: string;
+    starts_at: string;
+    ends_at: string;
+    quotas: Partial<Record<TemplateChannel, number | null>>;
+    contract_reference: string | null;
+    notes?: string | null;
+    created_by?: string | null;
+    cancelled_at: string | null;
+    cancel_reason: string | null;
+    created_at: string;
+}
+
+export type ChannelUsage = Record<TemplateChannel, { used: number; quota: number | null }>;
+
+export interface MembershipOverview {
+    current: Membership | null;
+    next: Membership | null;
+    usage: ChannelUsage;
+    quotas_enforced: boolean;
+    history: Membership[];
+}

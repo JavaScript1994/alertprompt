@@ -20,6 +20,7 @@ import Dashboard from '@/pages/dashboard/Dashboard';
 import Reports from '@/pages/reports/Reports';
 import AccountSettings from '@/pages/settings/AccountSettings';
 import ChannelAccounts from '@/pages/settings/ChannelAccounts';
+import MembershipPage from '@/pages/settings/MembershipPage';
 import Users from '@/pages/settings/Users';
 import Templates from '@/pages/templates/Templates';
 
@@ -53,6 +54,9 @@ export default function Root() {
                         </Route>
                         <Route element={<RequirePermission permission="settings.view" />}>
                             <Route path="/settings" element={<AccountSettings />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="membership.view" />}>
+                            <Route path="/settings/membership" element={<MembershipPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="whatsapp_account.view" />}>
                             <Route path="/settings/whatsapp" element={<ChannelAccounts />} />
