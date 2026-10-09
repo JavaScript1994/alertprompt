@@ -55,8 +55,8 @@ const PLATFORM_NAV: NavSection[] = [
     {
         heading: 'Clientes',
         items: [
-            { to: '/admin/clients/companies', label: 'Empresas', icon: Building2, permission: 'admin.clients.view', comingSoon: true },
-            { to: '/admin/clients/individuals', label: 'Naturales', icon: UserIcon, permission: 'admin.clients.view', comingSoon: true },
+            { to: '/admin/clients/companies', label: 'Empresas', icon: Building2, permission: 'admin.clients.view' },
+            { to: '/admin/clients/individuals', label: 'Naturales', icon: UserIcon, permission: 'admin.clients.view' },
         ],
     },
     {
@@ -107,7 +107,8 @@ const CLIENT_NAV: NavSection[] = [
 export function navigationFor(user: User | null | undefined): NavSection[] {
     if (!user) return [];
 
-    const sections = user.tenant.is_platform ? PLATFORM_NAV : CLIENT_NAV;
+    // En modo soporte se ve el panel del cliente, no el de la plataforma.
+    const sections = user.tenant.is_platform && !user.impersonating ? PLATFORM_NAV : CLIENT_NAV;
 
     return sections
         .map((section) => ({ ...section, items: section.items.filter((item) => userCan(user, item.permission)) }))
@@ -119,10 +120,13 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
     return item.to === '/' ? pathname === '/' : pathname === item.to || pathname.startsWith(`${item.to}/`);
 }
 
+/** Páginas de detalle que no son un item del menú. */
+const DETAIL_LABELS: [prefix: string, label: string][] = [['/admin/clients/', 'Clientes']];
+
 export function routeLabel(pathname: string, sections: NavSection[]): string {
     for (const section of sections) {
         const item = section.items.find((i) => isNavItemActive(i, pathname));
         if (item) return item.label;
     }
-    return 'Panel';
+    return DETAIL_LABELS.find(([prefix]) => pathname.startsWith(prefix))?.[1] ?? 'Panel';
 }

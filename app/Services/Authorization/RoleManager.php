@@ -6,6 +6,7 @@ namespace App\Services\Authorization;
 
 use App\Enums\RoleScope;
 use App\Models\Role;
+use App\Services\AuditLogger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -18,6 +19,8 @@ use Illuminate\Validation\ValidationException;
 class RoleManager
 {
     private const GUARD = 'web';
+
+    public function __construct(private readonly AuditLogger $audit) {}
 
     /** @param  list<string>  $permissions */
     public function create(string $label, ?string $description, RoleScope $scope, array $permissions): Role
@@ -34,6 +37,7 @@ class RoleManager
             ]);
 
             $role->syncPermissions($permissions);
+            $this->audit->record('role.created', subject: $role, metadata: ['permissions' => $permissions]);
 
             return $role;
         });
@@ -46,8 +50,14 @@ class RoleManager
 
         return DB::transaction(function () use ($role, $label, $description, $permissions) {
             // `name` no cambia: es la clave que usa el código y los pivotes.
+            $before = $role->permissions->pluck('name')->all();
             $role->update(['label' => $label, 'description' => $description]);
             $role->syncPermissions($permissions);
+
+            $this->audit->record('role.updated', subject: $role, metadata: [
+                'added' => array_values(array_diff($permissions, $before)),
+                'removed' => array_values(array_diff($before, $permissions)),
+            ]);
 
             return $role;
         });
@@ -71,6 +81,7 @@ class RoleManager
             ]);
         }
 
+        $this->audit->record('role.deleted', metadata: ['name' => $role->name, 'label' => $role->label]);
         $role->delete();
     }
 

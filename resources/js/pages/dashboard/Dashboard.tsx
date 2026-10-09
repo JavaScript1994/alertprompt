@@ -69,7 +69,7 @@ export default function Dashboard() {
                 </Avatar>
                 <div className="min-w-0">
                     <h1 className="text-lg">¡Hola de nuevo, {user?.name?.split(' ')[0] ?? ''}!</h1>
-                    <p className="text-muted-foreground">Así está {user?.tenant.name ?? 'tu cuenta'} hoy.</p>
+                    <p className="text-muted-foreground">Así está {(user?.impersonating ?? user?.tenant)?.name ?? 'tu cuenta'} hoy.</p>
                 </div>
             </div>
 

@@ -7,11 +7,6 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 
-function platformOwner(): User
-{
-    return User::factory()->for(Tenant::factory()->platform())->create();
-}
-
 it('lists the system roles with users and permissions counts', function () {
     $owner = platformOwner();
     User::factory()->count(2)->withRole('client-viewer')->create();
