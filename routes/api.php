@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\BulkImportController;
 use App\Http\Controllers\Api\Admin\ClientChannelAccountController;
 use App\Http\Controllers\Api\Admin\ClientController;
 use App\Http\Controllers\Api\Admin\ImpersonationController;
+use App\Http\Controllers\Api\Admin\InvoiceController;
 use App\Http\Controllers\Api\Admin\MembershipController as AdminMembershipController;
 use App\Http\Controllers\Api\Admin\ModuleController;
 use App\Http\Controllers\Api\Admin\PermissionTreeController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Api\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BillingController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\ChannelAccountController;
 use App\Http\Controllers\Api\ConsentController;
@@ -88,6 +90,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/channel-accounts', [ChannelAccountController::class, 'index'])->middleware('permission:whatsapp_account.view');
     Route::post('/channel-accounts/request', [ChannelAccountController::class, 'request'])->middleware('permission:whatsapp_account.manage');
 
+    Route::prefix('billing')->group(function () {
+        Route::get('/summary', [BillingController::class, 'summary'])->middleware('permission:billing.view');
+        Route::get('/invoices', [BillingController::class, 'invoices'])->middleware('permission:billing.view');
+        Route::get('/invoices/{invoice}', [BillingController::class, 'invoice'])->middleware('permission:billing.view');
+        Route::get('/payments', [BillingController::class, 'payments'])->middleware('permission:billing.view');
+        Route::get('/payment-methods', [BillingController::class, 'paymentMethods'])->middleware('permission:payment_methods.view');
+        Route::post('/payment-methods', [BillingController::class, 'addPaymentMethod'])->middleware('permission:payment_methods.manage');
+        Route::delete('/payment-methods/{paymentMethod}', [BillingController::class, 'removePaymentMethod'])->middleware('permission:payment_methods.manage');
+    });
+
     Route::get('/membership', [MembershipController::class, 'show'])->middleware('permission:membership.view');
 
     Route::get('/settings/account', [TenantSettingsController::class, 'show'])->middleware('permission:settings.view');
@@ -127,6 +139,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/clients/{client}/memberships', [AdminMembershipController::class, 'index'])->middleware('permission:admin.memberships.view');
         Route::post('/clients/{client}/memberships', [AdminMembershipController::class, 'store'])->middleware('permission:admin.memberships.manage');
         Route::post('/clients/{client}/memberships/{membership}/cancel', [AdminMembershipController::class, 'cancel'])->whereNumber('membership')->middleware('permission:admin.memberships.manage');
+
+        Route::get('/invoices', [InvoiceController::class, 'index'])->middleware('permission:admin.billing.view');
+        Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->whereNumber('invoice')->middleware('permission:admin.billing.view');
+        Route::post('/clients/{client}/invoices', [InvoiceController::class, 'store'])->middleware('permission:admin.billing.manage');
+        Route::post('/invoices/{invoice}/payments', [InvoiceController::class, 'recordPayment'])->whereNumber('invoice')->middleware('permission:admin.billing.manage');
+        Route::post('/invoices/{invoice}/void', [InvoiceController::class, 'void'])->whereNumber('invoice')->middleware('permission:admin.billing.manage');
 
         // Supervisión (solo lectura): los mismos listados del panel de cliente
         // con los datos de {client}.

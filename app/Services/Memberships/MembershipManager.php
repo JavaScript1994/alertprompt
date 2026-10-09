@@ -13,6 +13,7 @@ use App\Models\Scopes\TenantScope;
 use App\Models\Tenant;
 use App\Services\Alerts;
 use App\Services\AuditLogger;
+use App\Services\Billing\InvoiceManager;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -224,6 +225,9 @@ class MembershipManager
 
             $this->audit->record('membership.activated', $membership->tenant_id, $membership, ['plan' => $membership->plan->value]);
         });
+
+        // Primer comprobante del período, sin esperar a la tarea diaria.
+        app(InvoiceManager::class)->issueForMembershipPeriod($membership->fresh(), CarbonImmutable::today());
     }
 
     /** @param  array<string, mixed>  $quotas @return array<string, int|null> */

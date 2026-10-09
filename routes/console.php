@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('campaigns:dispatch-scheduled')->everyMinute();
 Schedule::command('memberships:refresh')->dailyAt('00:10')->timezone('America/Lima');
+Schedule::command('billing:daily')->dailyAt('00:30')->timezone('America/Lima');
