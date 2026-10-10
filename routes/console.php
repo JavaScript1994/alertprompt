@@ -9,5 +9,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('campaigns:dispatch-scheduled')->everyMinute();
-Schedule::command('memberships:refresh')->dailyAt('00:10')->timezone('America/Lima');
+// Cada hora y no solo de madrugada: si el scheduler estuvo caído, la siguiente
+// corrida activa lo pendiente. Es idempotente.
+Schedule::command('memberships:refresh')->hourlyAt(10)->withoutOverlapping();
 Schedule::command('billing:daily')->dailyAt('00:30')->timezone('America/Lima');

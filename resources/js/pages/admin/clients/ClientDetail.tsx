@@ -32,7 +32,7 @@ function Summary({ client }: { client: Client }) {
         ['Correo de contacto', client.contact_email],
         ['Teléfono', client.contact_phone],
         ['Dirección', client.address],
-        ['Plan', client.plan],
+        ['Plan', client.plan_name],
         ['Cliente desde', formatDateTime(client.created_at)],
     ];
 

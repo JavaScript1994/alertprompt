@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\DocumentType;
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\TenantType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,7 +23,6 @@ class Tenant extends Model
     protected $casts = [
         'type' => TenantType::class,
         'document_type' => DocumentType::class,
-        'plan' => TenantPlan::class,
         'status' => TenantStatus::class,
         'is_platform' => 'boolean',
         'settings' => 'array',

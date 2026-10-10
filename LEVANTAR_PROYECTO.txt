@@ -97,12 +97,24 @@ Después de cambiar el .env:
 
 7. CALIDAD (antes de cada commit)
 ---------------------------------
-    docker compose exec app ./vendor/bin/pint
-    docker compose exec app ./vendor/bin/pest
+Una vez (y cada vez que cambie composer.lock), en el host:
+    composer install
+
+    ./vendor/bin/pint                # formato PHP (corre en el host)
+
+Tests: dentro del contenedor, como www-data (UID 82), usando el vendor del
+host (el de la imagen no trae Pest):
+    docker compose run --rm --no-deps -u 82:82 -v "$PWD/vendor:/var/www/html/vendor" app ./vendor/bin/pest
+
+    # Por qué así: storage/ y bootstrap/cache pertenecen a www-data, así que
+    # desde tu usuario fallan con "Permission denied". Y NO usar
+    # "docker compose exec app ./vendor/bin/pest": corre como root y deja
+    # carpetas de root en storage/ que después rompen los tests.
 
     # Los tests usan SQLite en memoria. Para correrlos contra Postgres
     # (atrapa diferencias de SQL), una vez: CREATE DATABASE comms_test; luego:
-    docker compose exec -e DB_CONNECTION=pgsql -e DB_DATABASE=comms_test -e DB_HOST=postgres app ./vendor/bin/pest
+    docker compose run --rm -u 82:82 -v "$PWD/vendor:/var/www/html/vendor" -e DB_CONNECTION=pgsql -e DB_DATABASE=comms_test -e DB_HOST=postgres app ./vendor/bin/pest
+
     npm run typecheck
     npm run lint                     # oxlint (config en .oxlintrc.json)
 
@@ -110,7 +122,8 @@ Después de cambiar el .env:
 8. TAREAS PROGRAMADAS (contenedor scheduler)
 ---------------------------------------------
     campaigns:dispatch-scheduled   cada minuto
-    memberships:refresh            diario 00:10 (Lima): activa/vence membresías
+    memberships:refresh            cada hora (minuto 10): activa/vence membresías;
+                                   si el scheduler estuvo caído, recupera lo pendiente
     billing:daily                  diario 00:30 (Lima): emite comprobantes del período
                                    y alerta los vencidos
 
@@ -121,7 +134,23 @@ Variables nuevas (ver .env.example):
     BILLING_GATEWAY              manual | culqi (pendiente de implementar)
 
 
-9. APAGAR
+9. PROBLEMAS FRECUENTES
+-----------------------
+"permission denied" al hacer docker compose up --build
+    Una carpeta de storage/ creada por el contenedor no es legible por tu
+    usuario. storage/app ya está en .dockerignore; si pasa con otra ruta,
+    agrégala ahí. No hagas chown de storage/ a tu usuario: Laravel dejaría
+    de poder escribir.
+
+Tests con "Permission denied" o "Unable to create a directory"
+    Correrlos como indica la sección 7. Si quedó algo de root:
+    docker compose exec -u 0 app chown -R 82:82 storage bootstrap/cache
+
+"Tu membresía empieza pronto" en un cliente que debería estar activo
+    docker compose exec app php artisan memberships:refresh
+
+
+10. APAGAR
 ---------
     docker compose down          # apaga, conserva datos
     docker compose down -v       # apaga y BORRA volúmenes (base de datos incluida)

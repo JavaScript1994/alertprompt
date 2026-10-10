@@ -3,6 +3,7 @@ import { XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { planPrice } from '@/components/shared/PlanCards';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -10,6 +11,7 @@ import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateClient, useUpdateClient } from '@/hooks/useClients';
+import { usePlans } from '@/hooks/useMemberships';
 import { applyServerErrors } from '@/lib/forms';
 import type { Client, TenantType } from '@/types';
 import { CLIENT_TYPE_LABELS, DOCUMENT_LABELS, DOCUMENTS_FOR } from './clientLabels';
@@ -28,12 +30,13 @@ const schema = z.object({
     address: optional,
     admin_name: z.string().trim(),
     admin_email: z.string().trim(),
+    plan: z.string(),
 });
 
 type FormInput = z.input<typeof schema>;
 type FormOutput = z.output<typeof schema>;
 
-const FIELDS = ['name', 'document_type', 'document_number', 'contact_email', 'contact_phone', 'address', 'admin_name', 'admin_email'] as const;
+const FIELDS = ['name', 'document_type', 'document_number', 'contact_email', 'contact_phone', 'address', 'admin_name', 'admin_email', 'plan'] as const;
 
 /** Alta (con administrador inicial) o edición del perfil de un cliente. */
 export default function ClientFormDialog({
@@ -55,6 +58,8 @@ export default function ClientFormDialog({
     const mutation = isEditing ? updateClient : createClient;
     const [generalError, setGeneralError] = useState<string | null>(null);
     const labels = CLIENT_TYPE_LABELS[type];
+    const { data: plans } = usePlans();
+    const activePlans = (plans ?? []).filter((plan) => plan.is_active);
 
     const {
         register,
@@ -85,8 +90,11 @@ export default function ClientFormDialog({
             address: client?.address ?? '',
             admin_name: '',
             admin_email: '',
+            plan: activePlans[0]?.key ?? '',
         });
-    }, [open, client, type, reset]);
+        // activePlans cambia de identidad en cada render; basta con la primera clave.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, client, type, reset, activePlans[0]?.key]);
 
     const close = () => {
         setGeneralError(null);
@@ -109,7 +117,7 @@ export default function ClientFormDialog({
             updateClient.mutate(profile, { onSuccess: close, onError });
         } else {
             createClient.mutate(
-                { ...profile, type, admin_name: values.admin_name, admin_email: values.admin_email },
+                { ...profile, type, admin_name: values.admin_name, admin_email: values.admin_email, plan: values.plan },
                 {
                     onSuccess: (created) => {
                         close();
@@ -193,6 +201,30 @@ export default function ClientFormDialog({
                     <Field label="Dirección" htmlFor="client-address" error={errors.address?.message}>
                         <Input id="client-address" {...register('address')} />
                     </Field>
+
+                    {!isEditing && (
+                        <Field label="Plan" htmlFor="client-plan" hint="Nace con la membresía de este plan (precio y cuotas del catálogo)." error={errors.plan?.message}>
+                            <Controller
+                                control={control}
+                                name="plan"
+                                render={({ field }) => (
+                                    <Select value={field.value} onValueChange={(value) => value && field.onChange(value)}>
+                                        <SelectTrigger id="client-plan" className="w-full">
+                                            <SelectValue placeholder="Elige el plan" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {activePlans.map((plan) => (
+                                                <SelectItem key={plan.key} value={plan.key}>
+                                                    {plan.name} · {planPrice(plan)}
+                                                    {plan.monthly_price !== null && ' / mes'}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                        </Field>
+                    )}
 
                     {!isEditing && (
                         <fieldset className="space-y-4 rounded-lg border p-4">

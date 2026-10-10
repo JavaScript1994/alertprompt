@@ -15,7 +15,7 @@ it('creates the demo company once, with a usable admin and no emails', function 
     $this->seed(DemoClientSeeder::class);
 
     $tenant = Tenant::query()->where('document_number', DemoClientSeeder::RUC)->sole();
-    expect($tenant->plan->value)->toBe('growth')
+    expect($tenant->plan)->toBe('intermedio')
         ->and(Contact::query()->forTenant($tenant->id)->count())->toBe(12);
 
     Notification::assertNothingSent();

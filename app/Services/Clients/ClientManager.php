@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Clients;
 
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\TenantType;
+use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\SetPasswordLink;
 use App\Services\AuditLogger;
+use App\Services\Memberships\MembershipManager;
 use App\Services\Modules\TenantModules;
 use App\Support\TenantContext;
 use Illuminate\Support\Facades\DB;
@@ -45,13 +46,16 @@ class ClientManager
                 'contact_email' => $data['contact_email'] ?? null,
                 'contact_phone' => $data['contact_phone'] ?? null,
                 'address' => $data['address'] ?? null,
-                'plan' => TenantPlan::from($data['plan'] ?? TenantPlan::Starter->value),
+                'plan' => $data['plan'] ?? Plan::defaultKey(),
                 'status' => TenantStatus::Active,
                 'settings' => ['timezone' => 'America/Lima'],
             ]);
 
             $admin = $this->createUser($tenant, $data['admin_name'], $data['admin_email'], 'client-admin');
-            $this->modules->sync($tenant, $this->modules->defaultsFor($tenant->plan));
+            $this->modules->sync($tenant, $this->modules->defaultsFor((string) $tenant->plan));
+
+            // Un cliente siempre tiene membresía: nace con la de su plan.
+            app(MembershipManager::class)->startFromCatalog($tenant, (string) $tenant->plan);
 
             $this->audit->record('client.created', $tenant->id, $tenant, [
                 'admin_email' => $admin->email,

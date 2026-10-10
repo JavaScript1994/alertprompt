@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Enums\TenantPlan;
 use App\Jobs\DispatchCampaign;
 use App\Models\AuditLog;
 use App\Models\Campaign;
@@ -28,10 +27,10 @@ it('gives a new client the modules of its plan', function () {
 
     $response = $this->actingAs(platformOwner())->postJson('/api/admin/clients', [
         'type' => 'company', 'name' => 'Starter SAC', 'document_type' => 'ruc', 'document_number' => '20131312955',
-        'plan' => 'starter', 'admin_name' => 'Ana', 'admin_email' => 'ana@starter.pe',
+        'plan' => 'basico', 'admin_name' => 'Ana', 'admin_email' => 'ana@basico.pe',
     ])->assertCreated();
 
-    expect($response->json('data.modules'))->toEqualCanonicalizing(config('modules.plans.starter'));
+    expect($response->json('data.modules'))->toEqualCanonicalizing(['sms', 'email', 'csv_import']);
 });
 
 it('exposes the active modules on /api/user', function () {
@@ -116,7 +115,7 @@ it('summarises module usage for the catalog', function () {
 
     expect($data['sms']['clients_count'])->toBe(2)
         ->and($data['email']['clients_count'])->toBe(1)
-        ->and($data['whatsapp']['included_in_plans'])->not->toContain(TenantPlan::Starter->value);
+        ->and($data['whatsapp']['included_in_plans'])->not->toContain('Básico');
 });
 
 it('keeps scheduled campaigns waiting when the client lost the channel module', function () {

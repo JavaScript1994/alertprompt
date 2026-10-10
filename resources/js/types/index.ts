@@ -12,6 +12,7 @@ export interface Tenant {
     contact_phone: string | null;
     address: string | null;
     plan: string;
+    plan_name: string;
     status: TenantStatus;
     /** true solo para AlertPrompt: su usuario ve el panel de administración. */
     is_platform: boolean;
@@ -326,6 +327,7 @@ export type MembershipStatus = 'scheduled' | 'active' | 'expired' | 'cancelled';
 export interface Membership {
     id: number;
     plan: string;
+    plan_name: string;
     status: MembershipStatus;
     billing_cycle: 'monthly' | 'yearly';
     price: string;
@@ -343,12 +345,54 @@ export interface Membership {
 
 export type ChannelUsage = Record<TemplateChannel, { used: number; quota: number | null }>;
 
+export interface Plan {
+    id: number;
+    key: string;
+    name: string;
+    description: string | null;
+    /** Mensual sin IGV; null = a medida. */
+    monthly_price: string | null;
+    quotas: Record<TemplateChannel, number | null>;
+    /** Módulos con los que nace un cliente del plan. */
+    modules: ModuleKey[];
+    is_public: boolean;
+    /** Inactivo: no se ofrece en altas nuevas; quien lo tiene lo conserva. */
+    is_active: boolean;
+    /** Solo en /api/admin/plans. */
+    clients_count?: number;
+    sort: number;
+}
+
 export interface MembershipOverview {
     current: Membership | null;
     next: Membership | null;
     usage: ChannelUsage;
     quotas_enforced: boolean;
     history: Membership[];
+    plans: Plan[];
+    current_plan: string | null;
+    pending_request: PlanChangeRequest | null;
+    last_decision: PlanChangeRequest | null;
+}
+
+export type PlanChangeStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+export interface PlanChangeRequest {
+    id: number;
+    current_plan: string | null;
+    current_plan_name: string | null;
+    requested_plan: string;
+    requested_plan_name: string;
+    status: PlanChangeStatus;
+    comment: string | null;
+    requested_by: string | null;
+    decided_by: string | null;
+    decided_at: string | null;
+    decision_note: string | null;
+    effective_from: string | null;
+    /** Solo en /api/admin/*. */
+    tenant?: { id: number; name: string | null };
+    created_at: string;
 }
 
 export type InvoiceStatus = 'issued' | 'paid' | 'void';

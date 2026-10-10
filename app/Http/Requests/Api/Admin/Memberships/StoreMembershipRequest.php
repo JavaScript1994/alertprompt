@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\Admin\Memberships;
 
 use App\Enums\BillingCycle;
-use App\Enums\TenantPlan;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 class StoreMembershipRequest extends FormRequest
@@ -19,7 +19,7 @@ class StoreMembershipRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'plan' => ['required', new Enum(TenantPlan::class)],
+            'plan' => ['required', Rule::exists('plans', 'key')->where(fn ($query) => $query->where('is_active', true))],
             'billing_cycle' => ['required', new Enum(BillingCycle::class)],
             'price' => ['required', 'numeric', 'min:0', 'max:9999999'],
             'starts_at' => ['required', 'date_format:Y-m-d'],
@@ -31,6 +31,11 @@ class StoreMembershipRequest extends FormRequest
             'contract_reference' => ['nullable', 'string', 'max:80'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
+    }
+
+    public function messages(): array
+    {
+        return ['plan.exists' => 'El plan no existe o está desactivado.'];
     }
 
     public function attributes(): array

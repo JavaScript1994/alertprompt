@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Modules;
 
 use App\Enums\Channel;
-use App\Enums\TenantPlan;
+use App\Models\Plan;
 use App\Models\Tenant;
 use App\Services\AuditLogger;
 use App\Support\TenantContext;
@@ -59,10 +59,15 @@ class TenantModules
         return $this->isEnabled($channel->value, $tenant);
     }
 
-    /** @return list<string> */
-    public function defaultsFor(TenantPlan $plan): array
+    /** Módulos con los que nace un cliente del plan $planKey. @return list<string> */
+    public function defaultsFor(string $planKey): array
     {
-        return config("modules.plans.{$plan->value}", []);
+        $modules = Plan::query()->where('key', $planKey)->value('modules');
+
+        return array_values(array_intersect(
+            is_string($modules) ? json_decode($modules, true) ?? [] : ($modules ?? []),
+            array_keys($this->catalog()),
+        ));
     }
 
     /**

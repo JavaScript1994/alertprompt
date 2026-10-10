@@ -144,6 +144,7 @@ return [
                 ]],
                 'membership' => ['label' => 'Membresía', 'actions' => [
                     'view' => 'Ver contrato',
+                    'request_change' => 'Solicitar cambio de plan',
                 ]],
                 'whatsapp_account' => ['label' => 'Cuenta de WhatsApp', 'actions' => [
                     'view' => 'Ver',

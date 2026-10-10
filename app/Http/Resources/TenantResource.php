@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\Plan;
 use App\Models\Tenant;
 use App\Services\Modules\TenantModules;
 use Illuminate\Http\Request;
@@ -26,6 +27,7 @@ class TenantResource extends JsonResource
             'contact_phone' => $this->contact_phone,
             'address' => $this->address,
             'plan' => $this->plan,
+            'plan_name' => Plan::query()->where('key', $this->plan)->value('name') ?? $this->plan,
             'status' => $this->status,
             'is_platform' => $this->is_platform,
             'timezone' => $this->settings['timezone'] ?? 'America/Lima',

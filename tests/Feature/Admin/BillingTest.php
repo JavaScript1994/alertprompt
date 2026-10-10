@@ -85,7 +85,7 @@ it('voids only unpaid invoices', function () {
 it('invoices a membership period once, including on activation', function () {
     $client = Tenant::factory()->create();
     app(MembershipManager::class)->create($client, [
-        'plan' => 'growth', 'billing_cycle' => 'monthly', 'price' => '450',
+        'plan' => 'intermedio', 'billing_cycle' => 'monthly', 'price' => '450',
         'starts_at' => now()->toDateString(), 'ends_at' => now()->addMonths(3)->toDateString(),
     ]);
 

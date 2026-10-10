@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\Membership;
+use App\Models\Plan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,6 +21,7 @@ class MembershipResource extends JsonResource
         return [
             'id' => $this->id,
             'plan' => $this->plan,
+            'plan_name' => Plan::query()->where('key', $this->plan)->value('name') ?? $this->plan,
             'status' => $this->status,
             'billing_cycle' => $this->billing_cycle,
             'price' => (string) $this->price,

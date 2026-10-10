@@ -6,12 +6,12 @@ namespace Database\Seeders;
 
 use App\Enums\CampaignStatus;
 use App\Enums\TemplateStatus;
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\TenantType;
 use App\Models\Campaign;
 use App\Models\Consent;
 use App\Models\Contact;
+use App\Models\Plan;
 use App\Models\Template;
 use App\Models\Tenant;
 use App\Services\CampaignAudienceService;
@@ -64,7 +64,7 @@ class DemoClientSeeder extends Seeder
             'contact_email' => 'contacto@empresaprueba.pe',
             'contact_phone' => '+51 1 4000000',
             'address' => 'Av. Javier Prado Este 1000, San Isidro, Lima',
-            'plan' => TenantPlan::Starter,
+            'plan' => 'basico',
             'status' => TenantStatus::Active,
             'settings' => ['timezone' => 'America/Lima'],
         ]);
@@ -73,7 +73,7 @@ class DemoClientSeeder extends Seeder
         $admin = app(ClientManager::class)->createUser($tenant, 'Admin Empresa de Prueba', 'admin@empresaprueba.pe', 'client-admin');
         $admin->forceFill(['password' => Hash::make('password'), 'email_verified_at' => now()])->save();
 
-        app(TenantModules::class)->sync($tenant, app(TenantModules::class)->defaultsFor(TenantPlan::Growth));
+        app(TenantModules::class)->sync($tenant, app(TenantModules::class)->defaultsFor('intermedio'));
 
         TenantContext::set($tenant->id);
 
@@ -128,14 +128,16 @@ class DemoClientSeeder extends Seeder
         ]);
         app(CampaignAudienceService::class)->enroll($campaign, $contacts);
 
-        // Membresía vigente: activa el plan Growth y emite su primera proforma.
+        // Membresía vigente con las condiciones del catálogo (plan Intermedio):
+        // activa el plan y emite su primera proforma.
+        $intermedio = Plan::query()->where('key', 'intermedio')->firstOrFail();
         app(MembershipManager::class)->create($tenant, [
-            'plan' => 'growth',
+            'plan' => 'intermedio',
             'billing_cycle' => 'monthly',
-            'price' => '450',
+            'price' => (string) $intermedio->monthly_price,
             'starts_at' => now()->toDateString(),
             'ends_at' => now()->addYear()->subDay()->toDateString(),
-            'quotas' => ['whatsapp' => 1000, 'sms' => 500, 'email' => null],
+            'quotas' => $intermedio->quotas,
             'contract_reference' => 'CTR-PRUEBA-001',
         ]);
 
