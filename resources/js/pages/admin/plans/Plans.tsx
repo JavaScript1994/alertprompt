@@ -170,7 +170,7 @@ export default function Plans() {
                 <PlanCards
                     plans={plans}
                     footer={(plan) => (
-                        <div className="mt-auto space-y-3">
+                        <div className="mt-auto space-y-3 flex flex-col items-center">
                             <p className="text-xs text-muted-foreground">
                                 {plan.clients_count === 1 ? '1 cliente con este plan' : `${plan.clients_count ?? 0} clientes con este plan`}
                             </p>
@@ -181,13 +181,13 @@ export default function Plans() {
                                         Editar
                                     </Button>
                                     {plan.is_active ? (
-                                        <Button variant="ghost" size="sm" className="text-error hover:text-error" onClick={() => setDeactivating(plan)}>
+                                        <Button variant="outline" size="sm" className="text-error hover:text-error" onClick={() => setDeactivating(plan)}>
                                             <PowerOff />
                                             Desactivar
                                         </Button>
                                     ) : (
                                         <Button
-                                            variant="ghost"
+                                            variant="outline"
                                             size="sm"
                                             loading={setActive.isPending && setActive.variables?.id === plan.id}
                                             onClick={() => setActive.mutate({ id: plan.id, active: true })}

@@ -206,7 +206,7 @@ export default function MembershipPage() {
                             if (!canRequest || !plan.is_active) return null;
 
                             return (
-                                <Button variant="outline" className="mt-auto" disabled={pending !== null} onClick={() => setRequesting(plan)}>
+                                <Button variant="lightprimary" className="mt-auto" disabled={pending !== null} onClick={() => setRequesting(plan)}>
                                     Solicitar este plan
                                 </Button>
                             );
