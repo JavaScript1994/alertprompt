@@ -16,19 +16,21 @@ export default function MfaSetupPage() {
     return (
         <div>
             <div className="text-center">
-                <h2 className="text-[1.75rem] font-bold tracking-tight text-brand-700 dark:text-white">Protege tu cuenta</h2>
-                <p className="mt-3 text-muted-foreground">
+                <h2 className="text-[1.75rem] font-bold tracking-tight text-brand-700 shorter:text-2xl dark:text-white">Protege tu cuenta</h2>
+                <p className="mt-3 text-muted-foreground shorter:mt-1.5">
                     {user.mfa.required_now
                         ? 'Tu usuario necesita verificación en dos pasos para usar AlertPrompt.'
                         : 'Activa la verificación en dos pasos con tu app de autenticación.'}
                 </p>
             </div>
-            <div className="mt-8">
+            <div className="mt-8 short:mt-5">
                 <MfaEnrollment user={user} onFinished={() => navigate('/', { replace: true })} />
             </div>
-            <Button variant="ghost" className="mt-4 w-full" loading={logout.isPending} onClick={() => logout.mutate()}>
-                Cerrar sesión
-            </Button>
+            <div className="mt-6 flex justify-center border-t pt-4 short:mt-4 short:pt-2">
+                <Button variant="ghost" size="sm" loading={logout.isPending} onClick={() => logout.mutate()}>
+                    Cerrar sesión
+                </Button>
+            </div>
         </div>
     );
 }

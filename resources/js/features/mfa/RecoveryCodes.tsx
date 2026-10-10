@@ -34,7 +34,7 @@ export default function RecoveryCodes({ codes, email }: { codes: string[]; email
 
     return (
         <div className="space-y-3">
-            <ul className="grid grid-cols-2 gap-2 rounded-lg border bg-muted/40 p-4 font-mono text-sm tracking-wider text-foreground">
+            <ul className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-lg border bg-muted/40 p-4 font-mono text-[0.8rem] tracking-wide whitespace-nowrap text-foreground">
                 {codes.map((code) => (
                     <li key={code}>{code}</li>
                 ))}
