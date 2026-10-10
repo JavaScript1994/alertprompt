@@ -1,9 +1,11 @@
-import { LogOut } from 'lucide-react';
+import { LogOut, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
@@ -42,6 +44,16 @@ export default function ProfileMenu() {
                         )}
                     </div>
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator className="mx-0 my-0" />
+                <div className="p-2">
+                    <DropdownMenuItem asChild>
+                        <Link to="/settings/security">
+                            <ShieldCheck />
+                            Seguridad
+                            {user && !user.mfa.enabled && <span className="ml-auto size-2 rounded-full bg-warning" aria-label="Pendiente" />}
+                        </Link>
+                    </DropdownMenuItem>
+                </div>
                 <DropdownMenuSeparator className="mx-0 my-0" />
                 <div className="p-4">
                     <Button

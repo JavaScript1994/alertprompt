@@ -8,7 +8,10 @@ import Pagination from '@/components/shared/Pagination';
 import { CampaignStatusBadge, TemplateStatusBadge } from '@/components/shared/StatusBadge';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useResetClientUserMfa } from '@/features/mfa/api';
+import { MfaBadge, ResetMfaAction } from '@/features/mfa/UserMfaCells';
 import { useClientActivity, useClientUsers, useSupervision } from '@/hooks/useClients';
+import { useCan } from '@/hooks/usePermissions';
 import { formatDateTime } from '@/lib/format';
 import type { AuditLogEntry, Campaign, Contact, Template, TenantUser } from '@/types';
 import { AUDIT_ACTION_LABELS } from './clientLabels';
@@ -26,6 +29,8 @@ const userColumn = createColumnHelper<TenantUser>();
 
 export function ClientUsersTab({ clientId }: { clientId: number }) {
     const { data, isLoading } = useClientUsers(clientId);
+    const resetMfa = useResetClientUserMfa(clientId);
+    const canReset = useCan()('admin.clients.update');
     const columns = useMemo(
         () => [
             userColumn.accessor('name', {
@@ -52,8 +57,19 @@ export function ClientUsersTab({ clientId }: { clientId: number }) {
                         <Badge variant="warning">Invitación pendiente</Badge>
                     ),
             }),
+            userColumn.display({ id: 'mfa', header: 'Dos pasos', cell: (info) => <MfaBadge user={info.row.original} /> }),
+            ...(canReset
+                ? [
+                      userColumn.display({
+                          id: 'actions',
+                          header: () => <span className="sr-only">Acciones</span>,
+                          meta: { className: 'w-[1%] whitespace-nowrap text-right' },
+                          cell: (info) => <ResetMfaAction user={info.row.original} reset={resetMfa} />,
+                      }),
+                  ]
+                : []),
         ],
-        [],
+        [canReset, resetMfa],
     );
 
     if (isLoading) return <Skeleton className="h-40 w-full rounded-xl" />;

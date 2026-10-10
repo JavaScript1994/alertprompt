@@ -149,6 +149,7 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
 const DETAIL_LABELS: [prefix: string, label: string][] = [
     ['/admin/clients/', 'Clientes'],
     ['/billing/invoices/', 'Comprobante'],
+    ['/settings/security', 'Seguridad'],
 ];
 
 export function routeLabel(pathname: string, sections: NavSection[]): string {

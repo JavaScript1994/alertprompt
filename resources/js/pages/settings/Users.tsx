@@ -12,6 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthUser } from '@/hooks/useAuth';
 import { useCan } from '@/hooks/usePermissions';
+import { useResetUserMfa } from '@/features/mfa/api';
+import { MfaBadge, ResetMfaAction } from '@/features/mfa/UserMfaCells';
 import { useResendInvitation, useSetUserActive, useTenantUsers } from '@/hooks/useUsers';
 import { apiErrorMessage } from '@/lib/format';
 import type { TenantUser } from '@/types';
@@ -30,6 +32,7 @@ export default function Users() {
     const { data: me } = useAuthUser();
     const setActive = useSetUserActive();
     const resend = useResendInvitation();
+    const resetMfa = useResetUserMfa();
     const can = useCan();
     const canManage = can('users.manage');
     const [editing, setEditing] = useState<TenantUser | undefined>();
@@ -56,6 +59,7 @@ export default function Users() {
                 cell: (info) => info.getValue().map((role) => role.label).join(', ') || '—',
             }),
             columnHelper.display({ id: 'status', header: 'Estado', cell: (info) => <UserStatus user={info.row.original} /> }),
+            columnHelper.display({ id: 'mfa', header: 'Dos pasos', cell: (info) => <MfaBadge user={info.row.original} /> }),
             columnHelper.display({
                 id: 'actions',
                 header: () => <span className="sr-only">Acciones</span>,
@@ -93,6 +97,7 @@ export default function Users() {
                                 </TooltipTrigger>
                                 <TooltipContent>Editar nombre y rol</TooltipContent>
                             </Tooltip>
+                            {!isMe && <ResetMfaAction user={user} reset={resetMfa} />}
                             {!isMe && (
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -113,7 +118,7 @@ export default function Users() {
                 },
             }),
         ],
-        [canManage, me?.id, resend],
+        [canManage, me?.id, resend, resetMfa],
     );
 
     const reactivating = toggling?.deactivated_at !== null && toggling !== null;

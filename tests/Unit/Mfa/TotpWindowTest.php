@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Models\User;
 use App\Services\Mfa\MfaService;
+use Illuminate\Support\Facades\Cache;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
 
@@ -36,3 +38,10 @@ it('does not accept the same period twice (replay)', function () {
 it('rejects anything that is not six digits', function (string $code) {
     expect($this->mfa->verifyCode($this->secret, $code, atStep: $this->now))->toBeFalse();
 })->with(['', '12345', '1234567', 'abcdef', '12 345']);
+
+it('reads the last used period from a cache that returns strings (Redis)', function () {
+    $user = (new User)->forceFill(['id' => 999, 'two_factor_secret' => $this->secret]);
+    Cache::put("mfa:totp-last-step:{$user->id}", (string) ($this->now - 5));
+
+    expect($this->mfa->verifyUserCode($user, $this->google2fa->oathTotp($this->secret, $this->now)))->toBeTrue();
+});

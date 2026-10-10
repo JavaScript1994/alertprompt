@@ -133,7 +133,9 @@ class MfaService
         }
 
         $key = $this->lastStepKey($user);
-        $step = $this->verifyCode($user->two_factor_secret, $code, Cache::get($key));
+        // Redis devuelve el valor guardado como string.
+        $last = Cache::get($key);
+        $step = $this->verifyCode($user->two_factor_secret, $code, $last === null ? null : (int) $last);
 
         if ($step === false) {
             return false;
