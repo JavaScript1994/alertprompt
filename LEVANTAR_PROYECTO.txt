@@ -160,6 +160,14 @@ Tests con "Permission denied" o "Unable to create a directory"
 "Tu membresía empieza pronto" en un cliente que debería estar activo
     docker compose exec app php artisan memberships:refresh
 
+Ver los correos en local sin enviarlos (códigos de respaldo, avisos, invitaciones)
+    En .env: MAIL_MAILER=log (en vez de smtp), luego:
+    docker compose exec app php artisan config:clear
+    docker compose restart app horizon
+    Los correos quedan completos en storage/logs/laravel.log:
+    docker compose exec app tail -f storage/logs/laravel.log
+    Las campañas de email no cambian: salen por EMAIL_DRIVER (SendGrid).
+
 "Class PragmaRX\Google2FA\... not found" (u otro paquete nuevo) en la app
     El vendor del contenedor está desactualizado: ver sección 7
     (composer install dentro del contenedor).
