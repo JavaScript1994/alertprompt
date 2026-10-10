@@ -9,6 +9,9 @@ use App\Models\User;
 use App\Notifications\SetPasswordLink;
 use Illuminate\Support\Facades\Notification;
 
+// Usan rutas con acciones sensibles (reauth:*).
+beforeEach(fn () => $this->reauthConfirmed = true);
+
 function roleId(string $name): int
 {
     return Role::query()->whereNull('tenant_id')->where('name', $name)->value('id');

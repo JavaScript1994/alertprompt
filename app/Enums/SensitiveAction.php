@@ -19,6 +19,10 @@ enum SensitiveAction: string
     case DisableMfa = 'disable_mfa';
     case RegenerateRecoveryCodes = 'regenerate_recovery_codes';
     case ResetUserMfa = 'reset_user_mfa';
+    /** Cambiar de dispositivo de autenticación teniendo el anterior. */
+    case ChangeAuthenticator = 'change_authenticator';
+    /** Reemplazar un correo de respaldo ya verificado. */
+    case ChangeEmailBackup = 'change_email_backup';
 
     public function label(): string
     {
@@ -29,6 +33,8 @@ enum SensitiveAction: string
             self::DisableMfa => 'Desactivar la verificación en dos pasos',
             self::RegenerateRecoveryCodes => 'Regenerar los códigos de recuperación',
             self::ResetUserMfa => 'Restablecer la verificación en dos pasos de un usuario',
+            self::ChangeAuthenticator => 'Cambiar de app de autenticación',
+            self::ChangeEmailBackup => 'Cambiar el correo de respaldo',
         };
     }
 }

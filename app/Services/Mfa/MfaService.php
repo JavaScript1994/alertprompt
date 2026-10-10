@@ -29,59 +29,90 @@ class MfaService
         private readonly Google2FA $google2fa,
         private readonly RecoveryCodeService $recoveryCodes,
         private readonly AuthEventRecorder $events,
+        private readonly SecurityNotifier $notifier,
     ) {}
 
     /**
-     * Inicia (o reinicia) el enrolamiento: secreto nuevo sin confirmar y
-     * códigos de recuperación nuevos. El secreto y los códigos en claro solo
-     * se devuelven aquí, una vez.
+     * Inicia (o reinicia) un enrolamiento: secreto nuevo PENDIENTE. Si el
+     * usuario ya tenía MFA (cambio de dispositivo), el vigente sigue
+     * funcionando hasta que confirme el nuevo. El secreto en claro solo se
+     * devuelve aquí, una vez.
      *
-     * @return array{secret: string, otpauth_url: string, qr_svg: string, recovery_codes: list<string>}
+     * @return array{secret: string, otpauth_url: string, qr_svg: string}
      */
     public function startEnrollment(User $user): array
     {
         $secret = $this->google2fa->generateSecretKey(32);
 
-        $user->forceFill([
-            'two_factor_secret' => $secret,
-            'two_factor_confirmed_at' => null,
-        ])->save();
+        $user->forceFill(['two_factor_pending_secret' => $secret])->save();
 
-        $codes = $this->recoveryCodes->generate($user);
         $url = $this->otpauthUrl($user, $secret);
 
         return [
             'secret' => $secret,
             'otpauth_url' => $url,
             'qr_svg' => $this->qrSvg($url),
-            'recovery_codes' => $codes,
         ];
     }
 
-    /** Confirma el enrolamiento con el primer código de la app. */
-    public function confirmEnrollment(User $user, string $code): bool
+    /**
+     * Confirma el enrolamiento con el primer código de la app: el secreto
+     * pendiente pasa a vigente y se generan códigos de recuperación nuevos
+     * (los anteriores, si había, dejan de servir).
+     *
+     * @return list<string>|null los códigos en claro (única vez), o null si el código no sirve
+     */
+    public function confirmEnrollment(User $user, string $code): ?array
     {
-        if ($user->two_factor_secret === null || $user->hasMfaEnabled()) {
-            return false;
-        }
+        $pending = $user->two_factor_pending_secret;
+        $step = $pending === null ? false : $this->verifyCode($pending, $code);
 
-        if (! $this->verifyUserCode($user, $code)) {
+        if ($step === false) {
             $this->events->record(AuthEventType::MfaFailed, $user, ['stage' => 'enrollment']);
 
-            return false;
+            return null;
         }
 
-        $user->forceFill(['two_factor_confirmed_at' => now()])->save();
+        $user->forceFill([
+            'two_factor_secret' => $pending,
+            'two_factor_pending_secret' => null,
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        // El código de confirmación no puede reutilizarse para entrar.
+        Cache::put($this->lastStepKey($user), $step, now()->addSeconds(120));
+
+        $codes = $this->recoveryCodes->generate($user);
         $this->events->record(AuthEventType::MfaEnrolled, $user);
 
-        return true;
+        return $codes;
     }
 
-    /** Borra todo el MFA del usuario (desactivar o reset por un administrador). */
+    /** El propio usuario desactiva su MFA (ruta con re-autenticación). */
+    public function disable(User $user): void
+    {
+        $this->clear($user);
+        $this->events->record(AuthEventType::MfaDisabled, $user);
+        $this->notifier->mfaDisabled($user);
+    }
+
+    /**
+     * Un administrador borra el MFA de otro usuario que perdió dispositivo,
+     * códigos y correo de respaldo. Tendrá que enrolar de nuevo al entrar.
+     */
+    public function resetFor(User $user, User $actor): void
+    {
+        $this->clear($user);
+        $this->events->record(AuthEventType::MfaReset, $user, ['by_user_id' => $actor->id]);
+        $this->notifier->mfaDisabled($user, $actor);
+    }
+
+    /** Borra todo el MFA del usuario. */
     public function clear(User $user): void
     {
         $user->forceFill([
             'two_factor_secret' => null,
+            'two_factor_pending_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
             'two_factor_email_backup' => null,

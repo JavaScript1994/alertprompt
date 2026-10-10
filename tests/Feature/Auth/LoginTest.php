@@ -5,9 +5,10 @@ declare(strict_types=1);
 use App\Models\Tenant;
 use App\Models\User;
 
-it('logs in a user with valid credentials and scopes the response to their tenant', function () {
+it('logs in a user without MFA with valid credentials and scopes the response to their tenant', function () {
     $tenant = Tenant::factory()->create(['name' => 'Demo Empresa SAC']);
-    $user = User::factory()->for($tenant)->create([
+    // Con MFA enrolado la contraseña no abre sesión (ver tests/Feature/Mfa).
+    $user = User::factory()->withoutMfa()->for($tenant)->create([
         'email' => 'admin@demo.pe',
         'password' => bcrypt('password'),
     ]);

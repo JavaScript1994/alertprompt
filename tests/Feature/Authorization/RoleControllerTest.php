@@ -7,6 +7,9 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 
+// Usan rutas con acciones sensibles (reauth:*).
+beforeEach(fn () => $this->reauthConfirmed = true);
+
 it('lists the system roles with users and permissions counts', function () {
     $owner = platformOwner();
     User::factory()->count(2)->withRole('client-viewer')->create();

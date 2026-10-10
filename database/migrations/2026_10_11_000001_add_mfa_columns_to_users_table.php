@@ -13,6 +13,9 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             // Cifrados con la APP_KEY (casts del modelo); nunca en claro.
             $table->text('two_factor_secret')->nullable();
+            // Enrolamiento en curso (primero o cambio de dispositivo). El secreto
+            // vigente no se toca hasta confirmar el nuevo.
+            $table->text('two_factor_pending_secret')->nullable();
             $table->text('two_factor_recovery_codes')->nullable();
             $table->timestamp('two_factor_confirmed_at')->nullable();
             // Siempre en minúsculas (string en vez de CITEXT: los tests corren en SQLite).
@@ -30,6 +33,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn([
                 'two_factor_secret',
+                'two_factor_pending_secret',
                 'two_factor_recovery_codes',
                 'two_factor_confirmed_at',
                 'two_factor_email_backup',

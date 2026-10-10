@@ -27,6 +27,7 @@ class UserResource extends JsonResource
             ])->values(),
             'permissions' => $this->getAllPermissions()->pluck('name')->sort()->values(),
             'tenant' => new TenantResource($this->whenLoaded('tenant')),
+            'mfa' => new MfaStatusResource($this->resource),
             // Modo soporte: el panel muestra los datos de este cliente.
             'impersonating' => $this->impersonatedTenant($request),
         ];
