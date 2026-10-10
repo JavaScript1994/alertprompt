@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { api, ensureCsrfCookie } from '@/lib/api';
+import type { LoginChallenge } from '@/features/mfa/types';
 import type { User } from '@/types';
 
 interface Envelope<T> {
@@ -10,8 +11,10 @@ interface Envelope<T> {
 interface LoginPayload {
     email: string;
     password: string;
-    remember?: boolean;
 }
+
+/** Con MFA la contraseña no abre sesión: devuelve el reto del segundo paso. */
+export type LoginResult = { kind: 'user'; user: User } | { kind: 'challenge'; challenge: LoginChallenge };
 
 const AUTH_USER_QUERY_KEY = ['auth', 'user'];
 
@@ -40,13 +43,13 @@ export function useLogin() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (payload: LoginPayload) => {
+        mutationFn: async (payload: LoginPayload): Promise<LoginResult> => {
             await ensureCsrfCookie();
-            const { data } = await api.post<Envelope<User>>('/api/login', payload);
-            return data.data;
+            const { data } = await api.post<Envelope<User> | LoginChallenge>('/api/login', payload);
+            return 'mfa_required' in data ? { kind: 'challenge', challenge: data } : { kind: 'user', user: data.data };
         },
-        onSuccess: (user) => {
-            queryClient.setQueryData(AUTH_USER_QUERY_KEY, user);
+        onSuccess: (result) => {
+            if (result.kind === 'user') queryClient.setQueryData(AUTH_USER_QUERY_KEY, result.user);
         },
     });
 }

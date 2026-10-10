@@ -29,6 +29,8 @@ class TenantUserResource extends JsonResource
                 'label' => $role->label,
             ])->values(),
             'email_verified_at' => $this->email_verified_at,
+            'mfa_enabled' => $this->resource->hasMfaEnabled(),
+            'last_login_at' => $this->last_login_at,
             'deactivated_at' => $this->deactivated_at ?? null,
             'created_at' => $this->created_at,
         ];

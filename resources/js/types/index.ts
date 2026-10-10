@@ -1,3 +1,5 @@
+import type { MfaStatus } from '@/features/mfa/types';
+
 export type TenantType = 'company' | 'individual';
 export type TenantStatus = 'active' | 'trial' | 'suspended';
 export type DocumentType = 'ruc' | 'dni' | 'ce';
@@ -90,6 +92,7 @@ export interface User {
     tenant: Tenant;
     /** Modo soporte: el panel muestra los datos de este cliente. */
     impersonating: Tenant | null;
+    mfa: MfaStatus;
 }
 
 /** Cliente visto desde el panel de la plataforma. */
@@ -106,6 +109,8 @@ export interface TenantUser {
     email: string;
     roles: { id: number; name: string; label: string }[];
     email_verified_at: string | null;
+    mfa_enabled: boolean;
+    last_login_at: string | null;
     deactivated_at: string | null;
     created_at: string;
 }

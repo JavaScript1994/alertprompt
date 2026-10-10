@@ -72,6 +72,13 @@ Dejar esta terminal abierta mientras se trabaja.
 Si la base ya existía antes de los roles, crear el dueño con:
     docker compose exec app php artisan db:seed --class=PlatformSeeder
 
+VERIFICACIÓN EN DOS PASOS (MFA): todos los usuarios la necesitan. Instala
+una app de autenticación en tu teléfono (Google Authenticator, Microsoft
+Authenticator, 1Password...). La primera vez que entres con cada usuario te
+pedirá escanear un QR y te dará 8 códigos de recuperación: guárdalos.
+Los usuarios sin "gestionar usuarios" tienen 14 días antes de que sea
+obligatoria. Si pierdes el teléfono en local, ver "Problemas frecuentes".
+
 
 5. VERIFICAR QUE TODO CORRE
 ---------------------------
@@ -99,6 +106,10 @@ Después de cambiar el .env:
 ---------------------------------
 Una vez (y cada vez que cambie composer.lock), en el host:
     composer install
+Y también en el contenedor (su vendor vive en el volumen vendor_data, que el
+--build NO actualiza):
+    docker compose exec app composer install --no-dev --optimize-autoloader
+    docker compose restart app horizon scheduler
 
     ./vendor/bin/pint                # formato PHP (corre en el host)
 
@@ -148,6 +159,23 @@ Tests con "Permission denied" o "Unable to create a directory"
 
 "Tu membresía empieza pronto" en un cliente que debería estar activo
     docker compose exec app php artisan memberships:refresh
+
+Ver los correos en local sin enviarlos (códigos de respaldo, avisos, invitaciones)
+    En .env: MAIL_MAILER=log (en vez de smtp), luego:
+    docker compose exec app php artisan config:clear
+    docker compose restart app horizon
+    Los correos quedan completos en storage/logs/laravel.log:
+    docker compose exec app tail -f storage/logs/laravel.log
+    Las campañas de email no cambian: salen por EMAIL_DRIVER (SendGrid).
+
+"Class PragmaRX\Google2FA\... not found" (u otro paquete nuevo) en la app
+    El vendor del contenedor está desactualizado: ver sección 7
+    (composer install dentro del contenedor).
+
+Perdí la app de autenticación de un usuario de prueba (solo en local)
+    Lo normal: otro administrador lo restablece desde Usuarios (icono de
+    escudo). Si no hay otro, por tinker (reemplaza el correo):
+    docker compose exec app php artisan tinker --execute '$u=App\Models\User::query()->withoutGlobalScopes()->where("email","admin@empresaprueba.pe")->first(); app(App\Services\Mfa\MfaService::class)->clear($u);'
 
 
 10. APAGAR

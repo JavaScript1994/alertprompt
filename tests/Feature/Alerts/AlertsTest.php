@@ -26,6 +26,9 @@ use App\Services\TemplateRenderer;
 use Illuminate\Bus\Batch;
 use Illuminate\Database\Eloquent\Builder;
 
+// Usan rutas con acciones sensibles (reauth:*).
+beforeEach(fn () => $this->reauthConfirmed = true);
+
 afterEach(fn () => Mockery::close());
 
 function openAlerts(): Builder

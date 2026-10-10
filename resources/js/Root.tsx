@@ -16,6 +16,7 @@ import AdminReports from '@/pages/admin/reports/AdminReports';
 import RoleEditor from '@/pages/admin/roles/RoleEditor';
 import Roles from '@/pages/admin/roles/Roles';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
+import MfaSetupPage from '@/pages/auth/MfaSetupPage';
 import InvoicePrint from '@/pages/billing/InvoicePrint';
 import PaymentMethods from '@/pages/billing/PaymentMethods';
 import Payments from '@/pages/billing/Payments';
@@ -23,6 +24,7 @@ import Login from '@/pages/auth/Login';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import Campaigns from '@/pages/campaigns/Campaigns';
 import Contacts from '@/pages/contacts/Contacts';
+import SecuritySettings from '@/features/mfa/SecuritySettings';
 import Home from '@/pages/dashboard/Home';
 import Reports from '@/pages/reports/Reports';
 import AccountSettings from '@/pages/settings/AccountSettings';
@@ -39,6 +41,7 @@ export default function Root() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/mfa/setup" element={<MfaSetupPage />} />
                 </Route>
 
                 <Route element={<ProtectedRoute />}>
@@ -81,6 +84,8 @@ export default function Root() {
                         <Route element={<RequirePermission permission="users.view" />}>
                             <Route path="/settings/users" element={<Users />} />
                         </Route>
+                        {/* De cada usuario, sin permiso: todos gestionan su propio MFA. */}
+                        <Route path="/settings/security" element={<SecuritySettings />} />
 
                         <Route element={<RequirePermission permission="admin.clients.view" />}>
                             <Route path="/admin/clients/companies" element={<Clients key="company" type="company" />} />

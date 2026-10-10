@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 import { BarChart3, Download } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
@@ -8,6 +9,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { DeliveryCounts, ReportSummary } from '@/types';
 
@@ -41,13 +43,29 @@ export function RangePicker({ days, onChange }: { days: number; onChange: (days:
     );
 }
 
+/**
+ * Descarga por axios (no un enlace): exportar datos de contactos exige
+ * re-autenticación y el 403 reauth_required abre ReauthModal.
+ */
 export function ExportButton({ href }: { href: string }) {
+    const download = useMutation({
+        mutationFn: async () => {
+            const response = await api.get<Blob>(href, { responseType: 'blob' });
+            const disposition = String(response.headers['content-disposition'] ?? '');
+            const filename = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? 'reporte.csv';
+            const url = URL.createObjectURL(response.data);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+        },
+    });
+
     return (
-        <Button variant="outline" asChild>
-            <a href={href}>
-                <Download />
-                Exportar CSV
-            </a>
+        <Button variant="outline" loading={download.isPending} onClick={() => download.mutate()}>
+            {!download.isPending && <Download />}
+            Exportar CSV
         </Button>
     );
 }
