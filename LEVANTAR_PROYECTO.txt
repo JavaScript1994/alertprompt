@@ -96,6 +96,9 @@ obligatoria. Si pierdes el teléfono en local, ver "Problemas frecuentes".
     docker compose exec app php artisan horizon:status
     docker compose logs -f horizon        # ver jobs de envío en vivo
     docker compose exec app php artisan queue:failed
+    docker compose exec -u 82 app php artisan deploy:check
+        (migraciones, permisos, Redis, scheduler, Horizon y storage; con
+        --production revisa además las variables de producción)
 
 
 6. ANTES DE ENVIAR MENSAJES REALES
@@ -149,6 +152,8 @@ host (el de la imagen no trae Pest):
                                    requeridas ya publicados (una sola vez)
     billing:daily                  diario 00:30 (Lima): emite comprobantes del período
                                    y alerta los vencidos
+    scheduler-heartbeat            cada minuto: deja la hora en caché; deploy:check
+                                   avisa si el cron dejó de correr
 
 Variables nuevas (ver .env.example):
     CHANNELS_SHARED_SENDER       true = clientes sin número propio usan el de la plataforma
@@ -171,6 +176,15 @@ Sin esto el login por empresa no funciona en producción (el resto sí):
        Dejar SESSION_DOMAIN vacío: así cada empresa tiene su propia cookie de
        sesión y una sesión no sirve en el subdominio de otra.
     5. php artisan config:clear && docker compose restart app horizon
+    6. php artisan deploy:check   (sale con error si algo impide abrir el servicio)
+
+8-ter. CADA DESPLIEGUE (producción)
+-----------------------------------
+    php artisan migrate --force
+    php artisan permissions:sync
+    php artisan config:cache && php artisan route:cache
+    php artisan horizon:terminate        # Horizon se reinicia con el código nuevo
+    php artisan deploy:check
 
 
 9. PROBLEMAS FRECUENTES
