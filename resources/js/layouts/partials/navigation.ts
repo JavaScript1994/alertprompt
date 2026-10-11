@@ -160,6 +160,8 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
 const DETAIL_LABELS: [prefix: string, label: string][] = [
     ['/admin/clients/', 'Clientes'],
     ['/billing/invoices/', 'Comprobante'],
+    ['/billing/credit-notes/', 'Nota de crédito'],
+    ['/admin/credit-notes/', 'Nota de crédito'],
     ['/settings/profile', 'Mi perfil'],
     ['/announcements', 'Novedades'],
     ['/settings/security', 'Mi perfil'],
