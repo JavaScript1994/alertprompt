@@ -8,7 +8,11 @@ import Pagination from '@/components/shared/Pagination';
 import { CampaignStatusBadge, TemplateStatusBadge } from '@/components/shared/StatusBadge';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useResetClientUserMfa } from '@/features/mfa/api';
+import { MfaBadge, ResetMfaAction } from '@/features/mfa/UserMfaCells';
+import UserAvatar from '@/features/profile/UserAvatar';
 import { useClientActivity, useClientUsers, useSupervision } from '@/hooks/useClients';
+import { useCan } from '@/hooks/usePermissions';
 import { formatDateTime } from '@/lib/format';
 import type { AuditLogEntry, Campaign, Contact, Template, TenantUser } from '@/types';
 import { AUDIT_ACTION_LABELS } from './clientLabels';
@@ -26,14 +30,21 @@ const userColumn = createColumnHelper<TenantUser>();
 
 export function ClientUsersTab({ clientId }: { clientId: number }) {
     const { data, isLoading } = useClientUsers(clientId);
+    const resetMfa = useResetClientUserMfa(clientId);
+    const canReset = useCan()('admin.clients.update');
     const columns = useMemo(
         () => [
             userColumn.accessor('name', {
                 header: 'Usuario',
                 cell: (info) => (
-                    <div>
-                        <p className="font-medium text-foreground">{info.getValue()}</p>
-                        <p className="text-xs text-muted-foreground">{info.row.original.email}</p>
+                    <div className="flex items-center gap-3">
+                        <UserAvatar name={info.getValue()} photoUrl={info.row.original.photo_url} />
+                        <div className="min-w-0">
+                            <p className="font-medium text-foreground">{info.getValue()}</p>
+                            <p className="text-xs text-muted-foreground">
+                                {[info.row.original.job_title, info.row.original.email].filter(Boolean).join(' · ')}
+                            </p>
+                        </div>
                     </div>
                 ),
             }),
@@ -52,8 +63,19 @@ export function ClientUsersTab({ clientId }: { clientId: number }) {
                         <Badge variant="warning">Invitación pendiente</Badge>
                     ),
             }),
+            userColumn.display({ id: 'mfa', header: 'Dos pasos', cell: (info) => <MfaBadge user={info.row.original} /> }),
+            ...(canReset
+                ? [
+                      userColumn.display({
+                          id: 'actions',
+                          header: () => <span className="sr-only">Acciones</span>,
+                          meta: { className: 'w-[1%] whitespace-nowrap text-right' },
+                          cell: (info) => <ResetMfaAction user={info.row.original} reset={resetMfa} />,
+                      }),
+                  ]
+                : []),
         ],
-        [],
+        [canReset, resetMfa],
     );
 
     if (isLoading) return <Skeleton className="h-40 w-full rounded-xl" />;

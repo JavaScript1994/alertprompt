@@ -1,17 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
-import { AlertCircle, ArrowRight, ArrowUpRight, Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { AlertCircle, ArrowRight, ArrowUpRight, CheckCircle2, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import MfaChallenge from '@/features/mfa/MfaChallenge';
+import type { LoginChallenge } from '@/features/mfa/types';
 import { useAuthUser, useLogin } from '@/hooks/useAuth';
 import ComingSoon from './partials/ComingSoon';
 
@@ -28,8 +28,12 @@ const iconClasses = 'pointer-events-none absolute top-1/2 left-4 size-5 -transla
 export default function Login() {
     const { data: user, isLoading: isLoadingUser } = useAuthUser();
     const login = useLogin();
-    const [remember, setRemember] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
+    const [challenge, setChallenge] = useState<LoginChallenge | null>(null);
+    // Vuelve aquí desde el enlace de confirmación de cambio de correo.
+    const [searchParams] = useSearchParams();
+    const emailChanged = searchParams.has('email_changed');
+    const emailChangeFailed = searchParams.has('email_change_failed');
 
     const {
         register,
@@ -39,13 +43,43 @@ export default function Login() {
         resolver: zodResolver(loginSchema),
     });
 
-    if (!isLoadingUser && user) {
+    // Una sesión con MFA pendiente (venció o se perdió el segundo factor) no
+    // cuenta como iniciada: se vuelve a pasar por contraseña y código.
+    const pendingSecondFactor = user?.mfa.enabled === true && !user.mfa.session_verified;
+
+    if (!isLoadingUser && user && !pendingSecondFactor) {
         return <Navigate to="/" replace />;
     }
 
     const onSubmit = handleSubmit((values) => {
-        login.mutate({ ...values, remember });
+        login.mutate(values, {
+            onSuccess: (result) => {
+                if (result.kind === 'challenge') setChallenge(result.challenge);
+            },
+        });
     });
+
+    if (challenge) {
+        return (
+            <div>
+                <div className="text-center">
+                    <h2 className="text-[2rem] font-bold tracking-tight text-brand-700 shorter:text-[1.75rem] dark:text-white">
+                        Verificación en dos pasos
+                    </h2>
+                    <p className="mt-3 text-muted-foreground shorter:mt-1.5">Confirma que eres tú para entrar.</p>
+                </div>
+                <div className="mt-10 short:mt-7 shorter:mt-5">
+                    <MfaChallenge
+                        challenge={challenge}
+                        onRestart={() => {
+                            setChallenge(null);
+                            login.reset();
+                        }}
+                    />
+                </div>
+            </div>
+        );
+    }
 
     const serverErrors =
         login.error instanceof AxiosError && login.error.response?.status === 422
@@ -67,6 +101,18 @@ export default function Login() {
             </div>
 
             <form onSubmit={onSubmit} className="mt-10 space-y-6 short:mt-7 shorter:mt-5 shorter:space-y-4" noValidate>
+                {emailChanged && (
+                    <Alert variant="success">
+                        <CheckCircle2 />
+                        <AlertTitle>Correo confirmado. Desde ahora inicia sesión con tu correo nuevo.</AlertTitle>
+                    </Alert>
+                )}
+                {emailChangeFailed && (
+                    <Alert variant="error">
+                        <AlertCircle />
+                        <AlertTitle>No se pudo confirmar el correo: el enlace ya no es válido o ese correo ya está en uso.</AlertTitle>
+                    </Alert>
+                )}
                 <Field label="Correo electrónico" htmlFor="email" error={emailError} className="space-y-2.5">
                     <div className="relative">
                         <Mail className={iconClasses} />
@@ -105,18 +151,7 @@ export default function Login() {
                     </div>
                 </Field>
 
-                <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2.5">
-                        <Checkbox
-                            id="remember"
-                            checked={remember}
-                            onCheckedChange={(checked) => setRemember(checked === true)}
-                            className="size-5 data-[state=checked]:border-tenant-accent data-[state=checked]:bg-tenant-accent"
-                        />
-                        <Label htmlFor="remember" className="cursor-pointer font-normal">
-                            Recordar sesión
-                        </Label>
-                    </div>
+                <div className="flex items-center justify-end gap-4">
                     <Link
                         to="/forgot-password"
                         className="text-sm font-semibold text-tenant-accent hover:underline dark:text-prompt-400"

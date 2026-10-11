@@ -1,3 +1,5 @@
+import type { MfaStatus } from '@/features/mfa/types';
+
 export type TenantType = 'company' | 'individual';
 export type TenantStatus = 'active' | 'trial' | 'suspended';
 export type DocumentType = 'ruc' | 'dni' | 'ce';
@@ -12,6 +14,7 @@ export interface Tenant {
     contact_phone: string | null;
     address: string | null;
     plan: string;
+    plan_name: string;
     status: TenantStatus;
     /** true solo para AlertPrompt: su usuario ve el panel de administración. */
     is_platform: boolean;
@@ -80,15 +83,30 @@ export interface PermissionTreeSection {
     modules: PermissionTreeModule[];
 }
 
-export interface User {
+/** Datos personales de un usuario del panel (no de un contacto). */
+export interface PersonalData {
+    first_name: string | null;
+    last_name: string | null;
+    job_title: string | null;
+    /** YYYY-MM-DD */
+    birth_date: string | null;
+    phone: string | null;
+    mobile: string | null;
+    /** Ruta de la API (disco privado); null sin foto. */
+    photo_url: string | null;
+}
+
+export interface User extends PersonalData {
     id: number;
     name: string;
     email: string;
+    last_login_at: string | null;
     roles: UserRoleSummary[];
     permissions: PermissionName[];
     tenant: Tenant;
     /** Modo soporte: el panel muestra los datos de este cliente. */
     impersonating: Tenant | null;
+    mfa: MfaStatus;
 }
 
 /** Cliente visto desde el panel de la plataforma. */
@@ -99,12 +117,16 @@ export interface Client extends Tenant {
     created_at: string;
 }
 
-export interface TenantUser {
+export interface TenantUser extends PersonalData {
     id: number;
     name: string;
     email: string;
+    /** Correo nuevo esperando confirmación desde esa dirección. */
+    pending_email: string | null;
     roles: { id: number; name: string; label: string }[];
     email_verified_at: string | null;
+    mfa_enabled: boolean;
+    last_login_at: string | null;
     deactivated_at: string | null;
     created_at: string;
 }
@@ -326,6 +348,7 @@ export type MembershipStatus = 'scheduled' | 'active' | 'expired' | 'cancelled';
 export interface Membership {
     id: number;
     plan: string;
+    plan_name: string;
     status: MembershipStatus;
     billing_cycle: 'monthly' | 'yearly';
     price: string;
@@ -343,12 +366,54 @@ export interface Membership {
 
 export type ChannelUsage = Record<TemplateChannel, { used: number; quota: number | null }>;
 
+export interface Plan {
+    id: number;
+    key: string;
+    name: string;
+    description: string | null;
+    /** Mensual sin IGV; null = a medida. */
+    monthly_price: string | null;
+    quotas: Record<TemplateChannel, number | null>;
+    /** Módulos con los que nace un cliente del plan. */
+    modules: ModuleKey[];
+    is_public: boolean;
+    /** Inactivo: no se ofrece en altas nuevas; quien lo tiene lo conserva. */
+    is_active: boolean;
+    /** Solo en /api/admin/plans. */
+    clients_count?: number;
+    sort: number;
+}
+
 export interface MembershipOverview {
     current: Membership | null;
     next: Membership | null;
     usage: ChannelUsage;
     quotas_enforced: boolean;
     history: Membership[];
+    plans: Plan[];
+    current_plan: string | null;
+    pending_request: PlanChangeRequest | null;
+    last_decision: PlanChangeRequest | null;
+}
+
+export type PlanChangeStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+export interface PlanChangeRequest {
+    id: number;
+    current_plan: string | null;
+    current_plan_name: string | null;
+    requested_plan: string;
+    requested_plan_name: string;
+    status: PlanChangeStatus;
+    comment: string | null;
+    requested_by: string | null;
+    decided_by: string | null;
+    decided_at: string | null;
+    decision_note: string | null;
+    effective_from: string | null;
+    /** Solo en /api/admin/*. */
+    tenant?: { id: number; name: string | null };
+    created_at: string;
 }
 
 export type InvoiceStatus = 'issued' | 'paid' | 'void';

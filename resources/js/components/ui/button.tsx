@@ -21,6 +21,7 @@ const buttonVariants = cva(
                 destructive: 'bg-error text-white hover:bg-erroremphasis',
                 lightprimary: 'bg-lightprimary text-primary hover:bg-primary hover:text-white',
                 link: 'h-auto px-0 text-primary underline-offset-4 hover:underline',
+                brand: 'bg-secondary text-secondary-foreground hover:bg-primaryemphasis',
             },
             size: {
                 default: 'h-10 px-5 py-2',

@@ -72,6 +72,42 @@ pausar campañas automáticamente ante señales negativas.
 - Rotación de números/proxies para evadir detección.
 - Cualquier lógica cuyo propósito sea eludir rate limits o antispam de proveedores.
 
+### 2.4 Autenticación de usuarios (MFA)
+
+Aplica a los **usuarios del panel** (tabla `users`): el Administrador general y
+los usuarios de cada cliente. Nunca a los contactos.
+
+- **TOTP (app de autenticación) es el ÚNICO segundo factor del login rutinario.**
+  No existe "elige tu método": no hay toggle ni pantalla de elección.
+- El **correo de respaldo** no es un método elegible. Se configura y verifica
+  con un código (una vez) y solo se usa desde "¿Perdiste tu dispositivo?",
+  igual que los 8 **códigos de recuperación** (un solo uso, `Hash::make`).
+- Obligatoriedad por permiso, no por nombre de rol (hay roles personalizados):
+  quien tiene `users.manage` (administradores y el Administrador general)
+  enrola en el primer login; el resto tiene **14 días** de gracia desde su
+  primer login y al día 15 el middleware lo bloquea.
+- Con MFA, la contraseña **no abre sesión**: `POST /api/login` devuelve un
+  `challenge_token` (Crypt de Laravel, 5 min, ligado a usuario + IP, nonce de
+  un solo uso en Redis) y la sesión nace en `/api/mfa/verify`.
+- El MFA se exige **siempre en el middleware** (`mfa`, `mfa:enrollment`),
+  nunca solo en el frontend. Ventana TOTP ±1 periodo y sin reutilizar un
+  periodo ya aceptado.
+- **Re-autenticación** (contraseña + TOTP, 15 min, por acción) con
+  `reauth:{acción}`: exportar datos de contactos, configuración de
+  proveedores, usuarios/roles, desactivar/restablecer MFA, regenerar códigos,
+  cambiar de dispositivo o de correo de respaldo. **Revocar un consentimiento
+  NUNCA pide re-autenticación**: la baja tiene efecto inmediato (§2.1).
+- Todo uso o cambio de un respaldo, y toda desactivación o restablecimiento,
+  queda en `auth_events` y se avisa por correo a quienes tienen `users.manage`
+  en el tenant y al propio usuario.
+- Quien pierde todo (teléfono, códigos y correo): un administrador de su
+  cuenta restablece su MFA; para administradores de clientes, el
+  Administrador general.
+- Nunca en BD, logs ni `auth_events.metadata`: secreto TOTP (cast
+  `encrypted`), códigos de respaldo, OTP del correo (HMAC-SHA256 +
+  `hash_equals`) ni `challenge_token`. El correo con el OTP **no** va a la cola
+  (el payload quedaría en Redis/`failed_jobs`).
+
 ---
 
 ## 3. Stack
@@ -232,7 +268,17 @@ no es más barato.
 
 ```
 tenants               id, name, plan, settings(jsonb), created_at
-users                 id, tenant_id, name, email, password, role
+users                 id, tenant_id, name (= nombres + apellidos), email, pending_email,
+                      password, deactivated_at,
+                      first_name, last_name, job_title, birth_date, phone, mobile,
+                      photo_path (disco privado; se sirve por la API dentro del tenant)
+                      — fecha de nacimiento, teléfonos, cargo y foto: opcionales (Ley 29733),
+                      two_factor_secret (encrypted), two_factor_pending_secret (encrypted),
+                      two_factor_recovery_codes (encrypted: lista de hashes),
+                      two_factor_confirmed_at, two_factor_email_backup,
+                      two_factor_email_verified_at, two_factor_grace_ends_at,
+                      last_login_at, last_login_ip
+                      (roles y permisos: spatie/laravel-permission con teams = tenant)
 contacts              id, tenant_id, phone, email, name, attributes(jsonb)
                       UNIQUE(tenant_id, phone), UNIQUE(tenant_id, email)
 consents              id, contact_id, channel, granted_at, revoked_at,
@@ -249,6 +295,13 @@ campaign_recipients   id, campaign_id, contact_id, status, provider_message_id,
                       INDEX(provider_message_id)                  ← lo usa el webhook
 message_events        id, campaign_recipient_id, event, payload(jsonb), occurred_at
                       (particionar por mes cuando crezca)
+auth_events           id, user_id, tenant_id, event, ip, user_agent, metadata(jsonb), occurred_at
+                      INDEX(user_id, occurred_at), INDEX(tenant_id, event, occurred_at)
+sensitive_action_confirmations
+                      id, user_id, action, confirmed_at, expires_at, ip
+email_backup_otps     id, user_id, purpose(setup|login), email, code_hash(HMAC),
+                      attempts, expires_at, used_at, requested_at, ip
+                      INDEX(user_id, expires_at)
 ```
 
 ### Detalles que importan

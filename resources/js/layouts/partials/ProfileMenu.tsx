@@ -1,15 +1,16 @@
-import { LogOut } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { LogOut, ShieldCheck, UserRound } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuthUser, useLogout } from '@/hooks/useAuth';
-import { initials } from '@/lib/format';
+import UserAvatar from '@/features/profile/UserAvatar';
 
 export default function ProfileMenu() {
     const { data: user } = useAuthUser();
@@ -22,16 +23,12 @@ export default function ProfileMenu() {
                     className="rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
                     aria-label="Menú de perfil"
                 >
-                    <Avatar>
-                        <AvatarFallback>{initials(user?.name)}</AvatarFallback>
-                    </Avatar>
+                    <UserAvatar name={user?.name} photoUrl={user?.photo_url} />
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 p-0">
                 <DropdownMenuLabel className="flex items-center gap-3 px-4 py-4 font-normal">
-                    <Avatar className="size-11">
-                        <AvatarFallback className="text-sm">{initials(user?.name)}</AvatarFallback>
-                    </Avatar>
+                    <UserAvatar name={user?.name} photoUrl={user?.photo_url} className="size-11" fallbackClassName="text-sm" />
                     <div className="min-w-0">
                         <p className="truncate font-semibold text-foreground">{user?.name}</p>
                         <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
@@ -42,6 +39,22 @@ export default function ProfileMenu() {
                         )}
                     </div>
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator className="mx-0 my-0" />
+                <div className="p-2">
+                    <DropdownMenuItem asChild>
+                        <Link to="/settings/profile">
+                            <UserRound />
+                            Mi perfil
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link to="/settings/security">
+                            <ShieldCheck />
+                            Seguridad
+                            {user && !user.mfa.enabled && <span className="ml-auto size-2 rounded-full bg-warning" aria-label="Pendiente" />}
+                        </Link>
+                    </DropdownMenuItem>
+                </div>
                 <DropdownMenuSeparator className="mx-0 my-0" />
                 <div className="p-4">
                     <Button

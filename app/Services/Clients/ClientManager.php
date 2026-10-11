@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace App\Services\Clients;
 
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\TenantType;
+use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\SetPasswordLink;
 use App\Services\AuditLogger;
+use App\Services\Memberships\MembershipManager;
 use App\Services\Modules\TenantModules;
+use App\Services\Users\UserProfileService;
 use App\Support\TenantContext;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -32,9 +35,12 @@ class ClientManager
      * Crea el tenant y su administrador inicial, y le envía la invitación para
      * definir su contraseña. Nadie (ni el dueño) conoce esa contraseña.
      *
-     * @param  array{type: string, name: string, document_type: string, document_number: string, contact_email?: ?string, contact_phone?: ?string, address?: ?string, plan?: string, admin_name: string, admin_email: string}  $data
+     * Los datos personales del administrador llegan con prefijo `admin_`
+     * (admin_first_name, admin_last_name, admin_job_title...); la foto, aparte.
+     *
+     * @param  array<string, mixed>  $data
      */
-    public function create(array $data): Tenant
+    public function create(array $data, ?UploadedFile $adminPhoto = null): Tenant
     {
         [$tenant, $admin] = DB::transaction(function () use ($data) {
             $tenant = Tenant::query()->create([
@@ -45,13 +51,21 @@ class ClientManager
                 'contact_email' => $data['contact_email'] ?? null,
                 'contact_phone' => $data['contact_phone'] ?? null,
                 'address' => $data['address'] ?? null,
-                'plan' => TenantPlan::from($data['plan'] ?? TenantPlan::Starter->value),
+                'plan' => $data['plan'] ?? Plan::defaultKey(),
                 'status' => TenantStatus::Active,
                 'settings' => ['timezone' => 'America/Lima'],
             ]);
 
-            $admin = $this->createUser($tenant, $data['admin_name'], $data['admin_email'], 'client-admin');
-            $this->modules->sync($tenant, $this->modules->defaultsFor($tenant->plan));
+            $person = [];
+            foreach (UserProfileService::PERSONAL_FIELDS as $field) {
+                $person[$field] = $data["admin_{$field}"] ?? null;
+            }
+
+            $admin = $this->createUser($tenant, $person, $data['admin_email'], 'client-admin');
+            $this->modules->sync($tenant, $this->modules->defaultsFor((string) $tenant->plan));
+
+            // Un cliente siempre tiene membresía: nace con la de su plan.
+            app(MembershipManager::class)->startFromCatalog($tenant, (string) $tenant->plan);
 
             $this->audit->record('client.created', $tenant->id, $tenant, [
                 'admin_email' => $admin->email,
@@ -59,6 +73,11 @@ class ClientManager
 
             return [$tenant, $admin];
         });
+
+        // Fuera de la transacción: si el alta fallara, no queda un archivo huérfano.
+        if ($adminPhoto !== null) {
+            app(UserProfileService::class)->setPhoto($admin, $adminPhoto);
+        }
 
         $this->invite($admin, $tenant);
 
@@ -97,11 +116,15 @@ class ClientManager
      * Usuario con contraseña aleatoria imposible de adivinar: el acceso real
      * llega por el enlace de invitación.
      */
-    public function createUser(Tenant $tenant, string $name, string $email, string $role): User
+    /**
+     * @param  string|array<string, mixed>  $person  nombre visible (altas simples, seeders) o
+     *                                               datos personales (first_name, last_name...)
+     */
+    public function createUser(Tenant $tenant, string|array $person, string $email, string $role): User
     {
         $user = User::query()->create([
             'tenant_id' => $tenant->id,
-            'name' => $name,
+            ...(is_string($person) ? ['name' => $person] : $person),
             'email' => $email,
             'password' => Str::random(64),
         ]);

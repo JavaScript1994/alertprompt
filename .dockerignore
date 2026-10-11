@@ -9,3 +9,5 @@ storage/framework/testing
 storage/framework/views
 storage/logs
 .env
+storage/app/private
+storage/app/public

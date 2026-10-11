@@ -9,6 +9,9 @@ use App\Models\User;
 use App\Notifications\SetPasswordLink;
 use Illuminate\Support\Facades\Notification;
 
+// Usan rutas con acciones sensibles (reauth:*).
+beforeEach(fn () => $this->reauthConfirmed = true);
+
 function roleId(string $name): int
 {
     return Role::query()->whereNull('tenant_id')->where('name', $name)->value('id');
@@ -41,13 +44,15 @@ it('invites a user with a role and sends the invitation', function () {
     $admin = User::factory()->for($tenant)->create();
 
     $response = $this->actingAs($admin)->postJson('/api/users', [
-        'name' => 'Carla Ríos',
+        'first_name' => 'Carla',
+        'last_name' => 'Ríos',
         'email' => 'Carla@Andina.pe',
         'role_id' => roleId('client-user'),
     ]);
 
     $response->assertCreated()
         ->assertJsonPath('data.email', 'carla@andina.pe')
+        ->assertJsonPath('data.name', 'Carla Ríos')
         ->assertJsonPath('data.roles.0.name', 'client-user')
         ->assertJsonPath('data.email_verified_at', null);
 
@@ -58,7 +63,8 @@ it('invites a user with a role and sends the invitation', function () {
 
 it('rejects assigning a platform role from a client account', function () {
     $this->actingAs(User::factory()->create())->postJson('/api/users', [
-        'name' => 'Intruso',
+        'first_name' => 'Intruso',
+        'last_name' => 'X',
         'email' => 'intruso@demo.pe',
         'role_id' => roleId('platform-owner'),
     ])->assertUnprocessable()->assertJsonValidationErrors('role_id');
@@ -69,9 +75,8 @@ it('changes the role of a user', function () {
     $admin = User::factory()->for($tenant)->create();
     $user = User::factory()->for($tenant)->withRole('client-user')->create();
 
-    $this->actingAs($admin)->putJson("/api/users/{$user->id}", ['name' => 'Renombrado', 'role_id' => roleId('client-viewer')])
+    $this->actingAs($admin)->putJson("/api/users/{$user->id}/role", ['role_id' => roleId('client-viewer')])
         ->assertOk()
-        ->assertJsonPath('data.name', 'Renombrado')
         ->assertJsonPath('data.roles.0.name', 'client-viewer');
 
     $this->actingAs($user->fresh())->postJson('/api/contacts', ['name' => 'X', 'phone' => '+51999000111'])->assertForbidden();
@@ -83,10 +88,10 @@ it('never leaves an account without someone who can manage users', function () {
     $other = User::factory()->for($tenant)->create();
 
     // Puede degradar a otro administrador mientras quede uno.
-    $this->actingAs($admin)->putJson("/api/users/{$other->id}", ['name' => $other->name, 'role_id' => roleId('client-user')])->assertOk();
+    $this->actingAs($admin)->putJson("/api/users/{$other->id}/role", ['role_id' => roleId('client-user')])->assertOk();
 
     // Pero no puede quitarse a sí mismo el permiso.
-    $this->actingAs($admin)->putJson("/api/users/{$admin->id}", ['name' => $admin->name, 'role_id' => roleId('client-user')])
+    $this->actingAs($admin)->putJson("/api/users/{$admin->id}/role", ['role_id' => roleId('client-user')])
         ->assertUnprocessable()->assertJsonValidationErrors('role_id');
 });
 
@@ -146,7 +151,7 @@ it('requires users.manage to invite', function () {
     $this->actingAs($viewer)->getJson('/api/users')->assertForbidden();
 
     $user = User::factory()->withRole('client-user')->create();
-    $this->actingAs($user)->postJson('/api/users', ['name' => 'X', 'email' => 'x@demo.pe', 'role_id' => roleId('client-user')])->assertForbidden();
+    $this->actingAs($user)->postJson('/api/users', ['first_name' => 'X', 'last_name' => 'Y', 'email' => 'x@demo.pe', 'role_id' => roleId('client-user')])->assertForbidden();
 });
 
 it('lets support manage users of a client in support mode', function () {
@@ -156,7 +161,7 @@ it('lets support manage users of a client in support mode', function () {
 
     $this->actingAs(platformOwner())->postJson("/api/admin/clients/{$client->id}/impersonate")->assertNoContent();
 
-    $this->postJson('/api/users', ['name' => 'Nueva', 'email' => 'nueva@cliente.pe', 'role_id' => roleId('client-user')])
+    $this->postJson('/api/users', ['first_name' => 'Nueva', 'last_name' => 'Persona', 'email' => 'nueva@cliente.pe', 'role_id' => roleId('client-user')])
         ->assertCreated();
 
     expect(User::query()->forTenant($client->id)->where('email', 'nueva@cliente.pe')->exists())->toBeTrue();

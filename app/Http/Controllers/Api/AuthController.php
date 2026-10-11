@@ -4,51 +4,48 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AuthEventType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Services\Impersonation;
-use App\Support\TenantContext;
+use App\Services\Mfa\AuthEventRecorder;
+use App\Services\Mfa\ChallengeTokenService;
+use App\Services\Mfa\MfaLoginService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function login(LoginRequest $request): UserResource
-    {
-        $remember = $request->boolean('remember', true);
-        $credentials = $request->safe()->only(['email', 'password']);
+    /**
+     * Primer paso. Con MFA enrolado no abre sesión: devuelve un
+     * challenge_token para POST /api/mfa/verify. Sin MFA abre la sesión y el
+     * middleware `mfa` decide si debe enrolar ya o tiene plazo de gracia.
+     */
+    public function login(
+        LoginRequest $request,
+        MfaLoginService $login,
+        ChallengeTokenService $challenges,
+        AuthEventRecorder $events,
+    ): UserResource|JsonResponse {
+        $user = $login->checkPassword(
+            $request->string('email')->toString(),
+            $request->string('password')->toString(),
+        );
 
-        if (! Auth::guard('web')->attempt($credentials, remember: $remember)) {
-            throw ValidationException::withMessages([
-                'email' => 'El correo o la contraseña son incorrectos.',
+        if ($user->hasMfaEnabled()) {
+            $events->record(AuthEventType::MfaChallenge, $user);
+
+            return response()->json([
+                'mfa_required' => true,
+                'challenge_token' => $challenges->issue($user, (string) $request->ip()),
+                'expires_in' => (int) config('mfa.challenge_ttl'),
+                'email_backup_available' => $user->hasVerifiedEmailBackup(),
             ]);
         }
 
-        /** @var User $user */
-        $user = Auth::guard('web')->user()->load('tenant');
-
-        $blocked = match (true) {
-            ! $user->tenant->status->canSignIn() => 'La cuenta de tu empresa está suspendida. Comunícate con soporte.',
-            ! $user->isActive() => 'Tu usuario fue desactivado. Pide acceso al administrador de tu cuenta.',
-            default => null,
-        };
-
-        if ($blocked !== null) {
-            Auth::guard('web')->logout();
-
-            throw ValidationException::withMessages(['email' => $blocked]);
-        }
-
-        $request->session()->regenerate();
-        $request->session()->forget(Impersonation::SESSION_KEY);
-
-        // El middleware corrió antes del login (sin usuario): fijamos el
-        // tenant aquí para que roles y permisos de la respuesta salgan bien.
-        TenantContext::set($user->tenant_id);
+        $login->startSession($request, $user);
 
         return new UserResource($user);
     }

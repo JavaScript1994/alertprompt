@@ -26,6 +26,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Twilio\Security\RequestValidator;
 
+// Usan rutas con acciones sensibles (reauth:*).
+beforeEach(fn () => $this->reauthConfirmed = true);
+
 afterEach(fn () => Mockery::close());
 
 function smsRecipientFor(Tenant $tenant): CampaignRecipient

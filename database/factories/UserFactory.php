@@ -9,11 +9,14 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use PragmaRX\Google2FA\Google2FA;
 
 /** @extends Factory<User> */
 class UserFactory extends Factory
 {
     protected static ?string $password;
+
+    protected static ?string $mfaSecret = null;
 
     public function definition(): array
     {
@@ -24,7 +27,19 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            // Por defecto con MFA enrolado, como cualquier usuario real tras su
+            // primer login. withoutMfa() para probar el enrolamiento.
+            'two_factor_secret' => static::$mfaSecret ??= (new Google2FA)->generateSecretKey(32),
+            'two_factor_confirmed_at' => now(),
         ];
+    }
+
+    public function withoutMfa(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'two_factor_secret' => null,
+            'two_factor_confirmed_at' => null,
+        ]);
     }
 
     /**

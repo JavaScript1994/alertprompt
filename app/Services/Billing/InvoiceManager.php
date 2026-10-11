@@ -13,6 +13,7 @@ use App\Enums\PaymentMethodType;
 use App\Models\Invoice;
 use App\Models\Membership;
 use App\Models\Payment;
+use App\Models\Plan;
 use App\Models\Scopes\TenantScope;
 use App\Models\Tenant;
 use App\Services\Alerts;
@@ -118,7 +119,7 @@ class InvoiceManager
         return $this->issue(
             Tenant::query()->findOrFail($membership->tenant_id),
             (string) $membership->price,
-            "Plan {$membership->plan->value} ({$cycle}) del {$periodStart->format('d/m/Y')} al {$periodEnd->format('d/m/Y')}",
+            "Plan {$this->planName($membership->plan)} ({$cycle}) del {$periodStart->format('d/m/Y')} al {$periodEnd->format('d/m/Y')}",
             $membership,
             $periodStart,
         );
@@ -216,6 +217,11 @@ class InvoiceManager
         }
 
         return ['issued' => $issued, 'overdue' => $overdue->count()];
+    }
+
+    private function planName(string $key): string
+    {
+        return Plan::query()->where('key', $key)->value('name') ?? $key;
     }
 
     /** Inicio del ciclo de facturación que contiene $today (o null si fuera de vigencia). */

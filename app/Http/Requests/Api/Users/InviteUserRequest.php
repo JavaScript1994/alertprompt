@@ -21,7 +21,8 @@ class InviteUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:120'],
+            'first_name' => ['required', 'string', 'max:80'],
+            'last_name' => ['required', 'string', 'max:80'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'role_id' => ['required', 'integer'],
         ];
@@ -29,6 +30,6 @@ class InviteUserRequest extends FormRequest
 
     public function attributes(): array
     {
-        return ['name' => 'nombre', 'email' => 'correo', 'role_id' => 'rol'];
+        return ['first_name' => 'nombres', 'last_name' => 'apellidos', 'email' => 'correo', 'role_id' => 'rol'];
     }
 }

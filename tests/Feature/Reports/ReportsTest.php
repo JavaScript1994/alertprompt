@@ -12,6 +12,9 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Modules\TenantModules;
 
+// Usan rutas con acciones sensibles (reauth:*).
+beforeEach(fn () => $this->reauthConfirmed = true);
+
 /** @param  array<string, int>  $statuses */
 function seedCampaign(Tenant $tenant, Channel $channel, TemplateCategory $category, array $statuses, string $sentAt = 'now'): Campaign
 {

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Enums\TenantPlan;
 use App\Enums\TenantStatus;
 use App\Enums\TenantType;
 use App\Models\Tenant;
@@ -28,7 +27,7 @@ class PlatformSeeder extends Seeder
         $tenant = new Tenant([
             'name' => 'AlertPrompt',
             'type' => TenantType::Company,
-            'plan' => TenantPlan::Enterprise,
+            'plan' => 'empresarial',
             'status' => TenantStatus::Active,
             'settings' => ['timezone' => 'America/Lima'],
         ]);

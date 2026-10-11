@@ -1,8 +1,9 @@
 import { CircleHelp } from 'lucide-react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Logo from '@/components/shared/Logo';
 import ComingSoon from '@/pages/auth/partials/ComingSoon';
 import LoginHero from '@/pages/auth/partials/LoginHero';
+import { cn } from '@/lib/utils';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -12,6 +13,9 @@ const CURRENT_YEAR = new Date().getFullYear();
  * --tenant-accent en app.css para la futura personalización por empresa).
  */
 export default function AuthLayout() {
+    // Configurar la verificación en dos pasos necesita más ancho (QR y pasos en dos columnas).
+    const wide = useLocation().pathname.startsWith('/mfa');
+
     return (
         <div className="flex min-h-dvh flex-col bg-card xl:h-dvh xl:min-h-[600px]">
             <header className="mx-auto w-full max-w-[1600px] flex shrink-0 items-center justify-between px-6 py-5 sm:px-10 xl:px-16 xl:py-7 short:xl:py-4">
@@ -26,8 +30,13 @@ export default function AuthLayout() {
                 <div className="hidden min-h-0 xl:block">
                     <LoginHero />
                 </div>
-                <div className="flex items-center justify-center py-6 sm:py-10 xl:py-0">
-                    <div className="w-full max-w-sm">
+                {/*
+                  En desktop la página tiene alto fijo: si el contenido no entra, esta
+                  columna hace scroll en vez de montarse sobre el footer. `m-auto`
+                  centra cuando sobra espacio (justify-center recortaría el inicio).
+                */}
+                <div className="flex min-h-0 flex-col xl:overflow-y-auto">
+                    <div className={cn('m-auto w-full py-6 sm:py-10 xl:py-8', wide ? 'max-w-2xl' : 'max-w-sm')}>
                         <Outlet />
                     </div>
                 </div>

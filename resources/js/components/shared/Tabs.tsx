@@ -16,7 +16,7 @@ export default function Tabs<K extends string>({
     onChange: (key: K) => void;
 }) {
     return (
-        <div role="tablist" className="mb-6 flex gap-1 overflow-x-auto border-b">
+        <div role="tablist" className="mb-6 flex shrink-0 gap-1 overflow-x-auto border-b">
             {tabs.map((tab) => (
                 <button
                     key={tab.key}

@@ -72,6 +72,13 @@ Dejar esta terminal abierta mientras se trabaja.
 Si la base ya existía antes de los roles, crear el dueño con:
     docker compose exec app php artisan db:seed --class=PlatformSeeder
 
+VERIFICACIÓN EN DOS PASOS (MFA): todos los usuarios la necesitan. Instala
+una app de autenticación en tu teléfono (Google Authenticator, Microsoft
+Authenticator, 1Password...). La primera vez que entres con cada usuario te
+pedirá escanear un QR y te dará 8 códigos de recuperación: guárdalos.
+Los usuarios sin "gestionar usuarios" tienen 14 días antes de que sea
+obligatoria. Si pierdes el teléfono en local, ver "Problemas frecuentes".
+
 
 5. VERIFICAR QUE TODO CORRE
 ---------------------------
@@ -97,12 +104,28 @@ Después de cambiar el .env:
 
 7. CALIDAD (antes de cada commit)
 ---------------------------------
-    docker compose exec app ./vendor/bin/pint
-    docker compose exec app ./vendor/bin/pest
+Una vez (y cada vez que cambie composer.lock), en el host:
+    composer install
+Y también en el contenedor (su vendor vive en el volumen vendor_data, que el
+--build NO actualiza):
+    docker compose exec app composer install --no-dev --optimize-autoloader
+    docker compose restart app horizon scheduler
+
+    ./vendor/bin/pint                # formato PHP (corre en el host)
+
+Tests: dentro del contenedor, como www-data (UID 82), usando el vendor del
+host (el de la imagen no trae Pest):
+    docker compose run --rm --no-deps -u 82:82 -v "$PWD/vendor:/var/www/html/vendor" app ./vendor/bin/pest
+
+    # Por qué así: storage/ y bootstrap/cache pertenecen a www-data, así que
+    # desde tu usuario fallan con "Permission denied". Y NO usar
+    # "docker compose exec app ./vendor/bin/pest": corre como root y deja
+    # carpetas de root en storage/ que después rompen los tests.
 
     # Los tests usan SQLite en memoria. Para correrlos contra Postgres
     # (atrapa diferencias de SQL), una vez: CREATE DATABASE comms_test; luego:
-    docker compose exec -e DB_CONNECTION=pgsql -e DB_DATABASE=comms_test -e DB_HOST=postgres app ./vendor/bin/pest
+    docker compose run --rm -u 82:82 -v "$PWD/vendor:/var/www/html/vendor" -e DB_CONNECTION=pgsql -e DB_DATABASE=comms_test -e DB_HOST=postgres app ./vendor/bin/pest
+
     npm run typecheck
     npm run lint                     # oxlint (config en .oxlintrc.json)
 
@@ -110,7 +133,8 @@ Después de cambiar el .env:
 8. TAREAS PROGRAMADAS (contenedor scheduler)
 ---------------------------------------------
     campaigns:dispatch-scheduled   cada minuto
-    memberships:refresh            diario 00:10 (Lima): activa/vence membresías
+    memberships:refresh            cada hora (minuto 10): activa/vence membresías;
+                                   si el scheduler estuvo caído, recupera lo pendiente
     billing:daily                  diario 00:30 (Lima): emite comprobantes del período
                                    y alerta los vencidos
 
@@ -121,7 +145,40 @@ Variables nuevas (ver .env.example):
     BILLING_GATEWAY              manual | culqi (pendiente de implementar)
 
 
-9. APAGAR
+9. PROBLEMAS FRECUENTES
+-----------------------
+"permission denied" al hacer docker compose up --build
+    Una carpeta de storage/ creada por el contenedor no es legible por tu
+    usuario. storage/app ya está en .dockerignore; si pasa con otra ruta,
+    agrégala ahí. No hagas chown de storage/ a tu usuario: Laravel dejaría
+    de poder escribir.
+
+Tests con "Permission denied" o "Unable to create a directory"
+    Correrlos como indica la sección 7. Si quedó algo de root:
+    docker compose exec -u 0 app chown -R 82:82 storage bootstrap/cache
+
+"Tu membresía empieza pronto" en un cliente que debería estar activo
+    docker compose exec app php artisan memberships:refresh
+
+Ver los correos en local sin enviarlos (códigos de respaldo, avisos, invitaciones)
+    En .env: MAIL_MAILER=log (en vez de smtp), luego:
+    docker compose exec app php artisan config:clear
+    docker compose restart app horizon
+    Los correos quedan completos en storage/logs/laravel.log:
+    docker compose exec app tail -f storage/logs/laravel.log
+    Las campañas de email no cambian: salen por EMAIL_DRIVER (SendGrid).
+
+"Class PragmaRX\Google2FA\... not found" (u otro paquete nuevo) en la app
+    El vendor del contenedor está desactualizado: ver sección 7
+    (composer install dentro del contenedor).
+
+Perdí la app de autenticación de un usuario de prueba (solo en local)
+    Lo normal: otro administrador lo restablece desde Usuarios (icono de
+    escudo). Si no hay otro, por tinker (reemplaza el correo):
+    docker compose exec app php artisan tinker --execute '$u=App\Models\User::query()->withoutGlobalScopes()->where("email","admin@empresaprueba.pe")->first(); app(App\Services\Mfa\MfaService::class)->clear($u);'
+
+
+10. APAGAR
 ---------
     docker compose down          # apaga, conserva datos
     docker compose down -v       # apaga y BORRA volúmenes (base de datos incluida)
