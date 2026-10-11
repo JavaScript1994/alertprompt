@@ -26,6 +26,7 @@ import Campaigns from '@/pages/campaigns/Campaigns';
 import Contacts from '@/pages/contacts/Contacts';
 import AdminAnnouncementsPage from '@/features/announcements/AdminAnnouncementsPage';
 import AnnouncementsPage from '@/features/announcements/AnnouncementsPage';
+import AddOnsPage from '@/features/add-ons/AddOnsPage';
 import BrandingSettingsPage from '@/features/branding/BrandingSettingsPage';
 import MyProfile from '@/features/profile/MyProfile';
 import Home from '@/pages/dashboard/Home';
@@ -79,6 +80,9 @@ export default function Root() {
                             </Route>
                             <Route element={<RequirePermission permission="membership.view" />}>
                                 <Route path="/settings/membership" element={<MembershipPage />} />
+                            </Route>
+                            <Route element={<RequirePermission permission="add_ons.view" />}>
+                                <Route path="/settings/services" element={<AddOnsPage />} />
                             </Route>
                             <Route element={<RequirePermission permission="whatsapp_account.view" />}>
                                 <Route path="/settings/whatsapp" element={<ChannelAccounts />} />
