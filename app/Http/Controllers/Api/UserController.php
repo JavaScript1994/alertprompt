@@ -5,17 +5,22 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\Users\ChangeUserEmailRequest;
 use App\Http\Requests\Api\Users\InviteUserRequest;
-use App\Http\Requests\Api\Users\UpdateUserRequest;
+use App\Http\Requests\Api\Users\UpdatePersonalDataRequest;
+use App\Http\Requests\Api\Users\UpdateUserRoleRequest;
+use App\Http\Requests\Api\Users\UploadPhotoRequest;
 use App\Http\Resources\TenantUserResource;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Users\TenantUserManager;
+use App\Services\Users\UserProfileService;
 use App\Support\TenantContext;
 use App\Support\UserRoles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Usuarios del tenant activo (el propio, o el del cliente en modo soporte).
@@ -49,7 +54,7 @@ class UserController extends Controller
     {
         $user = $this->users->invite(
             $this->tenant(),
-            $request->string('name')->toString(),
+            $request->safe()->only(['first_name', 'last_name']),
             $request->string('email')->toString(),
             $request->integer('role_id'),
         );
@@ -57,9 +62,45 @@ class UserController extends Controller
         return $this->respond($user)->response()->setStatusCode(201);
     }
 
-    public function update(UpdateUserRequest $request, User $user): TenantUserResource
+    /** Datos personales (sin re-autenticación: no cambian accesos). */
+    public function update(UpdatePersonalDataRequest $request, User $user, UserProfileService $profiles): TenantUserResource
     {
-        $this->users->update($request->user(), $user, $request->string('name')->toString(), $request->integer('role_id'));
+        $profiles->updatePersonalData($user, $request->validated());
+
+        return $this->respond($user);
+    }
+
+    public function updateRole(UpdateUserRoleRequest $request, User $user): TenantUserResource
+    {
+        $this->users->updateRole($request->user(), $user, $request->integer('role_id'));
+
+        return $this->respond($user);
+    }
+
+    public function uploadPhoto(UploadPhotoRequest $request, User $user, UserProfileService $profiles): TenantUserResource
+    {
+        $profiles->setPhoto($user, $request->file('photo'));
+
+        return $this->respond($user);
+    }
+
+    public function deletePhoto(User $user, UserProfileService $profiles): TenantUserResource
+    {
+        $profiles->removePhoto($user);
+
+        return $this->respond($user);
+    }
+
+    /** Foto de un usuario de la cuenta ({user} con TenantScope). */
+    public function photo(User $user, UserProfileService $profiles): StreamedResponse
+    {
+        return $profiles->photoResponse($user);
+    }
+
+    /** Queda pendiente hasta que se confirme desde el correo nuevo. */
+    public function changeEmail(ChangeUserEmailRequest $request, User $user, UserProfileService $profiles): TenantUserResource
+    {
+        $profiles->requestEmailChange($user, $request->string('email')->toString());
 
         return $this->respond($user);
     }

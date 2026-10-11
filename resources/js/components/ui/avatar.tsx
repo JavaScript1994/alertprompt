@@ -25,4 +25,8 @@ function AvatarFallback({ className, ...props }: ComponentProps<typeof AvatarPri
     );
 }
 
-export { Avatar, AvatarFallback };
+function AvatarImage({ className, ...props }: ComponentProps<typeof AvatarPrimitive.Image>) {
+    return <AvatarPrimitive.Image data-slot="avatar-image" className={cn('aspect-square size-full object-cover', className)} {...props} />;
+}
+
+export { Avatar, AvatarFallback, AvatarImage };

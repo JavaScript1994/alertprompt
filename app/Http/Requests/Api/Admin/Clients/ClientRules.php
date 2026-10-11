@@ -52,7 +52,6 @@ final class ClientRules
             'document_number' => 'número de documento',
             'contact_email' => 'correo de contacto',
             'contact_phone' => 'teléfono de contacto',
-            'admin_name' => 'nombre del administrador',
             'admin_email' => 'correo del administrador',
         ];
     }

@@ -268,7 +268,11 @@ no es más barato.
 
 ```
 tenants               id, name, plan, settings(jsonb), created_at
-users                 id, tenant_id, name, email, password, deactivated_at,
+users                 id, tenant_id, name (= nombres + apellidos), email, pending_email,
+                      password, deactivated_at,
+                      first_name, last_name, job_title, birth_date, phone, mobile,
+                      photo_path (disco privado; se sirve por la API dentro del tenant)
+                      — fecha de nacimiento, teléfonos, cargo y foto: opcionales (Ley 29733),
                       two_factor_secret (encrypted), two_factor_pending_secret (encrypted),
                       two_factor_recovery_codes (encrypted: lista de hashes),
                       two_factor_confirmed_at, two_factor_email_backup,

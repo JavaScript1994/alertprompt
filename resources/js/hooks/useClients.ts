@@ -32,9 +32,15 @@ export interface ClientProfileInput {
 
 export interface CreateClientInput extends ClientProfileInput {
     type: TenantType;
-    admin_name: string;
-    admin_email: string;
     plan: string;
+    admin_first_name: string;
+    admin_last_name: string;
+    admin_email: string;
+    admin_job_title: string | null;
+    admin_birth_date: string | null;
+    admin_phone: string | null;
+    admin_mobile: string | null;
+    admin_photo: File | null;
 }
 
 export function useClients(filters: ClientFilters) {
@@ -64,8 +70,14 @@ export function useCreateClient() {
     const queryClient = useQueryClient();
 
     return useMutation({
+        // multipart: lleva la foto del administrador.
         mutationFn: async (input: CreateClientInput) => {
-            const { data } = await api.post<{ data: Client }>('/api/admin/clients', input);
+            const form = new FormData();
+            for (const [key, value] of Object.entries(input)) {
+                if (value === null || value === undefined || value === '') continue;
+                form.append(key, value instanceof File ? value : String(value));
+            }
+            const { data } = await api.post<{ data: Client }>('/api/admin/clients', form);
             return data.data;
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: [CLIENTS_QUERY_KEY] }),

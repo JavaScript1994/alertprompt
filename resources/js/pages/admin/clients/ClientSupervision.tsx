@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useResetClientUserMfa } from '@/features/mfa/api';
 import { MfaBadge, ResetMfaAction } from '@/features/mfa/UserMfaCells';
+import UserAvatar from '@/features/profile/UserAvatar';
 import { useClientActivity, useClientUsers, useSupervision } from '@/hooks/useClients';
 import { useCan } from '@/hooks/usePermissions';
 import { formatDateTime } from '@/lib/format';
@@ -36,9 +37,14 @@ export function ClientUsersTab({ clientId }: { clientId: number }) {
             userColumn.accessor('name', {
                 header: 'Usuario',
                 cell: (info) => (
-                    <div>
-                        <p className="font-medium text-foreground">{info.getValue()}</p>
-                        <p className="text-xs text-muted-foreground">{info.row.original.email}</p>
+                    <div className="flex items-center gap-3">
+                        <UserAvatar name={info.getValue()} photoUrl={info.row.original.photo_url} />
+                        <div className="min-w-0">
+                            <p className="font-medium text-foreground">{info.getValue()}</p>
+                            <p className="text-xs text-muted-foreground">
+                                {[info.row.original.job_title, info.row.original.email].filter(Boolean).join(' · ')}
+                            </p>
+                        </div>
                     </div>
                 ),
             }),

@@ -41,12 +41,13 @@ class TenantUserManager
             ->get();
     }
 
-    public function invite(Tenant $tenant, string $name, string $email, int $roleId): User
+    /** @param  array{first_name: string, last_name: string}  $person */
+    public function invite(Tenant $tenant, array $person, string $email, int $roleId): User
     {
         $role = $this->assignableRole($tenant, $roleId);
 
-        $user = DB::transaction(function () use ($tenant, $name, $email, $role) {
-            $user = $this->clients->createUser($tenant, $name, $email, $role->name);
+        $user = DB::transaction(function () use ($tenant, $person, $email, $role) {
+            $user = $this->clients->createUser($tenant, $person, $email, $role->name);
             $this->audit->record('user.invited', $tenant->id, $user, ['email' => $email, 'role' => $role->name]);
 
             return $user;
@@ -57,14 +58,13 @@ class TenantUserManager
         return $user;
     }
 
-    public function update(User $actor, User $user, string $name, int $roleId): User
+    /** Los datos personales se editan aparte (UserProfileService). */
+    public function updateRole(User $actor, User $user, int $roleId): User
     {
         $tenant = $user->tenant;
         $role = $this->assignableRole($tenant, $roleId);
 
-        DB::transaction(function () use ($actor, $user, $name, $role, $tenant) {
-            $user->update(['name' => $name]);
-
+        DB::transaction(function () use ($actor, $user, $role, $tenant) {
             $current = $this->roleNamesOf($user);
             if ($current !== [$role->name]) {
                 if ($user->is($actor) && ! $this->roleCanManage($role)) {

@@ -24,7 +24,7 @@ import Login from '@/pages/auth/Login';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import Campaigns from '@/pages/campaigns/Campaigns';
 import Contacts from '@/pages/contacts/Contacts';
-import SecuritySettings from '@/features/mfa/SecuritySettings';
+import MyProfile from '@/features/profile/MyProfile';
 import Home from '@/pages/dashboard/Home';
 import Reports from '@/pages/reports/Reports';
 import AccountSettings from '@/pages/settings/AccountSettings';
@@ -84,8 +84,9 @@ export default function Root() {
                         <Route element={<RequirePermission permission="users.view" />}>
                             <Route path="/settings/users" element={<Users />} />
                         </Route>
-                        {/* De cada usuario, sin permiso: todos gestionan su propio MFA. */}
-                        <Route path="/settings/security" element={<SecuritySettings />} />
+                        {/* De cada usuario, sin permiso: todos los roles gestionan su perfil y su MFA. */}
+                        <Route path="/settings/profile" element={<MyProfile key="data" initialTab="data" />} />
+                        <Route path="/settings/security" element={<MyProfile key="security" initialTab="security" />} />
 
                         <Route element={<RequirePermission permission="admin.clients.view" />}>
                             <Route path="/admin/clients/companies" element={<Clients key="company" type="company" />} />

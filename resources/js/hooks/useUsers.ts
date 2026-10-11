@@ -26,8 +26,10 @@ export function useAssignableRoles() {
     });
 }
 
-export interface UserFormInput {
-    name: string;
+export interface InviteUserInput {
+    first_name: string;
+    last_name: string;
+    email: string;
     role_id: number;
 }
 
@@ -35,20 +37,8 @@ export function useInviteUser() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (input: UserFormInput & { email: string }) => {
+        mutationFn: async (input: InviteUserInput) => {
             const { data } = await api.post<{ data: TenantUser }>('/api/users', input);
-            return data.data;
-        },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: [USERS_QUERY_KEY] }),
-    });
-}
-
-export function useUpdateUser() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async ({ id, ...input }: UserFormInput & { id: number }) => {
-            const { data } = await api.put<{ data: TenantUser }>(`/api/users/${id}`, input);
             return data.data;
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: [USERS_QUERY_KEY] }),
