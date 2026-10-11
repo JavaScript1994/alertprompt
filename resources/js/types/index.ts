@@ -447,6 +447,8 @@ export interface Invoice {
     igv: string;
     total: string;
     paid: string;
+    /** Saldado con notas de crédito (no es dinero recibido). */
+    credited: string;
     balance: string;
     description: string;
     /** Detalle sin IGV: el plan y cada servicio adicional. */
@@ -464,6 +466,8 @@ export interface Invoice {
 
 export interface BillingSummary {
     balance: string;
+    /** Notas de crédito aún no aplicadas: se descuentan solas del próximo comprobante. */
+    credit_balance: string;
     overdue_count: number;
     transfer_instructions: string;
     cards_enabled: boolean;
@@ -477,4 +481,23 @@ export interface SavedPaymentMethod {
     exp_month: number | null;
     exp_year: number | null;
     is_default: boolean;
+}
+
+/** Nota de crédito: corrige un comprobante; lo no aplicado es saldo a favor. */
+export interface CreditNote {
+    id: number;
+    code: string;
+    is_electronic: boolean;
+    issue_date: string;
+    currency: string;
+    subtotal: string;
+    igv: string;
+    total: string;
+    applied: string;
+    remaining: string;
+    reason: string;
+    lines: { description: string; amount: string }[];
+    customer: Invoice['customer'];
+    invoice: { id: number; code: string | null; document_type: 'factura' | 'boleta' | null };
+    tenant?: { id: number; name: string | null };
 }

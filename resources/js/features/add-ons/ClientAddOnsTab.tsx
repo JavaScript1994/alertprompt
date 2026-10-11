@@ -162,7 +162,7 @@ export default function ClientAddOnsTab({ clientId }: { clientId: number }) {
             <ConfirmDialog
                 open={cancelling !== null}
                 title={`Cancelar ${cancelling?.add_on.name ?? 'servicio'}`}
-                description="El módulo se desactiva de inmediato (salvo que su plan lo incluya) y deja de cobrarse."
+                description="El módulo se desactiva de inmediato (salvo que su plan lo incluya) y deja de cobrarse. Si su membresía es anual, se emite una nota de crédito por los meses ya cobrados que no usará (queda como saldo a favor)."
                 confirmLabel="Cancelar servicio"
                 destructive
                 loading={cancel.isPending}

@@ -15,6 +15,7 @@ import ClientAddOnsTab from '@/features/add-ons/ClientAddOnsTab';
 import { useClient, useImpersonation, useSetClientStatus } from '@/hooks/useClients';
 import { useCan } from '@/hooks/usePermissions';
 import { apiErrorMessage, formatDateTime } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import type { Client } from '@/types';
 import ClientBillingTab from './ClientBillingTab';
 import ClientChannelsTab from './ClientChannelsTab';
@@ -24,7 +25,8 @@ import ClientModulesTab from './ClientModulesTab';
 import { ClientActivityTab, ClientCampaignsTab, ClientContactsTab, ClientTemplatesTab, ClientUsersTab } from './ClientSupervision';
 import { CLIENT_STATUS, CLIENT_TYPE_LABELS, DOCUMENT_LABELS } from './clientLabels';
 
-type TabKey = 'summary' | 'users' | 'membership' | 'add-ons' | 'billing' | 'modules' | 'channels' | 'contacts' | 'templates' | 'campaigns' | 'activity';
+type TabKey = 'summary' | 'users' | 'membership' | 'add-ons' | 'billing' | 'modules' | 'channels' | 'supervision';
+type SupervisionKey = 'contacts' | 'templates' | 'campaigns' | 'activity';
 
 function Summary({ client }: { client: Client }) {
     const rows: [string, string | null][] = [
@@ -71,6 +73,46 @@ function Summary({ client }: { client: Client }) {
     );
 }
 
+const SUPERVISION_SECTIONS: { key: SupervisionKey; label: string }[] = [
+    { key: 'contacts', label: 'Contactos' },
+    { key: 'templates', label: 'Plantillas' },
+    { key: 'campaigns', label: 'Campañas' },
+    { key: 'activity', label: 'Actividad' },
+];
+
+/** Datos del cliente en solo lectura (contactos, plantillas, campañas) y su actividad. */
+function SupervisionTab({ clientId, canSupervise }: { clientId: number; canSupervise: boolean }) {
+    const [section, setSection] = useState<SupervisionKey>(canSupervise ? 'contacts' : 'activity');
+
+    if (!canSupervise) return <ClientActivityTab clientId={clientId} />;
+
+    return (
+        <div>
+            <div role="tablist" aria-label="Supervisión" className="mb-4 flex flex-wrap gap-2">
+                {SUPERVISION_SECTIONS.map(({ key, label }) => (
+                    <button
+                        key={key}
+                        type="button"
+                        role="tab"
+                        aria-selected={section === key}
+                        onClick={() => setSection(key)}
+                        className={cn(
+                            'rounded-full border px-3.5 py-1.5 text-sm transition-colors',
+                            section === key ? 'border-primary bg-lightprimary font-medium text-foreground dark:border-brand-200' : 'text-muted-foreground hover:bg-muted',
+                        )}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
+            {section === 'contacts' && <ClientContactsTab clientId={clientId} />}
+            {section === 'templates' && <ClientTemplatesTab clientId={clientId} />}
+            {section === 'campaigns' && <ClientCampaignsTab clientId={clientId} />}
+            {section === 'activity' && <ClientActivityTab clientId={clientId} />}
+        </div>
+    );
+}
+
 export default function ClientDetail() {
     const clientId = Number(useParams<{ id: string }>().id);
     const { data: client, isLoading } = useClient(clientId);
@@ -100,14 +142,8 @@ export default function ClientDetail() {
         ...(can('admin.billing.view') ? ([{ key: 'billing', label: 'Facturación' }] as TabItem<TabKey>[]) : []),
         ...(can('admin.modules.view') ? ([{ key: 'modules', label: 'Módulos' }] as TabItem<TabKey>[]) : []),
         { key: 'channels', label: 'Canales' },
-        ...(can('admin.supervision.view')
-            ? ([
-                  { key: 'contacts', label: 'Contactos' },
-                  { key: 'templates', label: 'Plantillas' },
-                  { key: 'campaigns', label: 'Campañas' },
-              ] as TabItem<TabKey>[])
-            : []),
-        { key: 'activity', label: 'Actividad' },
+        // Sin permiso de supervisión solo queda la actividad.
+        { key: 'supervision', label: can('admin.supervision.view') ? 'Supervisión' : 'Actividad' },
     ];
     const backTo = client.type === 'company' ? '/admin/clients/companies' : '/admin/clients/individuals';
 
@@ -169,10 +205,7 @@ export default function ClientDetail() {
             {tab === 'billing' && <ClientBillingTab clientId={client.id} />}
             {tab === 'modules' && <ClientModulesTab clientId={client.id} />}
             {tab === 'channels' && <ClientChannelsTab clientId={client.id} />}
-            {tab === 'contacts' && <ClientContactsTab clientId={client.id} />}
-            {tab === 'templates' && <ClientTemplatesTab clientId={client.id} />}
-            {tab === 'campaigns' && <ClientCampaignsTab clientId={client.id} />}
-            {tab === 'activity' && <ClientActivityTab clientId={client.id} />}
+            {tab === 'supervision' && <SupervisionTab clientId={client.id} canSupervise={can('admin.supervision.view')} />}
 
             <ClientFormDialog open={isEditing} type={client.type} client={client} onClose={() => setIsEditing(false)} />
 

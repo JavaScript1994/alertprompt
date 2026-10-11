@@ -67,4 +67,21 @@ class Invoice extends Model
     {
         return (string) $this->payments()->where('status', 'confirmed')->sum('amount');
     }
+
+    public function creditApplications(): HasMany
+    {
+        return $this->hasMany(CreditApplication::class);
+    }
+
+    /** Lo saldado con notas de crédito (no es dinero recibido). */
+    public function creditedAmount(): string
+    {
+        return (string) $this->creditApplications()->sum('amount');
+    }
+
+    /** Lo que falta cobrar: total − pagos − créditos aplicados. */
+    public function balance(): float
+    {
+        return max(0, round((float) $this->total - (float) $this->paidAmount() - (float) $this->creditedAmount(), 2));
+    }
 }

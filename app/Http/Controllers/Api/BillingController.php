@@ -6,15 +6,18 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Billing\AddPaymentMethodRequest;
+use App\Http\Resources\CreditNoteResource;
 use App\Http\Resources\InvoiceResource;
 use App\Http\Resources\PaymentMethodResource;
 use App\Http\Resources\PaymentResource;
+use App\Models\CreditNote;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
 use App\Models\Tenant;
 use App\Services\AuditLogger;
 use App\Services\Billing\BillingProviders;
+use App\Services\Billing\CreditNoteManager;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,12 +26,14 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 /** Facturación vista por el cliente: comprobantes, pagos y métodos de pago. */
 class BillingController extends Controller
 {
-    public function summary(BillingProviders $providers): JsonResponse
+    public function summary(BillingProviders $providers, CreditNoteManager $credits): JsonResponse
     {
         $open = Invoice::query()->where('status', 'issued')->get();
 
         return response()->json(['data' => [
-            'balance' => number_format($open->sum(fn (Invoice $i) => (float) $i->total - (float) $i->paidAmount()), 2, '.', ''),
+            'balance' => number_format($open->sum(fn (Invoice $i) => $i->balance()), 2, '.', ''),
+            // Notas de crédito aún no aplicadas: se descuentan solas del próximo comprobante.
+            'credit_balance' => number_format($credits->availableFor(TenantContext::id()), 2, '.', ''),
             'overdue_count' => $open->filter->isOverdue()->count(),
             'transfer_instructions' => config('billing.transfer_instructions'),
             'cards_enabled' => $providers->gateway()->supportsCards(),
@@ -38,13 +43,25 @@ class BillingController extends Controller
     public function invoices(Request $request): AnonymousResourceCollection
     {
         return InvoiceResource::collection(
-            Invoice::query()->with('payments')->latest('issue_date')->latest('id')->paginate(min((int) $request->integer('per_page', 10), 50)),
+            Invoice::query()->with(['payments', 'creditApplications'])->latest('issue_date')->latest('id')->paginate(min((int) $request->integer('per_page', 10), 50)),
         );
     }
 
     public function invoice(Invoice $invoice): InvoiceResource
     {
-        return new InvoiceResource($invoice->load('payments'));
+        return new InvoiceResource($invoice->load(['payments', 'creditApplications']));
+    }
+
+    public function creditNotes(Request $request): AnonymousResourceCollection
+    {
+        return CreditNoteResource::collection(
+            CreditNote::query()->with(['invoice', 'applications'])->latest('id')->paginate(min((int) $request->integer('per_page', 10), 50)),
+        );
+    }
+
+    public function creditNote(CreditNote $creditNote): CreditNoteResource
+    {
+        return new CreditNoteResource($creditNote->load(['invoice', 'applications']));
     }
 
     public function payments(Request $request): AnonymousResourceCollection

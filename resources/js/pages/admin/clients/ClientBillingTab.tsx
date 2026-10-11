@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAdminInvoices, useIssueInvoice } from '@/hooks/useBilling';
+import CreditNotesTable from '@/components/shared/CreditNotesTable';
+import { useAdminInvoices, useCreditNotes, useIssueInvoice } from '@/hooks/useBilling';
 import { useCan } from '@/hooks/usePermissions';
 import { apiErrorMessage } from '@/lib/format';
 import InvoicesTable from '../billing/InvoicesTable';
@@ -67,6 +68,8 @@ export default function ClientBillingTab({ clientId }: { clientId: number }) {
     const [isIssuing, setIsIssuing] = useState(false);
     const { data, isLoading } = useAdminInvoices({ page, client_id: clientId });
     const canManage = useCan()('admin.billing.manage');
+    const [creditPage, setCreditPage] = useState(1);
+    const { data: creditNotes } = useCreditNotes('admin', creditPage, clientId);
 
     return (
         <div className="space-y-4">
@@ -87,6 +90,13 @@ export default function ClientBillingTab({ clientId }: { clientId: number }) {
                 </>
             ) : (
                 <EmptyState icon={FileText} title="Sin comprobantes" description="Se emiten solos al activar o renovar la membresía." />
+            )}
+            {creditNotes && creditNotes.data.length > 0 && (
+                <section className="space-y-3 pt-4">
+                    <h3 className="text-base font-semibold">Notas de crédito</h3>
+                    <CreditNotesTable notes={creditNotes.data} scope="admin" />
+                    <Pagination meta={creditNotes.meta} noun="notas de crédito" onPageChange={setCreditPage} />
+                </section>
             )}
             {isIssuing && <IssueDialog clientId={clientId} onClose={() => setIsIssuing(false)} />}
         </div>

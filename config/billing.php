@@ -16,6 +16,9 @@ return [
     'series' => [
         'factura' => env('BILLING_SERIES_FACTURA', 'F001'),
         'boleta' => env('BILLING_SERIES_BOLETA', 'B001'),
+        // Notas de crédito: la serie empieza con la letra del comprobante que corrigen.
+        'nota_credito_factura' => env('BILLING_SERIES_NC_FACTURA', 'FC01'),
+        'nota_credito_boleta' => env('BILLING_SERIES_NC_BOLETA', 'BC01'),
     ],
 
     /*

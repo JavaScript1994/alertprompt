@@ -32,7 +32,7 @@ class InvoiceController extends Controller
         $request->validate(['status' => ['nullable', 'in:issued,paid,void,overdue'], 'client_id' => ['nullable', 'integer']]);
 
         $invoices = $this->query()
-            ->with('payments')
+            ->with(['payments', 'creditApplications'])
             ->when($request->filled('client_id'), fn (Builder $q) => $q->where('tenant_id', $request->integer('client_id')))
             ->when($request->input('status') === 'overdue', fn (Builder $q) => $q->where('status', InvoiceStatus::Issued)->where('due_date', '<', today()))
             ->when(in_array($request->input('status'), ['issued', 'paid', 'void'], true), fn (Builder $q) => $q->where('status', $request->input('status')))
@@ -45,7 +45,7 @@ class InvoiceController extends Controller
 
     public function show(int $invoice): InvoiceResource
     {
-        return new InvoiceResource($this->query()->with('payments')->findOrFail($invoice));
+        return new InvoiceResource($this->query()->with(['payments', 'creditApplications'])->findOrFail($invoice));
     }
 
     public function store(IssueInvoiceRequest $request, Tenant $client): JsonResponse

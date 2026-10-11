@@ -81,6 +81,8 @@ function useClientAddOnMutation<TInput>(clientId: number, request: (input: TInpu
             // El contrato prende o apaga un módulo del cliente.
             queryClient.invalidateQueries({ queryKey: ['admin-modules'] });
             queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
+            // Contratar (anual) emite un prorrateo y cancelar, una nota de crédito.
+            queryClient.invalidateQueries({ queryKey: ['billing'] });
         },
     });
 }
