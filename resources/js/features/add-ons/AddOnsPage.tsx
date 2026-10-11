@@ -30,7 +30,8 @@ function RequestDialog({ addOn, onClose }: { addOn: ClientAddOn; onClose: () => 
                     <DialogTitle>Solicitar {addOn.name}</DialogTitle>
                     <DialogDescription>
                         {addOnPrice(addOn.monthly_price)} / mes + IGV. AlertPrompt revisará tu solicitud; cuando la apruebe, el servicio se
-                        activa de inmediato y se suma a tu factura mensual desde el siguiente periodo.
+                        activa de inmediato y se suma a la factura de tu plan desde el siguiente periodo. Si tu membresía es anual,
+                        recibirás además un comprobante por los meses que faltan del año.
                     </DialogDescription>
                 </DialogHeader>
                 {request.isError && (

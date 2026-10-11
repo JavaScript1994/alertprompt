@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\TenantAddOn;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\Billing\InvoiceManager;
 use App\Services\Modules\TenantModules;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
@@ -22,12 +23,17 @@ use Illuminate\Validation\ValidationException;
  * servicio; cancelarlo lo apaga. Al cambiar de plan, el cliente queda con los
  * módulos del plan nuevo más los que tiene contratados, y se cancela lo que
  * el plan nuevo ya incluye (no se cobra dos veces).
+ *
+ * Cobro: entra en la factura del plan desde el período siguiente a la
+ * contratación (InvoiceManager); en membresías anuales, el resto del año se
+ * prorratea en un comprobante aparte al contratar.
  */
 class AddOnManager
 {
     public function __construct(
         private readonly TenantModules $modules,
         private readonly AuditLogger $audit,
+        private readonly InvoiceManager $invoices,
     ) {}
 
     /** @return Collection<int, TenantAddOn> */
@@ -59,7 +65,7 @@ class AddOnManager
             throw ValidationException::withMessages(['add_on' => "El cliente ya tiene «{$addOn->name}» activo."]);
         }
 
-        return DB::transaction(function () use ($tenant, $addOn, $by, $startsAt) {
+        $contract = DB::transaction(function () use ($tenant, $addOn, $by, $startsAt) {
             $contract = TenantAddOn::query()->create([
                 'tenant_id' => $tenant->id,
                 'add_on_id' => $addOn->id,
@@ -77,6 +83,14 @@ class AddOnManager
 
             return $contract;
         });
+
+        // Membresía anual: los meses que faltan del año se cobran aparte (en
+        // las mensuales entra en la factura del período siguiente). Tras el
+        // commit: si se contrata dentro de otra transacción (aprobar una
+        // solicitud), el comprobante no se envía a SUNAT antes de confirmarla.
+        DB::afterCommit(fn () => $this->invoices->issueAddOnProration($contract));
+
+        return $contract;
     }
 
     public function cancel(TenantAddOn $contract, ?User $by = null, ?string $reason = null): TenantAddOn

@@ -184,7 +184,8 @@ export default function AdminAddOnsPage() {
 
             <Alert variant="info" className="mb-6">
                 <AlertDescription>
-                    Un servicio contratado se suma a la factura del plan desde el siguiente periodo. Desactivarlo deja de ofrecerlo,
+                    Un servicio contratado se suma a la factura del plan desde el siguiente periodo; en membresías anuales, los
+                    meses que faltan del año se cobran en un comprobante aparte al contratarlo. Desactivarlo deja de ofrecerlo,
                     pero los clientes que lo tienen lo conservan. Los servicios no se eliminan para no perder el historial.
                 </AlertDescription>
             </Alert>

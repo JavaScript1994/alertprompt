@@ -30,7 +30,7 @@ function DecisionDialog({ request, approve, onClose }: { request: AddOnRequest; 
                     <DialogDescription>
                         {request.tenant.name}: {request.add_on.name}
                         {approve &&
-                            ` (${addOnPrice(request.add_on.monthly_price)} / mes + IGV). Se activa hoy y se suma a su factura desde el siguiente periodo.`}
+                            ` (${addOnPrice(request.add_on.monthly_price)} / mes + IGV). Se activa hoy y se suma a su factura desde el siguiente periodo; si su membresía es anual, se emite un comprobante por los meses que faltan del año.`}
                     </DialogDescription>
                 </DialogHeader>
                 {decide.isError && (

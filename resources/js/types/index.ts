@@ -449,6 +449,8 @@ export interface Invoice {
     paid: string;
     balance: string;
     description: string;
+    /** Detalle sin IGV: el plan y cada servicio adicional. */
+    lines: { description: string; amount: string }[];
     customer: { name: string; document_type: string | null; document_number: string | null; address: string | null };
     status: InvoiceStatus;
     is_overdue: boolean;

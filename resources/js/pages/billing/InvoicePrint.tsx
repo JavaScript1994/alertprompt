@@ -80,10 +80,12 @@ export default function InvoicePrint({ scope }: { scope: 'client' | 'admin' }) {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr className="border-b">
-                            <td className="py-4">{invoice.description}</td>
-                            <td className="py-4 text-right tabular-nums">{money(invoice.subtotal, invoice.currency)}</td>
-                        </tr>
+                        {invoice.lines.map((line, index) => (
+                            <tr key={index} className="border-b">
+                                <td className="py-4">{line.description}</td>
+                                <td className="py-4 text-right tabular-nums">{money(line.amount, invoice.currency)}</td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
 

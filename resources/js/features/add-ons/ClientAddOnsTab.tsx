@@ -34,7 +34,7 @@ function ContractDialog({ clientId, onClose }: { clientId: number; onClose: () =
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>Contratar servicio</DialogTitle>
-                    <DialogDescription>Se activa hoy con el precio vigente del catálogo y se suma a su factura desde el siguiente periodo.</DialogDescription>
+                    <DialogDescription>Se activa hoy con el precio vigente del catálogo y se suma a su factura desde el siguiente periodo. Si su membresía es anual, se emite un comprobante por los meses que faltan del año.</DialogDescription>
                 </DialogHeader>
                 {contract.isError && (
                     <Alert variant="error">

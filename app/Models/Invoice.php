@@ -20,8 +20,8 @@ class Invoice extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-        'tenant_id', 'membership_id', 'period_start', 'document_type', 'series', 'number', 'issue_date', 'due_date',
-        'currency', 'subtotal', 'igv', 'total', 'description', 'customer', 'status', 'sunat_status',
+        'tenant_id', 'membership_id', 'tenant_add_on_id', 'period_start', 'document_type', 'series', 'number', 'issue_date', 'due_date',
+        'currency', 'subtotal', 'igv', 'total', 'description', 'lines', 'customer', 'status', 'sunat_status',
         'provider_reference', 'pdf_url', 'paid_at', 'voided_at', 'void_reason', 'created_by',
     ];
 
@@ -35,6 +35,7 @@ class Invoice extends Model
             'igv' => 'decimal:2',
             'total' => 'decimal:2',
             'customer' => 'array',
+            'lines' => 'array',
             'status' => InvoiceStatus::class,
             'sunat_status' => SunatStatus::class,
             'paid_at' => 'datetime',
