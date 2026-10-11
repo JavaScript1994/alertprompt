@@ -24,6 +24,7 @@ return [
         'csv_import' => ['label' => 'Importación CSV', 'description' => 'Carga de contactos desde archivos CSV.'],
         'scheduling' => ['label' => 'Envíos programados', 'description' => 'Programar campañas para una fecha y hora.'],
         'reports' => ['label' => 'Reportes', 'description' => 'Métricas de entrega y exportación.'],
+        'branding' => ['label' => 'Marca en el login', 'description' => 'Logo, color y título propios en el login de su subdominio.'],
     ],
 
 ];

@@ -7,6 +7,9 @@ export type DocumentType = 'ruc' | 'dni' | 'ce';
 export interface Tenant {
     id: number;
     name: string;
+    /** Subdominio del login de la empresa; null en la plataforma. */
+    slug: string | null;
+    login_url: string | null;
     type: TenantType;
     document_type: DocumentType | null;
     document_number: string | null;
@@ -23,7 +26,7 @@ export interface Tenant {
     modules: ModuleKey[];
 }
 
-export type ModuleKey = 'whatsapp' | 'sms' | 'email' | 'csv_import' | 'scheduling' | 'reports';
+export type ModuleKey = 'whatsapp' | 'sms' | 'email' | 'csv_import' | 'scheduling' | 'reports' | 'branding';
 
 export interface ModuleSummary {
     key: ModuleKey;

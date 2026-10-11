@@ -24,6 +24,7 @@ import Login from '@/pages/auth/Login';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import Campaigns from '@/pages/campaigns/Campaigns';
 import Contacts from '@/pages/contacts/Contacts';
+import BrandingSettingsPage from '@/features/branding/BrandingSettingsPage';
 import MyProfile from '@/features/profile/MyProfile';
 import Home from '@/pages/dashboard/Home';
 import Reports from '@/pages/reports/Reports';
@@ -79,6 +80,9 @@ export default function Root() {
                             </Route>
                             <Route element={<RequirePermission permission="whatsapp_account.view" />}>
                                 <Route path="/settings/whatsapp" element={<ChannelAccounts />} />
+                            </Route>
+                            <Route element={<RequirePermission permission="settings.view" />}>
+                                <Route path="/settings/branding" element={<BrandingSettingsPage />} />
                             </Route>
                         </Route>
                         <Route element={<RequirePermission permission="users.view" />}>

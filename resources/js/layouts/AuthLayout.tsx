@@ -1,6 +1,8 @@
 import { CircleHelp } from 'lucide-react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Logo from '@/components/shared/Logo';
+import BrandStyle from '@/features/branding/BrandStyle';
+import { usePublicBranding } from '@/features/branding/api';
 import ComingSoon from '@/pages/auth/partials/ComingSoon';
 import LoginHero from '@/pages/auth/partials/LoginHero';
 import { cn } from '@/lib/utils';
@@ -15,11 +17,19 @@ const CURRENT_YEAR = new Date().getFullYear();
 export default function AuthLayout() {
     // Configurar la verificación en dos pasos necesita más ancho (QR y pasos en dos columnas).
     const wide = useLocation().pathname.startsWith('/mfa');
+    // En el subdominio de una empresa con marca: su logo, color y título.
+    const { data: branding } = usePublicBranding();
+    const branded = branding?.branded === true;
 
     return (
         <div className="flex min-h-dvh flex-col bg-card xl:h-dvh xl:min-h-[600px]">
+            <BrandStyle color={branded ? branding?.color : null} />
             <header className="mx-auto w-full max-w-[1600px] flex shrink-0 items-center justify-between px-6 py-5 sm:px-10 xl:px-16 xl:py-7 short:xl:py-4">
-                <Logo size="lg" />
+                {branded && branding?.logo_url ? (
+                    <img src={branding.logo_url} alt={branding.tenant?.name ?? ''} className="h-12 w-auto max-w-[14rem] object-contain object-left" />
+                ) : (
+                    <Logo size="lg" />
+                )}
                 <ComingSoon className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
                     <CircleHelp className="size-4.5" />
                     <span className="hidden sm:inline">Centro de ayuda</span>
@@ -28,7 +38,7 @@ export default function AuthLayout() {
 
             <main className="mx-auto w-full max-w-[1600px] grid min-h-0 flex-1 grid-cols-1 gap-16 px-6 sm:px-10 xl:grid-cols-2 xl:px-16 2xl:gap-24">
                 <div className="hidden min-h-0 xl:block">
-                    <LoginHero />
+                    <LoginHero title={branded ? branding?.title : null} />
                 </div>
                 {/*
                   En desktop la página tiene alto fijo: si el contenido no entra, esta
@@ -43,7 +53,11 @@ export default function AuthLayout() {
             </main>
 
             <footer className="mx-auto w-full max-w-[1600px] flex shrink-0 flex-col items-center justify-between gap-3 px-6 py-5 text-xs text-muted-foreground sm:flex-row sm:px-10 xl:px-16 xl:py-6 short:xl:py-4">
-                <p>© {CURRENT_YEAR} AlertPrompt. Todos los derechos reservados.</p>
+                <p>
+                    {branded && branding?.tenant
+                        ? `${branding.tenant.name} · Con la tecnología de AlertPrompt`
+                        : `© ${CURRENT_YEAR} AlertPrompt. Todos los derechos reservados.`}
+                </p>
                 <div className="flex gap-6">
                     <ComingSoon className="hover:text-foreground">Privacidad</ComingSoon>
                     <ComingSoon className="hover:text-foreground">Términos de uso</ComingSoon>

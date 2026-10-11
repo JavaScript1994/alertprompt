@@ -108,6 +108,21 @@ los usuarios de cada cliente. Nunca a los contactos.
   `hash_equals`) ni `challenge_token`. El correo con el OTP **no** va a la cola
   (el payload quedaría en Redis/`failed_jobs`).
 
+### 2.5 Subdominio y marca por empresa
+
+- Cada cliente tiene `tenants.slug` y su login en `{slug}.{APP_BASE_DOMAIN}`.
+  Ahí **solo** inician sesión y trabajan usuarios de esa empresa
+  (`ResolveTenantDomain` → 403 `wrong_domain`). El dominio base es el login
+  general (y el único del Administrador general).
+- El slug se genera al crear el cliente y solo lo cambia la plataforma:
+  cambiarlo rompe los enlaces que la empresa ya compartió. Hay palabras
+  reservadas (`config/branding.php`).
+- Con el módulo `branding` (planes Avanzado y Empresarial) el login muestra
+  logo, color y título propios. El logo es público pero **nunca SVG** (puede
+  llevar scripts). El color debe tener contraste WCAG AA con blanco.
+- Invitaciones y recuperación de contraseña llevan al subdominio si la
+  empresa tiene la marca activa.
+
 ---
 
 ## 3. Stack
@@ -267,7 +282,8 @@ no es más barato.
 ## 5. Esquema de base de datos
 
 ```
-tenants               id, name, plan, settings(jsonb), created_at
+tenants               id, name, slug (subdominio del login, UNIQUE; null en la plataforma),
+                      plan, settings(jsonb), brand_logo_path, brand_color, brand_title, created_at
 users                 id, tenant_id, name (= nombres + apellidos), email, pending_email,
                       password, deactivated_at,
                       first_name, last_name, job_title, birth_date, phone, mobile,

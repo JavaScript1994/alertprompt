@@ -18,6 +18,7 @@ class Tenant extends Model
     protected $fillable = [
         'name', 'type', 'document_type', 'document_number', 'contact_email', 'contact_phone', 'address',
         'plan', 'status', 'settings',
+        'slug',
     ];
 
     protected $casts = [

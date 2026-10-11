@@ -18,11 +18,14 @@ return [
     |
     */
 
+    // Incluye los subdominios de los clientes (*.{dominio base}[:puerto]): el
+    // login con marca de cada empresa es un SPA en su propio subdominio.
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
+        '%s%s,*.%s%s',
         'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
         Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
+        env('APP_BASE_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST) ?: 'localhost'),
+        ($port = parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_PORT)) ? ':'.$port : '',
     ))),
 
     /*

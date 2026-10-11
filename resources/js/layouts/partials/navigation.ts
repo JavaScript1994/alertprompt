@@ -11,6 +11,7 @@ import {
     Megaphone,
     MessageCircle,
     MessageSquareText,
+    Palette,
     Receipt,
     Settings2,
     ShieldCheck,
@@ -116,6 +117,7 @@ const CLIENT_NAV: NavSection[] = [
             { to: '/settings/users', label: 'Usuarios', icon: UserCog, permission: 'users.view' },
             { to: '/settings/membership', label: 'Membresía', icon: FileText, permission: 'membership.view' },
             { to: '/settings/whatsapp', label: 'Cuenta de WhatsApp', icon: MessageCircle, permission: 'whatsapp_account.view' },
+            { to: '/settings/branding', label: 'Marca', icon: Palette, permission: 'settings.view', module: 'branding' },
         ],
     },
 ];

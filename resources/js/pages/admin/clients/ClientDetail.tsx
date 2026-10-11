@@ -33,6 +33,7 @@ function Summary({ client }: { client: Client }) {
         ['Teléfono', client.contact_phone],
         ['Dirección', client.address],
         ['Plan', client.plan_name],
+        ['Login de la empresa', client.login_url],
         ['Cliente desde', formatDateTime(client.created_at)],
     ];
 

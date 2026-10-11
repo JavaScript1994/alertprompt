@@ -69,6 +69,16 @@ Dejar esta terminal abierta mientras se trabaja.
     Contraseña: password
     Tenant:     Demo Empresa SAC (con contactos de prueba)
 
+LOGIN POR EMPRESA (subdominio): cada empresa entra en su propia dirección,
+donde solo pueden iniciar sesión sus usuarios. En local no hay que
+configurar nada: los navegadores resuelven *.localhost solos.
+    http://demo-empresa-sac.localhost:8000        (Demo Empresa SAC)
+    http://empresa-de-prueba-sac.localhost:8000   (Empresa de Prueba SAC)
+El identificador de cada empresa se ve en su ficha (Administración >
+Clientes) y en Configuración > Marca del cliente. El Administrador general
+entra siempre por http://localhost:8000.
+Logo, color y título propios: módulo "Marca" (planes Avanzado y Empresarial).
+
 Si la base ya existía antes de los roles, crear el dueño con:
     docker compose exec app php artisan db:seed --class=PlatformSeeder
 
@@ -145,6 +155,22 @@ Variables nuevas (ver .env.example):
     BILLING_GATEWAY              manual | culqi (pendiente de implementar)
 
 
+8-bis. DESPLIEGUE DEL LOGIN POR SUBDOMINIO (producción)
+-----------------------------------------------------
+Sin esto el login por empresa no funciona en producción (el resto sí):
+    1. DNS: registro comodín  *.alertprompt.pe  →  IP del servidor
+       (además del registro de alertprompt.pe).
+    2. Certificado SSL comodín para *.alertprompt.pe y alertprompt.pe
+       (Let's Encrypt con validación DNS-01, p. ej. certbot + plugin del
+       proveedor DNS). El HTTP-01 normal NO sirve para comodines.
+    3. nginx: server_name alertprompt.pe *.alertprompt.pe;  (el de local ya
+       acepta cualquier host con server_name _).
+    4. .env: APP_URL=https://alertprompt.pe  y  APP_BASE_DOMAIN=alertprompt.pe
+       Dejar SESSION_DOMAIN vacío: así cada empresa tiene su propia cookie de
+       sesión y una sesión no sirve en el subdominio de otra.
+    5. php artisan config:clear && docker compose restart app horizon
+
+
 9. PROBLEMAS FRECUENTES
 -----------------------
 "permission denied" al hacer docker compose up --build
@@ -171,6 +197,12 @@ Ver los correos en local sin enviarlos (códigos de respaldo, avisos, invitacion
 "Class PragmaRX\Google2FA\... not found" (u otro paquete nuevo) en la app
     El vendor del contenedor está desactualizado: ver sección 7
     (composer install dentro del contenedor).
+
+Un archivo subido por tinker no se ve (logo, foto) / "Permission denied"
+    tinker por defecto corre como root y deja carpetas que php-fpm
+    (www-data) no puede leer. Usa:  docker compose exec -u 82 app php artisan tinker
+    Para arreglar lo que ya quedó:
+    docker compose exec -u 0 app chown -R 82:82 storage
 
 Perdí la app de autenticación de un usuario de prueba (solo en local)
     Lo normal: otro administrador lo restablece desde Usuarios (icono de
