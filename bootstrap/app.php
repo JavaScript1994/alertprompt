@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureMfaVerified;
 use App\Http\Middleware\EnsureModuleEnabled;
 use App\Http\Middleware\EnsurePlatformTenant;
 use App\Http\Middleware\RequireReauth;
+use App\Http\Middleware\ResolveTenantDomain;
 use App\Http\Middleware\SuperviseClient;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -35,6 +36,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->group('api', [
             EnsureFrontendRequestsAreStateful::class,
             BindTenantFromAuth::class,
+            // Después de la sesión (necesita el usuario) y antes de los bindings.
+            ResolveTenantDomain::class,
             SubstituteBindings::class,
             AuditImpersonatedWrites::class,
         ]);

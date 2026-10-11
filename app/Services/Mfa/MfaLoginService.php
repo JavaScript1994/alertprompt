@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Mfa;
 
 use App\Enums\AuthEventType;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Impersonation;
 use App\Support\TenantContext;
@@ -30,9 +31,16 @@ class MfaLoginService
         private readonly AuthEventRecorder $events,
     ) {}
 
-    /** Valida contraseña y estado del usuario/tenant. No abre sesión. */
-    public function checkPassword(string $email, string $password): User
+    /**
+     * Valida contraseña y estado del usuario/tenant. No abre sesión.
+     * En el subdominio de un cliente ($domainTenant) solo entran sus usuarios.
+     */
+    public function checkPassword(string $email, string $password, ?Tenant $domainTenant = null, bool $unknownDomain = false): User
     {
+        if ($unknownDomain) {
+            throw ValidationException::withMessages(['email' => 'Esta dirección no corresponde a ninguna empresa. Revisa el enlace.']);
+        }
+
         $provider = Auth::guard('web')->getProvider();
 
         /** @var User|null $user */
@@ -43,6 +51,13 @@ class MfaLoginService
         }
 
         $user->load('tenant');
+
+        // Después de validar la contraseña: no revela qué correos existen.
+        if ($domainTenant !== null && $user->tenant_id !== $domainTenant->id) {
+            throw ValidationException::withMessages([
+                'email' => "Este acceso es solo para usuarios de {$domainTenant->name}. Entra desde el enlace de tu empresa.",
+            ]);
+        }
 
         $blocked = match (true) {
             ! $user->tenant->status->canSignIn() => 'La cuenta de tu empresa está suspendida. Comunícate con soporte.',

@@ -19,6 +19,8 @@ use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BillingController;
+use App\Http\Controllers\Api\BrandingController;
+use App\Http\Controllers\Api\BrandingSettingsController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\ChannelAccountController;
 use App\Http\Controllers\Api\ConsentController;
@@ -37,6 +39,10 @@ use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+
+// Marca del login según el subdominio (público: se ve antes de iniciar sesión).
+Route::get('/branding', [BrandingController::class, 'show'])->middleware('throttle:60,1');
+Route::get('/branding/logo', [BrandingController::class, 'logo'])->middleware('throttle:60,1');
 Route::post('/forgot-password', [PasswordController::class, 'forgot'])->middleware('throttle:5,1');
 Route::post('/reset-password', [PasswordController::class, 'reset'])->middleware('throttle:10,1');
 
@@ -136,6 +142,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
             Route::get('/settings/account', [TenantSettingsController::class, 'show'])->middleware('permission:settings.view');
             Route::put('/settings/account', [TenantSettingsController::class, 'update'])->middleware('permission:settings.manage');
+
+            Route::prefix('settings/branding')->middleware('module:branding')->group(function () {
+                Route::get('/', [BrandingSettingsController::class, 'show'])->middleware('permission:settings.view');
+                Route::get('/logo', [BrandingSettingsController::class, 'logo'])->middleware('permission:settings.view');
+                Route::put('/', [BrandingSettingsController::class, 'update'])->middleware('permission:settings.manage');
+                Route::post('/logo', [BrandingSettingsController::class, 'uploadLogo'])->middleware('permission:settings.manage');
+                Route::delete('/logo', [BrandingSettingsController::class, 'deleteLogo'])->middleware('permission:settings.manage');
+            });
         });
 
         // Equipo de la cuenta: también lo usa la plataforma para su propio equipo.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Notifications;
 
 use App\Models\User;
+use App\Support\TenantDomain;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -32,7 +33,8 @@ class SetPasswordLink extends Notification implements ShouldQueue
 
     public function toMail(User $notifiable): MailMessage
     {
-        $url = rtrim((string) config('app.url'), '/').'/reset-password?'.http_build_query(array_filter([
+        // Al login con la marca de su empresa, si la tiene.
+        $url = TenantDomain::linkBaseFor($notifiable->tenant).'/reset-password?'.http_build_query(array_filter([
             'token' => $this->token,
             'email' => $notifiable->email,
             'invite' => $this->invitation ? '1' : null,

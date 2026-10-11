@@ -7,6 +7,7 @@ namespace App\Http\Resources;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Services\Modules\TenantModules;
+use App\Support\TenantDomain;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,6 +21,8 @@ class TenantResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'slug' => $this->slug,
+            'login_url' => TenantDomain::urlFor($this->resource),
             'type' => $this->type,
             'document_type' => $this->document_type,
             'document_number' => $this->document_number,
