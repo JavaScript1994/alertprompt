@@ -15,6 +15,7 @@ use App\Services\Memberships\MembershipManager;
 use App\Services\Modules\TenantModules;
 use App\Services\Users\UserProfileService;
 use App\Support\TenantContext;
+use App\Support\TenantSlug;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
@@ -45,6 +46,7 @@ class ClientManager
         [$tenant, $admin] = DB::transaction(function () use ($data) {
             $tenant = Tenant::query()->create([
                 'name' => $data['name'],
+                'slug' => TenantSlug::unique((string) $data['name']),
                 'type' => TenantType::from($data['type']),
                 'document_type' => $data['document_type'],
                 'document_number' => $data['document_number'],

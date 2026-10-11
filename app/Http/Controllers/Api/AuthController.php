@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Mfa\AuthEventRecorder;
 use App\Services\Mfa\ChallengeTokenService;
 use App\Services\Mfa\MfaLoginService;
+use App\Support\TenantDomain;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +33,8 @@ class AuthController extends Controller
         $user = $login->checkPassword(
             $request->string('email')->toString(),
             $request->string('password')->toString(),
+            TenantDomain::current($request),
+            (bool) $request->attributes->get('domain_unknown', false),
         );
 
         if ($user->hasMfaEnabled()) {

@@ -34,6 +34,8 @@ class InvoiceResource extends JsonResource
             'paid' => number_format($paid, 2, '.', ''),
             'balance' => number_format(max(0, (float) $this->total - $paid), 2, '.', ''),
             'description' => $this->description,
+            // Los emitidos antes del desglose tienen una sola línea.
+            'lines' => $this->lines ?? [['description' => $this->description, 'amount' => (string) $this->subtotal]],
             'customer' => $this->customer,
             'status' => $this->status,
             'is_overdue' => $this->isOverdue(),

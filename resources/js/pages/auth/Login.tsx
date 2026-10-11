@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { usePublicBranding } from '@/features/branding/api';
 import MfaChallenge from '@/features/mfa/MfaChallenge';
 import type { LoginChallenge } from '@/features/mfa/types';
 import { useAuthUser, useLogin } from '@/hooks/useAuth';
@@ -22,6 +23,12 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+/** El dominio general (sin el subdominio de la empresa). */
+function baseDomainUrl(): string {
+    const { protocol, host } = window.location;
+    return `${protocol}//${host.split('.').slice(1).join('.')}/login`;
+}
+
 const inputClasses = 'h-14 rounded-lg bg-card pl-12 text-base shorter:h-12';
 const iconClasses = 'pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground';
 
@@ -29,6 +36,7 @@ export default function Login() {
     const { data: user, isLoading: isLoadingUser } = useAuthUser();
     const login = useLogin();
     const [showPassword, setShowPassword] = useState(false);
+    const { data: branding } = usePublicBranding();
     const [challenge, setChallenge] = useState<LoginChallenge | null>(null);
     // Vuelve aquí desde el enlace de confirmación de cambio de correo.
     const [searchParams] = useSearchParams();
@@ -97,10 +105,25 @@ export default function Login() {
                 <h2 className="text-[2rem] font-bold tracking-tight text-brand-700 shorter:text-[1.75rem] dark:text-white">
                     Bienvenido de nuevo
                 </h2>
-                <p className="mt-3 text-muted-foreground shorter:mt-1.5">Inicia sesión y continúa conectando con tus clientes.</p>
+                <p className="mt-3 text-muted-foreground shorter:mt-1.5">
+                    {branding?.tenant
+                        ? `Inicia sesión en ${branding.tenant.name}.`
+                        : 'Inicia sesión y continúa conectando con tus clientes.'}
+                </p>
             </div>
 
             <form onSubmit={onSubmit} className="mt-10 space-y-6 short:mt-7 shorter:mt-5 shorter:space-y-4" noValidate>
+                {branding?.unknown && (
+                    <Alert variant="warning">
+                        <AlertCircle />
+                        <AlertTitle>
+                            Esta dirección no corresponde a ninguna empresa.{' '}
+                            <a href={baseDomainUrl()} className="font-semibold underline">
+                                Ir al inicio de AlertPrompt
+                            </a>
+                        </AlertTitle>
+                    </Alert>
+                )}
                 {emailChanged && (
                     <Alert variant="success">
                         <CheckCircle2 />

@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import ClientAddOnsTab from '@/features/add-ons/ClientAddOnsTab';
 import { useClient, useImpersonation, useSetClientStatus } from '@/hooks/useClients';
 import { useCan } from '@/hooks/usePermissions';
 import { apiErrorMessage, formatDateTime } from '@/lib/format';
@@ -23,7 +24,7 @@ import ClientModulesTab from './ClientModulesTab';
 import { ClientActivityTab, ClientCampaignsTab, ClientContactsTab, ClientTemplatesTab, ClientUsersTab } from './ClientSupervision';
 import { CLIENT_STATUS, CLIENT_TYPE_LABELS, DOCUMENT_LABELS } from './clientLabels';
 
-type TabKey = 'summary' | 'users' | 'membership' | 'billing' | 'modules' | 'channels' | 'contacts' | 'templates' | 'campaigns' | 'activity';
+type TabKey = 'summary' | 'users' | 'membership' | 'add-ons' | 'billing' | 'modules' | 'channels' | 'contacts' | 'templates' | 'campaigns' | 'activity';
 
 function Summary({ client }: { client: Client }) {
     const rows: [string, string | null][] = [
@@ -33,6 +34,7 @@ function Summary({ client }: { client: Client }) {
         ['Teléfono', client.contact_phone],
         ['Dirección', client.address],
         ['Plan', client.plan_name],
+        ['Login de la empresa', client.login_url],
         ['Cliente desde', formatDateTime(client.created_at)],
     ];
 
@@ -89,7 +91,12 @@ export default function ClientDetail() {
     const tabs: TabItem<TabKey>[] = [
         { key: 'summary', label: 'Resumen' },
         { key: 'users', label: 'Usuarios' },
-        ...(can('admin.memberships.view') ? ([{ key: 'membership', label: 'Membresía' }] as TabItem<TabKey>[]) : []),
+        ...(can('admin.memberships.view')
+            ? ([
+                  { key: 'membership', label: 'Membresía' },
+                  { key: 'add-ons', label: 'Servicios' },
+              ] as TabItem<TabKey>[])
+            : []),
         ...(can('admin.billing.view') ? ([{ key: 'billing', label: 'Facturación' }] as TabItem<TabKey>[]) : []),
         ...(can('admin.modules.view') ? ([{ key: 'modules', label: 'Módulos' }] as TabItem<TabKey>[]) : []),
         { key: 'channels', label: 'Canales' },
@@ -158,6 +165,7 @@ export default function ClientDetail() {
             {tab === 'summary' && <Summary client={client} />}
             {tab === 'users' && <ClientUsersTab clientId={client.id} />}
             {tab === 'membership' && <ClientMembershipTab clientId={client.id} />}
+            {tab === 'add-ons' && <ClientAddOnsTab clientId={client.id} />}
             {tab === 'billing' && <ClientBillingTab clientId={client.id} />}
             {tab === 'modules' && <ClientModulesTab clientId={client.id} />}
             {tab === 'channels' && <ClientChannelsTab clientId={client.id} />}

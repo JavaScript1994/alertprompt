@@ -11,6 +11,9 @@ import {
     Megaphone,
     MessageCircle,
     MessageSquareText,
+    Newspaper,
+    Palette,
+    Puzzle,
     Receipt,
     Settings2,
     ShieldCheck,
@@ -68,10 +71,16 @@ const PLATFORM_NAV: NavSection[] = [
         ],
     },
     {
+        heading: 'Comunicación',
+        items: [{ to: '/admin/announcements', label: 'Comunicados', icon: Newspaper, permission: 'admin.announcements.view' }],
+    },
+    {
         heading: 'Facturación',
         items: [
             { to: '/admin/plans', label: 'Planes', icon: Layers, permission: 'admin.memberships.view' },
             { to: '/admin/plan-changes', label: 'Solicitudes de plan', icon: Inbox, permission: 'admin.memberships.view' },
+            { to: '/admin/add-ons', label: 'Servicios', icon: Puzzle, permission: 'admin.memberships.view' },
+            { to: '/admin/add-on-requests', label: 'Solicitudes de servicios', icon: Inbox, permission: 'admin.memberships.view' },
             { to: '/admin/invoices', label: 'Comprobantes', icon: Receipt, permission: 'admin.billing.view' },
         ],
     },
@@ -115,7 +124,9 @@ const CLIENT_NAV: NavSection[] = [
             { to: '/settings', label: 'Panel', icon: Settings2, permission: 'settings.view', exact: true },
             { to: '/settings/users', label: 'Usuarios', icon: UserCog, permission: 'users.view' },
             { to: '/settings/membership', label: 'Membresía', icon: FileText, permission: 'membership.view' },
+            { to: '/settings/services', label: 'Servicios', icon: Puzzle, permission: 'add_ons.view' },
             { to: '/settings/whatsapp', label: 'Cuenta de WhatsApp', icon: MessageCircle, permission: 'whatsapp_account.view' },
+            { to: '/settings/branding', label: 'Marca', icon: Palette, permission: 'settings.view', module: 'branding' },
         ],
     },
 ];
@@ -150,6 +161,7 @@ const DETAIL_LABELS: [prefix: string, label: string][] = [
     ['/admin/clients/', 'Clientes'],
     ['/billing/invoices/', 'Comprobante'],
     ['/settings/profile', 'Mi perfil'],
+    ['/announcements', 'Novedades'],
     ['/settings/security', 'Mi perfil'],
 ];
 

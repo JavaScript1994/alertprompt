@@ -2,8 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\AddOnController;
+use App\Http\Controllers\Api\Admin\AddOnController as AdminAddOnController;
+use App\Http\Controllers\Api\Admin\AddOnRequestController as AdminAddOnRequestController;
 use App\Http\Controllers\Api\Admin\AlertController as AdminAlertController;
+use App\Http\Controllers\Api\Admin\AnnouncementController as AdminAnnouncementController;
 use App\Http\Controllers\Api\Admin\BulkImportController;
+use App\Http\Controllers\Api\Admin\ClientAddOnController as AdminClientAddOnController;
 use App\Http\Controllers\Api\Admin\ClientChannelAccountController;
 use App\Http\Controllers\Api\Admin\ClientController;
 use App\Http\Controllers\Api\Admin\ClientUserMfaController;
@@ -17,8 +22,11 @@ use App\Http\Controllers\Api\Admin\PlanController;
 use App\Http\Controllers\Api\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\AlertController;
+use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BillingController;
+use App\Http\Controllers\Api\BrandingController;
+use App\Http\Controllers\Api\BrandingSettingsController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\ChannelAccountController;
 use App\Http\Controllers\Api\ConsentController;
@@ -37,6 +45,10 @@ use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+
+// Marca del login según el subdominio (público: se ve antes de iniciar sesión).
+Route::get('/branding', [BrandingController::class, 'show'])->middleware('throttle:60,1');
+Route::get('/branding/logo', [BrandingController::class, 'logo'])->middleware('throttle:60,1');
 Route::post('/forgot-password', [PasswordController::class, 'forgot'])->middleware('throttle:5,1');
 Route::post('/reset-password', [PasswordController::class, 'reset'])->middleware('throttle:10,1');
 
@@ -73,6 +85,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Todo lo demás exige el segundo factor (o el plazo de gracia).
     Route::middleware('mfa')->group(function () {
         Route::post('/reauth', [ReauthController::class, 'store']);
+
+        // Comunicados de la plataforma: todos los roles de los clientes.
+        Route::get('/announcements', [AnnouncementController::class, 'index']);
+        Route::post('/announcements/read-all', [AnnouncementController::class, 'readAll']);
+        Route::post('/announcements/{announcement}/read', [AnnouncementController::class, 'read'])->whereNumber('announcement');
+        Route::post('/announcements/{announcement}/dismiss', [AnnouncementController::class, 'dismiss'])->whereNumber('announcement');
 
         // Mi perfil: todos los roles.
         Route::put('/profile', [ProfileController::class, 'update']);
@@ -134,8 +152,22 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/membership/plan-change', [MembershipController::class, 'requestChange'])->middleware(['permission:membership.request_change', 'not-impersonating']);
             Route::delete('/membership/plan-change', [MembershipController::class, 'cancelChange'])->middleware(['permission:membership.request_change', 'not-impersonating']);
 
+            Route::get('/add-ons', [AddOnController::class, 'index'])->middleware('permission:add_ons.view');
+            Route::post('/add-ons/{addOn}/request', [AddOnController::class, 'request'])->whereNumber('addOn')->middleware(['permission:add_ons.request', 'not-impersonating']);
+            Route::delete('/add-ons/{addOn}/request', [AddOnController::class, 'cancelRequest'])->whereNumber('addOn')->middleware(['permission:add_ons.request', 'not-impersonating']);
+            Route::post('/add-ons/{addOn}/interest', [AddOnController::class, 'interest'])->whereNumber('addOn')->middleware(['permission:add_ons.request', 'not-impersonating']);
+            Route::delete('/add-ons/{addOn}/interest', [AddOnController::class, 'removeInterest'])->whereNumber('addOn')->middleware(['permission:add_ons.request', 'not-impersonating']);
+
             Route::get('/settings/account', [TenantSettingsController::class, 'show'])->middleware('permission:settings.view');
             Route::put('/settings/account', [TenantSettingsController::class, 'update'])->middleware('permission:settings.manage');
+
+            Route::prefix('settings/branding')->middleware('module:branding')->group(function () {
+                Route::get('/', [BrandingSettingsController::class, 'show'])->middleware('permission:settings.view');
+                Route::get('/logo', [BrandingSettingsController::class, 'logo'])->middleware('permission:settings.view');
+                Route::put('/', [BrandingSettingsController::class, 'update'])->middleware('permission:settings.manage');
+                Route::post('/logo', [BrandingSettingsController::class, 'uploadLogo'])->middleware('permission:settings.manage');
+                Route::delete('/logo', [BrandingSettingsController::class, 'deleteLogo'])->middleware('permission:settings.manage');
+            });
         });
 
         // Equipo de la cuenta: también lo usa la plataforma para su propio equipo.
@@ -175,6 +207,13 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/clients/{client}/channel-accounts/{channel}', [ClientChannelAccountController::class, 'update'])->middleware(['permission:admin.clients.update', 'reauth:change_provider_config']);
             Route::post('/clients/{client}/users/{user}/mfa/reset', [ClientUserMfaController::class, 'reset'])->whereNumber('user')->middleware(['permission:admin.clients.update', 'reauth:reset_user_mfa']);
 
+            Route::get('/announcements', [AdminAnnouncementController::class, 'index'])->middleware('permission:admin.announcements.view');
+            Route::get('/announcements/{announcement}/stats', [AdminAnnouncementController::class, 'stats'])->whereNumber('announcement')->middleware('permission:admin.announcements.view');
+            Route::post('/announcements', [AdminAnnouncementController::class, 'store'])->middleware('permission:admin.announcements.manage');
+            Route::put('/announcements/{announcement}', [AdminAnnouncementController::class, 'update'])->whereNumber('announcement')->middleware('permission:admin.announcements.manage');
+            Route::post('/announcements/{announcement}/resolve', [AdminAnnouncementController::class, 'resolve'])->whereNumber('announcement')->middleware('permission:admin.announcements.manage');
+            Route::delete('/announcements/{announcement}', [AdminAnnouncementController::class, 'destroy'])->whereNumber('announcement')->middleware('permission:admin.announcements.manage');
+
             Route::get('/alerts', [AdminAlertController::class, 'index'])->middleware('permission:admin.alerts.view');
             Route::post('/alerts/{alert}/resolve', [AdminAlertController::class, 'resolve'])->whereNumber('alert')->middleware('permission:admin.alerts.manage');
 
@@ -191,6 +230,21 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/plans/{plan}', [PlanController::class, 'update'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
             Route::post('/plans/{plan}/deactivate', [PlanController::class, 'deactivate'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
             Route::post('/plans/{plan}/activate', [PlanController::class, 'activate'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
+
+            Route::get('/add-ons', [AdminAddOnController::class, 'index'])->middleware('permission:admin.memberships.view');
+            Route::post('/add-ons', [AdminAddOnController::class, 'store'])->middleware('permission:admin.memberships.manage');
+            Route::put('/add-ons/{addOn}', [AdminAddOnController::class, 'update'])->whereNumber('addOn')->middleware('permission:admin.memberships.manage');
+            Route::post('/add-ons/{addOn}/deactivate', [AdminAddOnController::class, 'deactivate'])->whereNumber('addOn')->middleware('permission:admin.memberships.manage');
+            Route::post('/add-ons/{addOn}/activate', [AdminAddOnController::class, 'activate'])->whereNumber('addOn')->middleware('permission:admin.memberships.manage');
+            Route::get('/add-ons/{addOn}/interests', [AdminAddOnController::class, 'interests'])->whereNumber('addOn')->middleware('permission:admin.memberships.view');
+
+            Route::get('/add-on-requests', [AdminAddOnRequestController::class, 'index'])->middleware('permission:admin.memberships.view');
+            Route::post('/add-on-requests/{addOnRequest}/approve', [AdminAddOnRequestController::class, 'approve'])->whereNumber('addOnRequest')->middleware('permission:admin.memberships.manage');
+            Route::post('/add-on-requests/{addOnRequest}/reject', [AdminAddOnRequestController::class, 'reject'])->whereNumber('addOnRequest')->middleware('permission:admin.memberships.manage');
+
+            Route::get('/clients/{client}/add-ons', [AdminClientAddOnController::class, 'index'])->middleware('permission:admin.memberships.view');
+            Route::post('/clients/{client}/add-ons', [AdminClientAddOnController::class, 'store'])->middleware('permission:admin.memberships.manage');
+            Route::post('/clients/{client}/add-ons/{contract}/cancel', [AdminClientAddOnController::class, 'cancel'])->whereNumber('contract')->middleware('permission:admin.memberships.manage');
 
             Route::get('/plan-changes', [PlanChangeRequestController::class, 'index'])->middleware('permission:admin.memberships.view');
             Route::post('/plan-changes/{planChange}/approve', [PlanChangeRequestController::class, 'approve'])->whereNumber('planChange')->middleware('permission:admin.memberships.manage');

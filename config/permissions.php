@@ -63,6 +63,10 @@ return [
                     'view' => 'Ver',
                     'manage' => 'Marcar como resueltas',
                 ]],
+                'admin.announcements' => ['label' => 'Comunicados', 'actions' => [
+                    'view' => 'Ver y sus lecturas',
+                    'manage' => 'Crear, publicar y resolver',
+                ]],
                 'admin.bulk_imports' => ['label' => 'Cargas masivas', 'actions' => [
                     'view' => 'Ver',
                     'create' => 'Cargar a nombre de un cliente',
@@ -145,6 +149,10 @@ return [
                 'membership' => ['label' => 'Membresía', 'actions' => [
                     'view' => 'Ver contrato',
                     'request_change' => 'Solicitar cambio de plan',
+                ]],
+                'add_ons' => ['label' => 'Servicios adicionales', 'actions' => [
+                    'view' => 'Ver',
+                    'request' => 'Solicitar servicios',
                 ]],
                 'whatsapp_account' => ['label' => 'Cuenta de WhatsApp', 'actions' => [
                     'view' => 'Ver',

@@ -34,11 +34,19 @@ const profileShape = {
     address: optional,
 };
 
-const editSchema = z.object(profileShape);
+const editSchema = z.object({
+    ...profileShape,
+    slug: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .regex(/^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/, 'De 3 a 40 letras minúsculas, números o guiones'),
+});
 
 /** Alta: empresa + ficha del administrador (mismas reglas que Mi perfil, con prefijo admin_). */
 const createSchema = z.object({
     ...profileShape,
+    slug: z.string().optional(),
     plan: z.string().min(1, 'Elige el plan'),
     admin_email: z.string().trim().min(1, 'Ingresa el correo').email('Correo inválido'),
     admin_first_name: personalDataShape.first_name,
@@ -53,6 +61,7 @@ type FormInput = z.input<typeof createSchema>;
 type FormOutput = z.output<typeof createSchema>;
 
 const FIELDS = [
+    'slug',
     'name',
     'document_type',
     'document_number',
@@ -125,6 +134,7 @@ export default function ClientFormDialog({
             contact_email: client?.contact_email ?? '',
             contact_phone: client?.contact_phone ?? '',
             address: client?.address ?? '',
+            slug: client?.slug ?? '',
             plan: activePlans[0]?.key ?? '',
             admin_email: '',
             admin_first_name: '',
@@ -162,7 +172,7 @@ export default function ClientFormDialog({
         };
 
         if (isEditing) {
-            updateClient.mutate(profile, { onSuccess: close, onError });
+            updateClient.mutate({ ...profile, ...(values.slug ? { slug: values.slug } : {}) }, { onSuccess: close, onError });
             return;
         }
 
@@ -269,6 +279,23 @@ export default function ClientFormDialog({
         </div>
     );
 
+    // ".alertprompt.pe" (o ".localhost:8000"): lo que sigue al subdominio en su URL actual.
+    const domainSuffix = client?.login_url && client.slug ? new URL(client.login_url).host.slice(client.slug.length) : '';
+
+    const slugField = isEditing && client?.slug !== null && (
+        <Field
+            label="Subdominio del login"
+            htmlFor="client-slug"
+            error={errors.slug?.message}
+            hint="Cambiarlo invalida los enlaces que la empresa ya compartió."
+        >
+            <div className="flex items-center rounded-md border focus-within:border-primary focus-within:ring-[3px] focus-within:ring-ring/40">
+                <Input id="client-slug" className="border-0 font-mono focus-visible:ring-0" aria-invalid={Boolean(errors.slug)} {...register('slug')} />
+                <span className="shrink-0 pr-3 font-mono text-sm text-muted-foreground">{domainSuffix}</span>
+            </div>
+        </Field>
+    );
+
     return (
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && close()}>
             <DialogContent className={cn('max-h-[92vh] overflow-y-auto', isEditing ? 'max-w-xl' : 'max-w-5xl')}>
@@ -290,7 +317,10 @@ export default function ClientFormDialog({
                     )}
 
                     {isEditing ? (
-                        clientFields
+                        <div className="space-y-4">
+                            {clientFields}
+                            {slugField}
+                        </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-2 lg:divide-x">
                             <section className="lg:pr-8">

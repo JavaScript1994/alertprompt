@@ -24,6 +24,12 @@ import Login from '@/pages/auth/Login';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import Campaigns from '@/pages/campaigns/Campaigns';
 import Contacts from '@/pages/contacts/Contacts';
+import AdminAnnouncementsPage from '@/features/announcements/AdminAnnouncementsPage';
+import AnnouncementsPage from '@/features/announcements/AnnouncementsPage';
+import AddOnsPage from '@/features/add-ons/AddOnsPage';
+import AdminAddOnRequestsPage from '@/features/add-ons/AdminAddOnRequestsPage';
+import AdminAddOnsPage from '@/features/add-ons/AdminAddOnsPage';
+import BrandingSettingsPage from '@/features/branding/BrandingSettingsPage';
 import MyProfile from '@/features/profile/MyProfile';
 import Home from '@/pages/dashboard/Home';
 import Reports from '@/pages/reports/Reports';
@@ -77,14 +83,21 @@ export default function Root() {
                             <Route element={<RequirePermission permission="membership.view" />}>
                                 <Route path="/settings/membership" element={<MembershipPage />} />
                             </Route>
+                            <Route element={<RequirePermission permission="add_ons.view" />}>
+                                <Route path="/settings/services" element={<AddOnsPage />} />
+                            </Route>
                             <Route element={<RequirePermission permission="whatsapp_account.view" />}>
                                 <Route path="/settings/whatsapp" element={<ChannelAccounts />} />
+                            </Route>
+                            <Route element={<RequirePermission permission="settings.view" />}>
+                                <Route path="/settings/branding" element={<BrandingSettingsPage />} />
                             </Route>
                         </Route>
                         <Route element={<RequirePermission permission="users.view" />}>
                             <Route path="/settings/users" element={<Users />} />
                         </Route>
                         {/* De cada usuario, sin permiso: todos los roles gestionan su perfil y su MFA. */}
+                        <Route path="/announcements" element={<AnnouncementsPage />} />
                         <Route path="/settings/profile" element={<MyProfile key="data" initialTab="data" />} />
                         <Route path="/settings/security" element={<MyProfile key="security" initialTab="security" />} />
 
@@ -96,6 +109,8 @@ export default function Root() {
                         <Route element={<RequirePermission permission="admin.memberships.view" />}>
                             <Route path="/admin/plans" element={<Plans />} />
                             <Route path="/admin/plan-changes" element={<PlanChanges />} />
+                            <Route path="/admin/add-ons" element={<AdminAddOnsPage />} />
+                            <Route path="/admin/add-on-requests" element={<AdminAddOnRequestsPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="admin.billing.view" />}>
                             <Route path="/admin/invoices" element={<AdminInvoices />} />
@@ -103,6 +118,9 @@ export default function Root() {
                         </Route>
                         <Route element={<RequirePermission permission="admin.bulk_imports.view" />}>
                             <Route path="/admin/bulk-imports" element={<BulkImports />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="admin.announcements.view" />}>
+                            <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="admin.alerts.view" />}>
                             <Route path="/admin/alerts" element={<Alerts />} />

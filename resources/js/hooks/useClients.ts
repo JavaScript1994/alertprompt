@@ -28,6 +28,8 @@ export interface ClientProfileInput {
     contact_email: string | null;
     contact_phone: string | null;
     address: string | null;
+    /** Solo en edición (plataforma): subdominio del login. */
+    slug?: string;
 }
 
 export interface CreateClientInput extends ClientProfileInput {
