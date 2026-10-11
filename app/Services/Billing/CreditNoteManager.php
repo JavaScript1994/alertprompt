@@ -20,8 +20,9 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Notas de crédito y saldo a favor (CLAUDE.md §2.7). Una nota primero salda
- * lo pendiente del comprobante que corrige; lo que sobra queda a favor del
- * cliente y se aplica solo, en orden, a sus comprobantes siguientes.
+ * lo pendiente del comprobante que corrige, luego los otros comprobantes
+ * pendientes del cliente (el más antiguo primero); lo que sobra queda a favor
+ * y se aplica solo a sus comprobantes siguientes.
  */
 class CreditNoteManager
 {
@@ -107,6 +108,7 @@ class CreditNoteManager
             if ($invoice->status === InvoiceStatus::Issued) {
                 $this->apply($note, $invoice, min($note->remaining(), $invoice->balance()));
             }
+            $this->applyToPendingInvoices($note);
 
             return $note;
         });
@@ -129,6 +131,25 @@ class CreditNoteManager
                 return;
             }
             $this->apply($note, $invoice, min($note->remaining(), $due));
+        }
+    }
+
+    /** Lo que queda de la nota salda los demás comprobantes pendientes, del más antiguo al más nuevo. */
+    private function applyToPendingInvoices(CreditNote $note): void
+    {
+        $pending = Invoice::query()->withoutGlobalScope(TenantScope::class)
+            ->where('tenant_id', $note->tenant_id)
+            ->where('status', InvoiceStatus::Issued)
+            ->orderBy('issue_date')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($pending as $invoice) {
+            $left = $note->remaining();
+            if ($left <= 0) {
+                return;
+            }
+            $this->apply($note, $invoice, min($left, $invoice->balance()));
         }
     }
 

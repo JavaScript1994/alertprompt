@@ -154,7 +154,8 @@ junta "Me interesa" (uno por cliente).
 - **Cancelar un servicio anual** emite una **nota de crédito** (serie FC01/BC01,
   con referencia al comprobante) por los meses ya cobrados que no se usarán
   (el mes en curso no se devuelve). Primero salda lo pendiente de ese
-  comprobante; lo que sobra es **saldo a favor** y se descuenta solo de los
+  comprobante, luego los demás pendientes del cliente (el más antiguo
+  primero); lo que sobra es **saldo a favor** y se descuenta solo de los
   comprobantes siguientes. No mueve dinero fuera del sistema. Mensuales y
   cambios de plan no generan nota. Saldo de un comprobante = total − pagos −
   créditos aplicados.

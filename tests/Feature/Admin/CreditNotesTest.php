@@ -18,8 +18,8 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
-/** Cliente con plan Básico desde el 01/01/2026 (anual a S/ 1500 o mensual a S/ 150). */
-function creditClient(string $cycle = 'yearly'): Tenant
+/** Cliente con plan Básico desde el 01/01/2026 (anual a S/ 1500 o mensual a S/ 150), con el plan pagado salvo $payPlan = false. */
+function creditClient(string $cycle = 'yearly', bool $payPlan = true): Tenant
 {
     test()->travelTo(CarbonImmutable::parse('2026-01-01 09:00'));
     $tenant = Tenant::factory()->create();
@@ -28,6 +28,11 @@ function creditClient(string $cycle = 'yearly'): Tenant
         'starts_at' => '2026-01-01', 'ends_at' => '2027-12-31',
     ]);
     app(TenantModules::class)->sync($tenant->refresh(), app(TenantModules::class)->defaultsFor('basico'));
+
+    if ($payPlan) {
+        $plan = Invoice::query()->withoutGlobalScope(TenantScope::class)->where('tenant_id', $tenant->id)->sole();
+        app(InvoiceManager::class)->recordPayment($plan, ['amount' => (string) $plan->total, 'method' => 'transfer']);
+    }
 
     return $tenant;
 }
@@ -197,4 +202,16 @@ it('reports what was settled with credit on the invoice', function () {
     $this->actingAs(platformOwner())->getJson('/api/admin/invoices/'.prorationOf($contract)->id)
         ->assertJsonPath('data.credited', '424.80')
         ->assertJsonPath('data.balance', '212.40');
+});
+
+it('uses what is left of the credit on other pending invoices, oldest first', function () {
+    $tenant = creditClient(payPlan: false);
+    $yearly = Invoice::query()->withoutGlobalScope(TenantScope::class)->where('tenant_id', $tenant->id)->sole();
+    $contract = contractBrandingOn($tenant, '2026-03-15');
+    app(InvoiceManager::class)->recordPayment(prorationOf($contract), ['amount' => '637.20', 'method' => 'transfer']);
+
+    cancelOn($contract, '2026-06-10');
+
+    expect($yearly->fresh()->balance())->toBe(1345.20)
+        ->and(app(CreditNoteManager::class)->availableFor($tenant->id))->toBe(0.0);
 });
