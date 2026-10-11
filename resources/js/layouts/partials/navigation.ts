@@ -79,6 +79,8 @@ const PLATFORM_NAV: NavSection[] = [
         items: [
             { to: '/admin/plans', label: 'Planes', icon: Layers, permission: 'admin.memberships.view' },
             { to: '/admin/plan-changes', label: 'Solicitudes de plan', icon: Inbox, permission: 'admin.memberships.view' },
+            { to: '/admin/add-ons', label: 'Servicios', icon: Puzzle, permission: 'admin.memberships.view' },
+            { to: '/admin/add-on-requests', label: 'Solicitudes de servicios', icon: Inbox, permission: 'admin.memberships.view' },
             { to: '/admin/invoices', label: 'Comprobantes', icon: Receipt, permission: 'admin.billing.view' },
         ],
     },

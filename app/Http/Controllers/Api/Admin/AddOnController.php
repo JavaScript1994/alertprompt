@@ -8,6 +8,7 @@ use App\Enums\TenantAddOnStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Admin\AddOns\StoreAddOnRequest;
 use App\Http\Requests\Api\Admin\AddOns\UpdateAddOnRequest;
+use App\Http\Resources\AddOnInterestResource;
 use App\Http\Resources\AddOnResource;
 use App\Models\AddOn;
 use App\Services\AuditLogger;
@@ -56,6 +57,14 @@ class AddOnController extends Controller
         }
 
         return new AddOnResource($this->fresh($addOn));
+    }
+
+    /** Clientes que marcaron "Me interesa", del más reciente al más antiguo. */
+    public function interests(AddOn $addOn): JsonResponse
+    {
+        $interests = $addOn->interests()->with(['tenant:id,name,plan', 'user:id,name'])->latest('id')->get();
+
+        return response()->json(['data' => AddOnInterestResource::collection($interests)]);
     }
 
     public function deactivate(AddOn $addOn): AddOnResource

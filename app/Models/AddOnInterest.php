@@ -19,4 +19,9 @@ class AddOnInterest extends Model
     {
         return $this->belongsTo(AddOn::class);
     }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class)->withoutGlobalScopes();
+    }
 }

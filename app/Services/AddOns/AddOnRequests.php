@@ -17,16 +17,19 @@ use App\Models\User;
 use App\Services\Alerts;
 use App\Services\AuditLogger;
 use App\Services\Modules\TenantModules;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Lo que el cliente hace en Configuración → Servicios: pedir un servicio
  * disponible (lo decide la plataforma) o marcar "Me interesa" en uno próximo.
- * A lo sumo una solicitud pendiente por servicio.
+ * A lo sumo una solicitud pendiente por servicio. Aprobarla contrata el
+ * servicio en el momento (prende el módulo); se cobra desde el periodo siguiente.
  */
 class AddOnRequests
 {
     public function __construct(
+        private readonly AddOnManager $contracts,
         private readonly TenantModules $modules,
         private readonly AuditLogger $audit,
         private readonly Alerts $alerts,
@@ -75,13 +78,48 @@ class AddOnRequests
 
     public function cancel(AddOnRequest $request): AddOnRequest
     {
-        if ($request->status !== AddOnRequestStatus::Pending) {
-            throw ValidationException::withMessages(['request' => 'La solicitud ya fue atendida.']);
-        }
+        $this->ensurePending($request);
 
         $request->update(['status' => AddOnRequestStatus::Cancelled]);
         $this->audit->record('add_on.request_cancelled', $request->tenant_id, $request, ['add_on' => $request->addOn->key]);
         $this->resolveAlert($request, null);
+
+        return $request;
+    }
+
+    public function approve(AddOnRequest $request, User $admin, ?string $note): AddOnRequest
+    {
+        $this->ensurePending($request);
+
+        return DB::transaction(function () use ($request, $admin, $note) {
+            $contract = $this->contracts->contract(Tenant::query()->findOrFail($request->tenant_id), $request->addOn, $admin);
+
+            $request->update([
+                'status' => AddOnRequestStatus::Approved,
+                'decided_by' => $admin->id,
+                'decided_at' => now(),
+                'decision_note' => $note,
+                'tenant_add_on_id' => $contract->id,
+            ]);
+            $this->audit->record('add_on.request_approved', $request->tenant_id, $request, ['add_on' => $request->addOn->key]);
+            $this->resolveAlert($request, $admin->id);
+
+            return $request;
+        });
+    }
+
+    public function reject(AddOnRequest $request, User $admin, string $note): AddOnRequest
+    {
+        $this->ensurePending($request);
+
+        $request->update([
+            'status' => AddOnRequestStatus::Rejected,
+            'decided_by' => $admin->id,
+            'decided_at' => now(),
+            'decision_note' => $note,
+        ]);
+        $this->audit->record('add_on.request_rejected', $request->tenant_id, $request, ['add_on' => $request->addOn->key, 'note' => $note]);
+        $this->resolveAlert($request, $admin->id);
 
         return $request;
     }
@@ -122,7 +160,14 @@ class AddOnRequests
         }
     }
 
-    public function resolveAlert(AddOnRequest $request, ?int $userId): void
+    private function ensurePending(AddOnRequest $request): void
+    {
+        if ($request->status !== AddOnRequestStatus::Pending) {
+            throw ValidationException::withMessages(['request' => 'La solicitud ya fue atendida.']);
+        }
+    }
+
+    private function resolveAlert(AddOnRequest $request, ?int $userId): void
     {
         Alert::query()->withoutGlobalScope(TenantScope::class)
             ->where('fingerprint', "{$request->tenant_id}:add_on.requested:add-on-request-{$request->id}")

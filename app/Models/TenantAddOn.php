@@ -33,4 +33,14 @@ class TenantAddOn extends Model
     {
         return $this->belongsTo(AddOn::class);
     }
+
+    public function activator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'activated_by')->withoutGlobalScopes();
+    }
+
+    public function canceller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by')->withoutGlobalScopes();
+    }
 }
