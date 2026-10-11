@@ -11,8 +11,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useAddOnCatalog } from '@/features/add-ons/adminApi';
+import { addOnKeyFromLink, addOnLink } from '@/features/add-ons/meta';
 import { usePlans } from '@/hooks/useMemberships';
+import { useCan } from '@/hooks/usePermissions';
 import { applyServerErrors } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { useClientOptions, useSaveAnnouncement } from './api';
@@ -198,6 +202,7 @@ export default function AnnouncementEditor({ item, onClose }: { item?: AdminAnno
         control,
         handleSubmit,
         watch,
+        setValue,
         setError,
         formState: { errors },
     } = useForm<Form>({ resolver: zodResolver(schema), defaultValues: defaults(item) });
@@ -205,6 +210,10 @@ export default function AnnouncementEditor({ item, onClose }: { item?: AdminAnno
     const type = watch('type');
     const audience = watch('audience');
     const publish = watch('publish');
+    const linkedAddOn = addOnKeyFromLink(watch('link_url'));
+    // Las promociones pueden llevar a un servicio adicional (Configuración → Servicios).
+    const canLinkAddOns = useCan()('admin.memberships.view');
+    const { data: addOns } = useAddOnCatalog(type === 'promotion' && canLinkAddOns);
     const emailed = item?.emailed_at !== null && item?.emailed_at !== undefined;
 
     const submit = handleSubmit((values) => {
@@ -286,6 +295,37 @@ export default function AnnouncementEditor({ item, onClose }: { item?: AdminAnno
                             <Field label="Mensaje" htmlFor="announcement-body" error={errors.body?.message} hint="Texto simple. Deja una línea en blanco para separar párrafos.">
                                 <Textarea id="announcement-body" rows={4} maxLength={2000} {...register('body')} />
                             </Field>
+                            {type === 'promotion' && addOns && (
+                                <Field
+                                    label="Enlazar a un servicio (opcional)"
+                                    htmlFor="announcement-add-on"
+                                    hint="Lleva a Configuración → Servicios con el servicio resaltado. Esa pantalla la ven los administradores de cada cliente."
+                                >
+                                    <Select
+                                        value={linkedAddOn ?? ''}
+                                        onValueChange={(key) => {
+                                            if (!key) return;
+                                            setValue('link_url', addOnLink(key), { shouldValidate: true });
+                                            if (!watch('link_label')) setValue('link_label', 'Ver servicio');
+                                            setValue('admins_only', true);
+                                        }}
+                                    >
+                                        <SelectTrigger id="announcement-add-on" className="w-full">
+                                            <SelectValue placeholder="Elige un servicio" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {addOns
+                                                .filter((addOn) => addOn.is_active)
+                                                .map((addOn) => (
+                                                    <SelectItem key={addOn.key} value={addOn.key}>
+                                                        {addOn.name}
+                                                        {addOn.status === 'coming_soon' && ' (próximamente)'}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                </Field>
+                            )}
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
                                 <Field label="Enlace (opcional)" htmlFor="announcement-link" error={errors.link_url?.message} hint="Ruta del panel o https://">
                                     <Input id="announcement-link" placeholder="/settings/membership" {...register('link_url')} />

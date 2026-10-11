@@ -6,6 +6,7 @@ namespace App\Http\Requests\Api\Admin\Announcements;
 
 use App\Enums\AnnouncementAudience;
 use App\Enums\AnnouncementType;
+use App\Models\AddOn;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -27,6 +28,11 @@ class SaveAnnouncementRequest extends FormRequest
             'link_url' => ['nullable', 'string', 'max:500', function (string $attribute, mixed $value, Closure $fail) {
                 if (! preg_match('#^(/[A-Za-z0-9/_\-?=&.]*|https://[^\s]+)$#', (string) $value)) {
                     $fail('Usa una ruta del panel (/settings/membership) o un enlace que empiece con https://.');
+                }
+                // Enlace a un servicio adicional (promociones): el servicio debe existir y ofrecerse.
+                if (preg_match('#^/settings/services\?service=([a-z0-9-]+)$#', (string) $value, $match)
+                    && ! AddOn::query()->active()->where('key', $match[1])->exists()) {
+                    $fail('Ese servicio no existe o está desactivado.');
                 }
             }],
             'link_label' => ['nullable', 'required_with:link_url', 'string', 'max:40'],

@@ -1,5 +1,6 @@
 import { Check, CheckCircle2, Clock, Heart, Puzzle, Send, XCircle } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import EmptyState from '@/components/shared/EmptyState';
 import { formatDate } from '@/components/shared/MembershipBits';
 import PageHeader from '@/components/shared/PageHeader';
@@ -59,9 +60,15 @@ function RequestDialog({ addOn, onClose }: { addOn: ClientAddOn; onClose: () => 
 
 function AddOnCard({ addOn, badge, children }: { addOn: ClientAddOn; badge?: ReactNode; children?: ReactNode }) {
     const Icon = ADD_ON_ICONS[addOn.key] ?? Puzzle;
+    // ?service=<clave>: llega desde una promoción y resalta esa tarjeta.
+    const [params] = useSearchParams();
+    const highlighted = params.get('service') === addOn.key;
 
     return (
-        <Card className={cn('gap-4 p-6', addOn.state === 'coming_soon' && 'border-dashed')}>
+        <Card
+            id={`add-on-${addOn.key}`}
+            className={cn('scroll-mt-24 gap-4 p-6', addOn.state === 'coming_soon' && 'border-dashed', highlighted && 'ring-2 ring-primary dark:ring-brand-300')}
+        >
             <div className="flex items-start justify-between gap-3">
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-lightprimary text-primary dark:text-brand-200">
                     <Icon className="size-5" />
@@ -104,6 +111,12 @@ export default function AddOnsPage() {
     const cancelRequest = useCancelAddOnRequest();
     const interest = useAddOnInterest();
     const [requesting, setRequesting] = useState<ClientAddOn | null>(null);
+    const service = useSearchParams()[0].get('service');
+
+    // Llega desde una promoción: lleva la vista a la tarjeta cuando ya se pintó.
+    useEffect(() => {
+        if (service && data) document.getElementById(`add-on-${service}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, [service, data]);
 
     if (isLoading || !data) return <Skeleton className="h-96 w-full rounded-xl" />;
 

@@ -5,10 +5,11 @@ import type { AddOn, AddOnInput, AddOnInterest, AddOnRequest, AddOnRequestStatus
 
 const KEY = 'admin-add-ons';
 
-export function useAddOnCatalog() {
+export function useAddOnCatalog(enabled = true) {
     return useQuery({
         queryKey: [KEY, 'catalog'],
         queryFn: async () => (await api.get<{ data: AddOn[] }>('/api/admin/add-ons')).data.data,
+        enabled,
     });
 }
 

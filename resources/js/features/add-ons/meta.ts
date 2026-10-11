@@ -13,3 +13,13 @@ export const ADD_ON_ICONS: Record<string, LucideIcon> = {
 export function addOnPrice(price: string | null): string {
     return price === null ? '—' : Number(price).toLocaleString('es-PE', { style: 'currency', currency: 'PEN', maximumFractionDigits: 2 });
 }
+
+/** Ruta que abre Configuración → Servicios con la tarjeta del servicio resaltada (la usan las promociones). */
+export function addOnLink(key: string): string {
+    return `/settings/services?service=${key}`;
+}
+
+/** Clave del servicio si `url` es un enlace de addOnLink(). */
+export function addOnKeyFromLink(url: string): string | null {
+    return /^\/settings\/services\?service=([a-z0-9-]+)$/.exec(url.trim())?.[1] ?? null;
+}
