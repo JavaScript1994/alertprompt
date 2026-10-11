@@ -150,6 +150,10 @@ return [
                     'view' => 'Ver contrato',
                     'request_change' => 'Solicitar cambio de plan',
                 ]],
+                'add_ons' => ['label' => 'Servicios adicionales', 'actions' => [
+                    'view' => 'Ver',
+                    'request' => 'Solicitar servicios',
+                ]],
                 'whatsapp_account' => ['label' => 'Cuenta de WhatsApp', 'actions' => [
                     'view' => 'Ver',
                     'manage' => 'Conectar y cambiar número',

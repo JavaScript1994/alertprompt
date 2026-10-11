@@ -10,9 +10,9 @@ use App\Models\Membership;
 use App\Models\Plan;
 use App\Models\Scopes\TenantScope;
 use App\Models\Tenant;
+use App\Services\AddOns\AddOnManager;
 use App\Services\AuditLogger;
 use App\Services\Billing\InvoiceManager;
-use App\Services\Modules\TenantModules;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -253,10 +253,11 @@ class MembershipManager
 
             $this->audit->record('membership.activated', $membership->tenant_id, $membership, ['plan' => $membership->plan]);
 
-            // Cambio de plan: el cliente pasa a los módulos de su nuevo plan.
+            // Cambio de plan: el cliente pasa a los módulos de su nuevo plan,
+            // más los servicios adicionales que tenga contratados.
             if ($previousPlan !== null && $previousPlan !== $membership->plan) {
                 $tenant = Tenant::query()->findOrFail($membership->tenant_id);
-                app(TenantModules::class)->sync($tenant, app(TenantModules::class)->defaultsFor($membership->plan));
+                app(AddOnManager::class)->reconcileWithPlan($tenant, $membership->plan);
             }
         });
 

@@ -2,9 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\AddOnController;
+use App\Http\Controllers\Api\Admin\AddOnController as AdminAddOnController;
+use App\Http\Controllers\Api\Admin\AddOnRequestController as AdminAddOnRequestController;
 use App\Http\Controllers\Api\Admin\AlertController as AdminAlertController;
 use App\Http\Controllers\Api\Admin\AnnouncementController as AdminAnnouncementController;
 use App\Http\Controllers\Api\Admin\BulkImportController;
+use App\Http\Controllers\Api\Admin\ClientAddOnController as AdminClientAddOnController;
 use App\Http\Controllers\Api\Admin\ClientChannelAccountController;
 use App\Http\Controllers\Api\Admin\ClientController;
 use App\Http\Controllers\Api\Admin\ClientUserMfaController;
@@ -148,6 +152,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/membership/plan-change', [MembershipController::class, 'requestChange'])->middleware(['permission:membership.request_change', 'not-impersonating']);
             Route::delete('/membership/plan-change', [MembershipController::class, 'cancelChange'])->middleware(['permission:membership.request_change', 'not-impersonating']);
 
+            Route::get('/add-ons', [AddOnController::class, 'index'])->middleware('permission:add_ons.view');
+            Route::post('/add-ons/{addOn}/request', [AddOnController::class, 'request'])->whereNumber('addOn')->middleware(['permission:add_ons.request', 'not-impersonating']);
+            Route::delete('/add-ons/{addOn}/request', [AddOnController::class, 'cancelRequest'])->whereNumber('addOn')->middleware(['permission:add_ons.request', 'not-impersonating']);
+            Route::post('/add-ons/{addOn}/interest', [AddOnController::class, 'interest'])->whereNumber('addOn')->middleware(['permission:add_ons.request', 'not-impersonating']);
+            Route::delete('/add-ons/{addOn}/interest', [AddOnController::class, 'removeInterest'])->whereNumber('addOn')->middleware(['permission:add_ons.request', 'not-impersonating']);
+
             Route::get('/settings/account', [TenantSettingsController::class, 'show'])->middleware('permission:settings.view');
             Route::put('/settings/account', [TenantSettingsController::class, 'update'])->middleware('permission:settings.manage');
 
@@ -220,6 +230,21 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/plans/{plan}', [PlanController::class, 'update'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
             Route::post('/plans/{plan}/deactivate', [PlanController::class, 'deactivate'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
             Route::post('/plans/{plan}/activate', [PlanController::class, 'activate'])->whereNumber('plan')->middleware('permission:admin.memberships.manage');
+
+            Route::get('/add-ons', [AdminAddOnController::class, 'index'])->middleware('permission:admin.memberships.view');
+            Route::post('/add-ons', [AdminAddOnController::class, 'store'])->middleware('permission:admin.memberships.manage');
+            Route::put('/add-ons/{addOn}', [AdminAddOnController::class, 'update'])->whereNumber('addOn')->middleware('permission:admin.memberships.manage');
+            Route::post('/add-ons/{addOn}/deactivate', [AdminAddOnController::class, 'deactivate'])->whereNumber('addOn')->middleware('permission:admin.memberships.manage');
+            Route::post('/add-ons/{addOn}/activate', [AdminAddOnController::class, 'activate'])->whereNumber('addOn')->middleware('permission:admin.memberships.manage');
+            Route::get('/add-ons/{addOn}/interests', [AdminAddOnController::class, 'interests'])->whereNumber('addOn')->middleware('permission:admin.memberships.view');
+
+            Route::get('/add-on-requests', [AdminAddOnRequestController::class, 'index'])->middleware('permission:admin.memberships.view');
+            Route::post('/add-on-requests/{addOnRequest}/approve', [AdminAddOnRequestController::class, 'approve'])->whereNumber('addOnRequest')->middleware('permission:admin.memberships.manage');
+            Route::post('/add-on-requests/{addOnRequest}/reject', [AdminAddOnRequestController::class, 'reject'])->whereNumber('addOnRequest')->middleware('permission:admin.memberships.manage');
+
+            Route::get('/clients/{client}/add-ons', [AdminClientAddOnController::class, 'index'])->middleware('permission:admin.memberships.view');
+            Route::post('/clients/{client}/add-ons', [AdminClientAddOnController::class, 'store'])->middleware('permission:admin.memberships.manage');
+            Route::post('/clients/{client}/add-ons/{contract}/cancel', [AdminClientAddOnController::class, 'cancel'])->whereNumber('contract')->middleware('permission:admin.memberships.manage');
 
             Route::get('/plan-changes', [PlanChangeRequestController::class, 'index'])->middleware('permission:admin.memberships.view');
             Route::post('/plan-changes/{planChange}/approve', [PlanChangeRequestController::class, 'approve'])->whereNumber('planChange')->middleware('permission:admin.memberships.manage');

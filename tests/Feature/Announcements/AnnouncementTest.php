@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\AddOn;
 use App\Models\Announcement;
 use App\Models\Tenant;
 use App\Models\User;
@@ -168,4 +169,21 @@ it('requires a target when the audience is plans or clients', function () {
 it('keeps the management of announcements in the platform', function () {
     $this->actingAs($this->adminBasico)->getJson('/api/admin/announcements')->assertForbidden();
     $this->actingAs($this->adminBasico)->postJson('/api/admin/announcements', [])->assertForbidden();
+});
+
+it('lets a promotion link to an offered service and rejects unknown or inactive ones', function () {
+    $payload = ['type' => 'promotion', 'title' => 'Prueba tu marca', 'body' => 'Tu logo en el login.', 'audience' => 'all', 'link_label' => 'Ver servicio'];
+
+    $id = publish($this, $this->owner, [...$payload, 'link_url' => '/settings/services?service=branding', 'admins_only' => true]);
+    $this->actingAs($this->adminBasico)->getJson('/api/announcements')
+        ->assertJsonPath('data.0.id', $id)
+        ->assertJsonPath('data.0.link_url', '/settings/services?service=branding');
+    expect(titlesFor($this, $this->userBasico))->toBe([]);
+
+    $this->actingAs($this->owner)->postJson('/api/admin/announcements', [...$payload, 'link_url' => '/settings/services?service=no-existe'])
+        ->assertUnprocessable()->assertJsonValidationErrors('link_url');
+
+    AddOn::query()->where('key', 'attendance')->update(['is_active' => false]);
+    $this->actingAs($this->owner)->postJson('/api/admin/announcements', [...$payload, 'link_url' => '/settings/services?service=attendance'])
+        ->assertUnprocessable()->assertJsonValidationErrors('link_url');
 });

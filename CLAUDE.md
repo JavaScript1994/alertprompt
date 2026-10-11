@@ -132,6 +132,28 @@ requeridas, una vez; **las promociones nunca van por correo** (§2.1).
 - Invitaciones y recuperación de contraseña llevan al subdominio si la
   empresa tiene la marca activa.
 
+### 2.7 Servicios adicionales (catálogo)
+
+Lo que un cliente contrata aparte de su plan (modelo `AddOn`; en la UI,
+"Servicios"). Uno **disponible** activa un módulo de `config/modules.php`; uno
+**próximamente** (IA, chat en vivo, asistencias…) no tiene código detrás: solo
+junta "Me interesa" (uno por cliente).
+
+- El cliente lo **solicita** en Configuración → Servicios y la plataforma
+  aprueba (contrata y activa el módulo) o rechaza con motivo. La plataforma
+  también puede contratar o cancelar directo desde la ficha del cliente.
+- Un módulo contratado no se apaga a mano en Módulos: se cancela el servicio.
+  Al cambiar de plan, el cliente queda con los módulos del plan **más** los
+  contratados, y se cancela lo que el plan nuevo ya incluye.
+- **Cobro (decidido, no re-discutir):** se suma a la factura del plan desde el
+  período **siguiente** a la contratación, al precio del contrato (no del
+  catálogo vigente). Membresía anual: al contratar, un comprobante aparte por
+  los meses que faltan del año (el mes en curso no se cobra); desde la
+  renovación va en la factura anual × 12. Cancelado antes de que empiece un
+  período, ese período ya no lo cobra. Sin devoluciones.
+- Las promociones (§2.6) pueden enlazar a un servicio:
+  `/settings/services?service=<clave>`.
+
 ---
 
 ## 3. Stack
@@ -327,6 +349,16 @@ announcements         id, type (feature|notice|incident|action_required|promotio
 announcement_tenant   announcement_id, tenant_id          ← audiencia "clientes específicos"
 announcement_reads    id, announcement_id, user_id, read_at, dismissed_at
                       UNIQUE(announcement_id, user_id)
+add_ons               id, key (UNIQUE, estable), name, description, status (available|coming_soon),
+                      module (UNIQUE, null si coming_soon), monthly_price, is_active, sort
+tenant_add_ons        id, tenant_id, add_on_id, status (active|cancelled), monthly_price (copiado),
+                      starts_at, cancelled_at, cancel_reason, activated_by, cancelled_by
+                      UNIQUE(tenant_id, add_on_id) WHERE status = 'active'
+add_on_requests       id, tenant_id, add_on_id, status (pending|approved|rejected|cancelled), comment,
+                      requested_by, decided_by, decided_at, decision_note, tenant_add_on_id
+add_on_interests      id, tenant_id, add_on_id, user_id   UNIQUE(add_on_id, tenant_id)
+invoices.lines        jsonb [{description, amount}] sin IGV (plan + cada servicio);
+invoices.tenant_add_on_id   prorrateo anual de un servicio (UNIQUE)
 auth_events           id, user_id, tenant_id, event, ip, user_agent, metadata(jsonb), occurred_at
                       INDEX(user_id, occurred_at), INDEX(tenant_id, event, occurred_at)
 sensitive_action_confirmations

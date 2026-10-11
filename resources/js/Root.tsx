@@ -26,6 +26,9 @@ import Campaigns from '@/pages/campaigns/Campaigns';
 import Contacts from '@/pages/contacts/Contacts';
 import AdminAnnouncementsPage from '@/features/announcements/AdminAnnouncementsPage';
 import AnnouncementsPage from '@/features/announcements/AnnouncementsPage';
+import AddOnsPage from '@/features/add-ons/AddOnsPage';
+import AdminAddOnRequestsPage from '@/features/add-ons/AdminAddOnRequestsPage';
+import AdminAddOnsPage from '@/features/add-ons/AdminAddOnsPage';
 import BrandingSettingsPage from '@/features/branding/BrandingSettingsPage';
 import MyProfile from '@/features/profile/MyProfile';
 import Home from '@/pages/dashboard/Home';
@@ -80,6 +83,9 @@ export default function Root() {
                             <Route element={<RequirePermission permission="membership.view" />}>
                                 <Route path="/settings/membership" element={<MembershipPage />} />
                             </Route>
+                            <Route element={<RequirePermission permission="add_ons.view" />}>
+                                <Route path="/settings/services" element={<AddOnsPage />} />
+                            </Route>
                             <Route element={<RequirePermission permission="whatsapp_account.view" />}>
                                 <Route path="/settings/whatsapp" element={<ChannelAccounts />} />
                             </Route>
@@ -103,6 +109,8 @@ export default function Root() {
                         <Route element={<RequirePermission permission="admin.memberships.view" />}>
                             <Route path="/admin/plans" element={<Plans />} />
                             <Route path="/admin/plan-changes" element={<PlanChanges />} />
+                            <Route path="/admin/add-ons" element={<AdminAddOnsPage />} />
+                            <Route path="/admin/add-on-requests" element={<AdminAddOnRequestsPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="admin.billing.view" />}>
                             <Route path="/admin/invoices" element={<AdminInvoices />} />
