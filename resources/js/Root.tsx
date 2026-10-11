@@ -17,6 +17,7 @@ import RoleEditor from '@/pages/admin/roles/RoleEditor';
 import Roles from '@/pages/admin/roles/Roles';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
 import MfaSetupPage from '@/pages/auth/MfaSetupPage';
+import CreditNotePrint from '@/pages/billing/CreditNotePrint';
 import InvoicePrint from '@/pages/billing/InvoicePrint';
 import PaymentMethods from '@/pages/billing/PaymentMethods';
 import Payments from '@/pages/billing/Payments';
@@ -73,6 +74,7 @@ export default function Root() {
                             <Route element={<RequirePermission permission="billing.view" />}>
                                 <Route path="/billing/payments" element={<Payments />} />
                                 <Route path="/billing/invoices/:id" element={<InvoicePrint scope="client" />} />
+                                <Route path="/billing/credit-notes/:id" element={<CreditNotePrint scope="client" />} />
                             </Route>
                             <Route element={<RequirePermission permission="payment_methods.view" />}>
                                 <Route path="/billing/payment-methods" element={<PaymentMethods />} />
@@ -115,6 +117,7 @@ export default function Root() {
                         <Route element={<RequirePermission permission="admin.billing.view" />}>
                             <Route path="/admin/invoices" element={<AdminInvoices />} />
                             <Route path="/admin/invoices/:id" element={<InvoicePrint scope="admin" />} />
+                            <Route path="/admin/credit-notes/:id" element={<CreditNotePrint scope="admin" />} />
                         </Route>
                         <Route element={<RequirePermission permission="admin.bulk_imports.view" />}>
                             <Route path="/admin/bulk-imports" element={<BulkImports />} />

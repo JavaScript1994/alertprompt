@@ -150,7 +150,15 @@ junta "Me interesa" (uno por cliente).
   catálogo vigente). Membresía anual: al contratar, un comprobante aparte por
   los meses que faltan del año (el mes en curso no se cobra); desde la
   renovación va en la factura anual × 12. Cancelado antes de que empiece un
-  período, ese período ya no lo cobra. Sin devoluciones.
+  período, ese período ya no lo cobra.
+- **Cancelar un servicio anual** emite una **nota de crédito** (serie FC01/BC01,
+  con referencia al comprobante) por los meses ya cobrados que no se usarán
+  (el mes en curso no se devuelve). Primero salda lo pendiente de ese
+  comprobante, luego los demás pendientes del cliente (el más antiguo
+  primero); lo que sobra es **saldo a favor** y se descuenta solo de los
+  comprobantes siguientes. No mueve dinero fuera del sistema. Mensuales y
+  cambios de plan no generan nota. Saldo de un comprobante = total − pagos −
+  créditos aplicados.
 - Las promociones (§2.6) pueden enlazar a un servicio:
   `/settings/services?service=<clave>`.
 
@@ -359,6 +367,9 @@ add_on_requests       id, tenant_id, add_on_id, status (pending|approved|rejecte
 add_on_interests      id, tenant_id, add_on_id, user_id   UNIQUE(add_on_id, tenant_id)
 invoices.lines        jsonb [{description, amount}] sin IGV (plan + cada servicio);
 invoices.tenant_add_on_id   prorrateo anual de un servicio (UNIQUE)
+credit_notes          id, tenant_id, invoice_id (el que corrige), tenant_add_on_id (UNIQUE), series, number,
+                      issue_date, currency, subtotal, igv, total, reason, lines(jsonb), customer(jsonb), sunat_status
+credit_applications   id, credit_note_id, invoice_id, amount   ← lo no aplicado es saldo a favor
 auth_events           id, user_id, tenant_id, event, ip, user_agent, metadata(jsonb), occurred_at
                       INDEX(user_id, occurred_at), INDEX(tenant_id, event, occurred_at)
 sensitive_action_confirmations
@@ -485,6 +496,7 @@ npm run lint
 php artisan queue:failed
 php artisan horizon:status
 php artisan campaign:dispatch {id}      # comando propio, disparo manual
+php artisan deploy:check [--production] # verifica un despliegue (falla si algo bloquea)
 ```
 
 ---

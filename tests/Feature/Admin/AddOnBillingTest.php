@@ -50,7 +50,7 @@ function runBillingOn(string $date): void
 
 it('adds a service to the monthly invoice from the next period', function () {
     $tenant = billedClient();
-    contractOn($tenant, 'branding', '2026-01-15');
+    $contract = contractOn($tenant, 'branding', '2026-01-15');
 
     expect(billsOf($tenant))->toHaveCount(1)
         ->and((string) billsOf($tenant)->first()->subtotal)->toBe('150.00');
@@ -64,7 +64,7 @@ it('adds a service to the monthly invoice from the next period', function () {
         ->and($february->description)->toEndWith('+ Marca en el login')
         ->and($february->lines)->toEqual([
             ['description' => 'Plan Básico (mensual) del 01/02/2026 al 28/02/2026', 'amount' => '150.00'],
-            ['description' => 'Servicio Marca en el login (mensual)', 'amount' => '60.00'],
+            ['description' => 'Servicio Marca en el login (mensual)', 'amount' => '60.00', 'tenant_add_on_id' => $contract->id],
         ]);
 });
 
@@ -149,7 +149,7 @@ it('prorates the rest of the year for a yearly membership and bills twelve month
     $renewal = billsOf($tenant)->last();
     expect(billsOf($tenant))->toHaveCount(3)
         ->and((string) $renewal->subtotal)->toBe('2220.00')
-        ->and($renewal->lines[1])->toEqual(['description' => 'Servicio Marca en el login (anual)', 'amount' => '720.00']);
+        ->and($renewal->lines[1])->toEqual(['description' => 'Servicio Marca en el login (anual)', 'amount' => '720.00', 'tenant_add_on_id' => $contract->id]);
 });
 
 it('issues the proration once and not in the last month of the year', function () {

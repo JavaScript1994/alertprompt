@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { BillingSummary, Invoice, PaginatedResponse, PaymentRecord, SavedPaymentMethod } from '@/types';
+import type { BillingSummary, CreditNote, Invoice, PaginatedResponse, PaymentRecord, SavedPaymentMethod } from '@/types';
 
 const KEY = 'billing';
 
@@ -93,5 +93,27 @@ export function useVoidInvoice() {
         mutationFn: async ({ invoiceId, reason }: { invoiceId: number; reason: string }) =>
             (await api.post<{ data: Invoice }>(`/api/admin/invoices/${invoiceId}/void`, { reason })).data.data,
         onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEY, 'admin'] }),
+    });
+}
+
+/** Notas de crédito: las propias o, en /admin, las de un cliente. */
+export function useCreditNotes(scope: 'client' | 'admin', page: number, clientId?: number) {
+    return useQuery({
+        queryKey: [KEY, scope, 'credit-notes', clientId ?? null, page],
+        queryFn: async () => {
+            const url = scope === 'admin' ? '/api/admin/credit-notes' : '/api/billing/credit-notes';
+            return (await api.get<PaginatedResponse<CreditNote>>(url, { params: { page, client_id: clientId } })).data;
+        },
+        placeholderData: keepPreviousData,
+    });
+}
+
+export function useCreditNote(id: number, scope: 'client' | 'admin') {
+    return useQuery({
+        queryKey: [KEY, scope, 'credit-note', id],
+        queryFn: async () => {
+            const url = scope === 'admin' ? `/api/admin/credit-notes/${id}` : `/api/billing/credit-notes/${id}`;
+            return (await api.get<{ data: CreditNote }>(url)).data.data;
+        },
     });
 }

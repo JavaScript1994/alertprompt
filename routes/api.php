@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Admin\ClientAddOnController as AdminClientAddOnCont
 use App\Http\Controllers\Api\Admin\ClientChannelAccountController;
 use App\Http\Controllers\Api\Admin\ClientController;
 use App\Http\Controllers\Api\Admin\ClientUserMfaController;
+use App\Http\Controllers\Api\Admin\CreditNoteController;
 use App\Http\Controllers\Api\Admin\ImpersonationController;
 use App\Http\Controllers\Api\Admin\InvoiceController;
 use App\Http\Controllers\Api\Admin\MembershipController as AdminMembershipController;
@@ -143,6 +144,8 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('/invoices', [BillingController::class, 'invoices'])->middleware('permission:billing.view');
                 Route::get('/invoices/{invoice}', [BillingController::class, 'invoice'])->middleware('permission:billing.view');
                 Route::get('/payments', [BillingController::class, 'payments'])->middleware('permission:billing.view');
+                Route::get('/credit-notes', [BillingController::class, 'creditNotes'])->middleware('permission:billing.view');
+                Route::get('/credit-notes/{creditNote}', [BillingController::class, 'creditNote'])->middleware('permission:billing.view');
                 Route::get('/payment-methods', [BillingController::class, 'paymentMethods'])->middleware('permission:payment_methods.view');
                 Route::post('/payment-methods', [BillingController::class, 'addPaymentMethod'])->middleware('permission:payment_methods.manage');
                 Route::delete('/payment-methods/{paymentMethod}', [BillingController::class, 'removePaymentMethod'])->middleware('permission:payment_methods.manage');
@@ -256,6 +259,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
             Route::get('/invoices', [InvoiceController::class, 'index'])->middleware('permission:admin.billing.view');
             Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->whereNumber('invoice')->middleware('permission:admin.billing.view');
+            Route::get('/credit-notes', [CreditNoteController::class, 'index'])->middleware('permission:admin.billing.view');
+            Route::get('/credit-notes/{creditNote}', [CreditNoteController::class, 'show'])->whereNumber('creditNote')->middleware('permission:admin.billing.view');
             Route::post('/clients/{client}/invoices', [InvoiceController::class, 'store'])->middleware('permission:admin.billing.manage');
             Route::post('/invoices/{invoice}/payments', [InvoiceController::class, 'recordPayment'])->whereNumber('invoice')->middleware('permission:admin.billing.manage');
             Route::post('/invoices/{invoice}/void', [InvoiceController::class, 'void'])->whereNumber('invoice')->middleware('permission:admin.billing.manage');

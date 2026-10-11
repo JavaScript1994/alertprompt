@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\TenantAddOn;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\Billing\CreditNoteManager;
 use App\Services\Billing\InvoiceManager;
 use App\Services\Modules\TenantModules;
 use Carbon\CarbonImmutable;
@@ -26,7 +27,8 @@ use Illuminate\Validation\ValidationException;
  *
  * Cobro: entra en la factura del plan desde el período siguiente a la
  * contratación (InvoiceManager); en membresías anuales, el resto del año se
- * prorratea en un comprobante aparte al contratar.
+ * prorratea en un comprobante aparte al contratar y, al cancelar, los meses
+ * no usados vuelven como nota de crédito (CreditNoteManager).
  */
 class AddOnManager
 {
@@ -34,6 +36,7 @@ class AddOnManager
         private readonly TenantModules $modules,
         private readonly AuditLogger $audit,
         private readonly InvoiceManager $invoices,
+        private readonly CreditNoteManager $credits,
     ) {}
 
     /** @return Collection<int, TenantAddOn> */
@@ -99,7 +102,7 @@ class AddOnManager
             throw ValidationException::withMessages(['add_on' => 'Ese servicio ya no está activo.']);
         }
 
-        return DB::transaction(function () use ($contract, $by, $reason) {
+        DB::transaction(function () use ($contract, $by, $reason) {
             $this->markCancelled($contract, $by, $reason);
 
             $tenant = Tenant::query()->findOrFail($contract->tenant_id);
@@ -110,9 +113,14 @@ class AddOnManager
             }
 
             $this->audit->record('add_on.cancelled', $tenant->id, $contract, ['add_on' => $contract->addOn->key, 'reason' => $reason]);
-
-            return $contract;
         });
+
+        // Membresía anual: nota de crédito por los meses ya cobrados que no se
+        // usarán (saldo a favor). No aplica a cambios de plan (reconcileWithPlan),
+        // igual que el plan mismo no se devuelve.
+        DB::afterCommit(fn () => $this->credits->issueForCancelledAddOn($contract));
+
+        return $contract;
     }
 
     /**
