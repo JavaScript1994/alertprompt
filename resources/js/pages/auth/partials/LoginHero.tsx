@@ -8,14 +8,23 @@ const CHANNELS = [
     { label: 'Email', icon: Mail },
 ];
 
-/** Panel izquierdo del login: propuesta de valor + ilustración de mensajes. */
-export default function LoginHero() {
+/**
+ * Panel izquierdo del login: propuesta de valor + ilustración de mensajes.
+ * Con marca de empresa, `title` reemplaza el titular de AlertPrompt.
+ */
+export default function LoginHero({ title }: { title?: string | null }) {
     return (
         <section className="relative flex h-full flex-col overflow-hidden rounded-3xl bg-gradient-to-b from-slate-50 via-slate-50 to-prompt-50 px-12 pt-14 short:pt-9 shorter:pt-6 dark:from-white/[0.05] dark:via-white/[0.04] dark:to-prompt-500/10">
             <h1 className="text-[2.75rem] leading-[1.1] font-bold tracking-tight text-brand-700 short:text-[2.25rem] shorter:text-[1.9rem] dark:text-white">
-                Comunicaciones
-                <br />
-                Masivas <span className="text-tenant-accent dark:text-prompt-400">Sencillas.</span>
+                {title ? (
+                    <span className="block max-w-lg [overflow-wrap:anywhere]">{title}</span>
+                ) : (
+                    <>
+                        Comunicaciones
+                        <br />
+                        Masivas <span className="text-tenant-accent dark:text-prompt-400">Sencillas.</span>
+                    </>
+                )}
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground short:mt-3 shorter:mt-2 shorter:text-sm">
                 Conecta con tus clientes por WhatsApp, SMS y Email desde un solo lugar.
