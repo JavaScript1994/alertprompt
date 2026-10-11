@@ -110,7 +110,7 @@ it('uses a new plan for clients and memberships', function () {
 
     $client = $this->actingAs($owner)->postJson('/api/admin/clients', [
         'type' => 'company', 'name' => 'Pyme SAC', 'document_type' => 'ruc', 'document_number' => '20131312955',
-        'plan' => 'pyme-plus', 'admin_name' => 'Ana', 'admin_email' => 'ana@pyme.pe',
+        'plan' => 'pyme-plus', 'admin_first_name' => 'Ana', 'admin_last_name' => 'Ríos', 'admin_email' => 'ana@pyme.pe',
     ])->assertCreated();
 
     expect($client->json('data.plan'))->toBe('pyme-plus')

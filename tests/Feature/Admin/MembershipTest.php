@@ -129,7 +129,7 @@ it('gives every new client the membership of its plan', function () {
 
     $id = $this->actingAs(platformOwner())->postJson('/api/admin/clients', [
         'type' => 'company', 'name' => 'Nueva SAC', 'document_type' => 'ruc', 'document_number' => '20131312955',
-        'plan' => 'avanzado', 'admin_name' => 'Ana', 'admin_email' => 'ana@nueva.pe',
+        'plan' => 'avanzado', 'admin_first_name' => 'Ana', 'admin_last_name' => 'Ríos', 'admin_email' => 'ana@nueva.pe',
     ])->assertCreated()->json('data.id');
 
     $membership = membershipsOf(Tenant::query()->findOrFail($id))->sole();

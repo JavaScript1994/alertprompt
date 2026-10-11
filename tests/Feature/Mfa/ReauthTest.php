@@ -85,7 +85,7 @@ it('requires re-auth to export contact data', function () {
 it('requires re-auth to change a user role', function () {
     $user = User::factory()->withRole('client-user')->for($this->tenant)->create();
 
-    $this->actingAs($this->admin)->putJson("/api/users/{$user->id}", ['name' => 'X', 'role_id' => 1])
+    $this->actingAs($this->admin)->putJson("/api/users/{$user->id}/role", ['role_id' => 1])
         ->assertForbidden()
         ->assertJsonPath('action', 'change_user_role');
 });

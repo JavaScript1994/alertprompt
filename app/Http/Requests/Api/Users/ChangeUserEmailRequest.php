@@ -6,7 +6,7 @@ namespace App\Http\Requests\Api\Users;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class InviteUserRequest extends FormRequest
+class ChangeUserEmailRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -21,15 +21,12 @@ class InviteUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => ['required', 'string', 'max:80'],
-            'last_name' => ['required', 'string', 'max:80'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'role_id' => ['required', 'integer'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email', 'unique:users,pending_email'],
         ];
     }
 
     public function attributes(): array
     {
-        return ['first_name' => 'nombres', 'last_name' => 'apellidos', 'email' => 'correo', 'role_id' => 'rol'];
+        return ['email' => 'correo'];
     }
 }

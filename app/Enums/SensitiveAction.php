@@ -23,6 +23,8 @@ enum SensitiveAction: string
     case ChangeAuthenticator = 'change_authenticator';
     /** Reemplazar un correo de respaldo ya verificado. */
     case ChangeEmailBackup = 'change_email_backup';
+    /** Cambiar el correo de inicio de sesión de un usuario. */
+    case ChangeUserEmail = 'change_user_email';
 
     public function label(): string
     {
@@ -35,6 +37,7 @@ enum SensitiveAction: string
             self::ResetUserMfa => 'Restablecer la verificación en dos pasos de un usuario',
             self::ChangeAuthenticator => 'Cambiar de app de autenticación',
             self::ChangeEmailBackup => 'Cambiar el correo de respaldo',
+            self::ChangeUserEmail => 'Cambiar el correo de inicio de sesión de un usuario',
         };
     }
 }

@@ -27,7 +27,7 @@ it('gives a new client the modules of its plan', function () {
 
     $response = $this->actingAs(platformOwner())->postJson('/api/admin/clients', [
         'type' => 'company', 'name' => 'Starter SAC', 'document_type' => 'ruc', 'document_number' => '20131312955',
-        'plan' => 'basico', 'admin_name' => 'Ana', 'admin_email' => 'ana@basico.pe',
+        'plan' => 'basico', 'admin_first_name' => 'Ana', 'admin_last_name' => 'Ríos', 'admin_email' => 'ana@basico.pe',
     ])->assertCreated();
 
     expect($response->json('data.modules'))->toEqualCanonicalizing(['sms', 'email', 'csv_import']);

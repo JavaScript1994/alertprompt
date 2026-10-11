@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\SetPasswordLink;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 function companyPayload(array $overrides = []): array
 {
@@ -19,7 +20,7 @@ function companyPayload(array $overrides = []): array
         'document_number' => '20131312955',
         'contact_email' => 'contacto@andina.pe',
         'contact_phone' => '+51 1 4445555',
-        'admin_name' => 'Rosa Quispe',
+        'admin_first_name' => 'Rosa', 'admin_last_name' => 'Quispe',
         'admin_email' => 'rosa@andina.pe',
         ...$overrides,
     ];
@@ -56,7 +57,7 @@ it('creates a natural person client with DNI', function () {
         'name' => 'Lucía Torres',
         'document_type' => 'dni',
         'document_number' => '46779354',
-        'admin_name' => 'Lucía Torres',
+        'admin_first_name' => 'Lucía', 'admin_last_name' => 'Torres',
         'admin_email' => 'lucia@gmail.com',
     ]))->assertCreated()->assertJsonPath('data.type', 'individual');
 });
@@ -151,4 +152,46 @@ it('does not expose the platform tenant as a client', function () {
 
 it('keeps client users out of client management', function () {
     $this->actingAs(User::factory()->create())->getJson('/api/admin/clients')->assertForbidden();
+});
+
+it('creates a company with the full profile and photo of its administrator', function () {
+    Storage::fake('local');
+    Notification::fake();
+
+    $this->actingAs(platformOwner())->post('/api/admin/clients', [
+        'type' => 'company',
+        'name' => 'Ficha SAC',
+        'document_type' => 'ruc',
+        'document_number' => '20100047218',
+        'admin_first_name' => 'Rosa',
+        'admin_last_name' => 'Quispe',
+        'admin_email' => 'rosa@ficha.pe',
+        'admin_job_title' => 'Gerente general',
+        'admin_birth_date' => '1985-02-03',
+        'admin_phone' => '01 555 1234',
+        'admin_mobile' => '+51 999 888 777',
+        'admin_photo' => fakePhoto(),
+    ], ['Accept' => 'application/json'])->assertCreated();
+
+    $admin = User::query()->withoutGlobalScopes()->where('email', 'rosa@ficha.pe')->sole();
+    expect($admin->name)->toBe('Rosa Quispe')
+        ->and($admin->job_title)->toBe('Gerente general')
+        ->and($admin->birth_date->toDateString())->toBe('1985-02-03')
+        ->and($admin->mobile)->toBe('+51 999 888 777');
+    Storage::disk('local')->assertExists($admin->photo_path);
+
+    // La plataforma ve la foto desde la ficha del cliente.
+    $users = $this->getJson("/api/admin/clients/{$admin->tenant_id}/users")->assertOk()->json('data');
+    expect($users[0]['photo_url'])->toStartWith("/api/admin/clients/{$admin->tenant_id}/users/{$admin->id}/photo");
+    $this->get($users[0]['photo_url'])->assertOk();
+});
+
+it('requires the administrator first and last names', function () {
+    $this->actingAs(platformOwner())->postJson('/api/admin/clients', [
+        'type' => 'company',
+        'name' => 'Sin Admin SAC',
+        'document_type' => 'ruc',
+        'document_number' => '20100047218',
+        'admin_email' => 'x@sinadmin.pe',
+    ])->assertUnprocessable()->assertJsonValidationErrors(['admin_first_name', 'admin_last_name']);
 });

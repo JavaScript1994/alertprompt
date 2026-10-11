@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\EmailBackupController;
 use App\Http\Controllers\Api\MembershipController;
 use App\Http\Controllers\Api\MfaController;
 use App\Http\Controllers\Api\PasswordController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReauthController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TemplateController;
@@ -72,6 +73,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Todo lo demás exige el segundo factor (o el plazo de gracia).
     Route::middleware('mfa')->group(function () {
         Route::post('/reauth', [ReauthController::class, 'store']);
+
+        // Mi perfil: todos los roles.
+        Route::put('/profile', [ProfileController::class, 'update']);
+        Route::get('/profile/photo', [ProfileController::class, 'photo']);
+        Route::post('/profile/photo', [ProfileController::class, 'uploadPhoto']);
+        Route::delete('/profile/photo', [ProfileController::class, 'deletePhoto']);
         Route::post('/mfa/recovery-codes/regenerate', [MfaController::class, 'regenerateRecoveryCodes'])->middleware('reauth:regenerate_recovery_codes');
         Route::delete('/mfa', [MfaController::class, 'disable'])->middleware('reauth:disable_mfa');
 
@@ -135,7 +142,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view');
         Route::get('/users/roles', [UserController::class, 'roles'])->middleware('permission:users.view');
         Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.manage');
-        Route::put('/users/{user}', [UserController::class, 'update'])->middleware(['permission:users.manage', 'reauth:change_user_role']);
+        Route::get('/users/{user}/photo', [UserController::class, 'photo'])->middleware('permission:users.view');
+        Route::put('/users/{user}', [UserController::class, 'update'])->middleware('permission:users.manage');
+        Route::put('/users/{user}/role', [UserController::class, 'updateRole'])->middleware(['permission:users.manage', 'reauth:change_user_role']);
+        Route::post('/users/{user}/email', [UserController::class, 'changeEmail'])->middleware(['permission:users.manage', 'reauth:change_user_email']);
+        Route::post('/users/{user}/photo', [UserController::class, 'uploadPhoto'])->middleware('permission:users.manage');
+        Route::delete('/users/{user}/photo', [UserController::class, 'deletePhoto'])->middleware('permission:users.manage');
         Route::post('/users/{user}/mfa/reset', [MfaController::class, 'reset'])->middleware(['permission:users.manage', 'reauth:reset_user_mfa']);
         Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->middleware('permission:users.manage');
         Route::post('/users/{user}/reactivate', [UserController::class, 'reactivate'])->middleware('permission:users.manage');
@@ -152,6 +164,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/clients/{client}/suspend', [ClientController::class, 'suspend'])->middleware('permission:admin.clients.suspend');
             Route::post('/clients/{client}/reactivate', [ClientController::class, 'reactivate'])->middleware('permission:admin.clients.suspend');
             Route::get('/clients/{client}/users', [ClientController::class, 'users'])->middleware('permission:admin.clients.view');
+            Route::get('/clients/{client}/users/{user}/photo', [ClientController::class, 'userPhoto'])->whereNumber('user')->middleware('permission:admin.clients.view');
             Route::get('/clients/{client}/activity', [ClientController::class, 'activity'])->middleware('permission:admin.clients.view');
 
             Route::get('/modules', [ModuleController::class, 'index'])->middleware('permission:admin.modules.view');

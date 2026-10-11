@@ -17,11 +17,13 @@ use App\Models\Scopes\TenantScope;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Clients\ClientManager;
+use App\Services\Users\UserProfileService;
 use App\Support\UserRoles;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Clientes de la plataforma. Las consultas sobre users/contacts/campaigns
@@ -60,7 +62,7 @@ class ClientController extends Controller
 
     public function store(StoreClientRequest $request): JsonResponse
     {
-        $client = $this->clients->create($request->validated());
+        $client = $this->clients->create($request->safe()->except('admin_photo'), $request->file('admin_photo'));
 
         return (new ClientResource($this->query()->findOrFail($client->id)))->response()->setStatusCode(201);
     }
@@ -93,6 +95,11 @@ class ClientController extends Controller
         UserRoles::attach($users);
 
         return TenantUserResource::collection($users);
+    }
+
+    public function userPhoto(Tenant $client, int $user, UserProfileService $profiles): StreamedResponse
+    {
+        return $profiles->photoResponse(User::query()->forTenant($client->id)->findOrFail($user));
     }
 
     public function activity(Request $request, Tenant $client): AnonymousResourceCollection

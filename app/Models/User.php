@@ -21,6 +21,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'first_name',
+        'last_name',
+        'job_title',
+        'birth_date',
+        'phone',
+        'mobile',
     ];
 
     protected $hidden = [
@@ -45,7 +51,23 @@ class User extends Authenticatable
             'two_factor_email_verified_at' => 'datetime',
             'two_factor_grace_ends_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'birth_date' => 'date:Y-m-d',
         ];
+    }
+
+    /**
+     * `name` (lo que se muestra en todo el panel) se arma con nombres +
+     * apellidos. Altas antiguas que solo traen `name` lo usan como nombres.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (User $user) {
+            if ($user->isDirty(['first_name', 'last_name']) && $user->first_name !== null) {
+                $user->name = trim($user->first_name.' '.($user->last_name ?? ''));
+            } elseif ($user->first_name === null && $user->name !== null) {
+                $user->first_name = $user->name;
+            }
+        });
     }
 
     public function hasMfaEnabled(): bool
