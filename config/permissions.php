@@ -63,6 +63,10 @@ return [
                     'view' => 'Ver',
                     'manage' => 'Marcar como resueltas',
                 ]],
+                'admin.announcements' => ['label' => 'Comunicados', 'actions' => [
+                    'view' => 'Ver y sus lecturas',
+                    'manage' => 'Crear, publicar y resolver',
+                ]],
                 'admin.bulk_imports' => ['label' => 'Cargas masivas', 'actions' => [
                     'view' => 'Ver',
                     'create' => 'Cargar a nombre de un cliente',
