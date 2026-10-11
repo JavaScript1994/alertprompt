@@ -27,3 +27,10 @@ export function applyServerErrors<T extends FieldValues>(
 
     return unmatched;
 }
+
+/** Mensaje 422 de un campo que no es del formulario (p. ej. un archivo), o null. */
+export function serverFieldError(error: unknown, field: string): string | null {
+    if (!(error instanceof AxiosError) || error.response?.status !== 422) return null;
+    const errors = (error.response.data as { errors?: Record<string, string[]> }).errors ?? {};
+    return errors[field]?.[0] ?? null;
+}

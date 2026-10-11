@@ -14,6 +14,7 @@ import { useAuthUser } from '@/hooks/useAuth';
 import { useCan } from '@/hooks/usePermissions';
 import { useResetUserMfa } from '@/features/mfa/api';
 import { MfaBadge, ResetMfaAction } from '@/features/mfa/UserMfaCells';
+import UserAvatar from '@/features/profile/UserAvatar';
 import { useResendInvitation, useSetUserActive, useTenantUsers } from '@/hooks/useUsers';
 import { apiErrorMessage } from '@/lib/format';
 import type { TenantUser } from '@/types';
@@ -45,12 +46,17 @@ export default function Users() {
             columnHelper.accessor('name', {
                 header: 'Usuario',
                 cell: (info) => (
-                    <div>
-                        <p className="font-medium text-foreground">
-                            {info.getValue()}
-                            {info.row.original.id === me?.id && <span className="ml-1.5 text-xs text-muted-foreground">(tú)</span>}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{info.row.original.email}</p>
+                    <div className="flex items-center gap-3">
+                        <UserAvatar name={info.getValue()} photoUrl={info.row.original.photo_url} />
+                        <div className="min-w-0">
+                            <p className="font-medium text-foreground">
+                                {info.getValue()}
+                                {info.row.original.id === me?.id && <span className="ml-1.5 text-xs text-muted-foreground">(tú)</span>}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {[info.row.original.job_title, info.row.original.email].filter(Boolean).join(' · ')}
+                            </p>
+                        </div>
                     </div>
                 ),
             }),
@@ -91,11 +97,11 @@ export default function Users() {
                             )}
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon-sm" aria-label="Editar usuario" onClick={() => setEditing(user)}>
+                                    <Button variant="ghost" size="icon-sm" aria-label="Ver y editar ficha" onClick={() => setEditing(user)}>
                                         <Pencil />
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Editar nombre y rol</TooltipContent>
+                                <TooltipContent>Ver y editar ficha</TooltipContent>
                             </Tooltip>
                             {!isMe && <ResetMfaAction user={user} reset={resetMfa} />}
                             {!isMe && (

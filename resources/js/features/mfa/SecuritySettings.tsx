@@ -1,7 +1,6 @@
 import { KeyRound, Mail, ShieldCheck, ShieldOff, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import PageHeader from '@/components/shared/PageHeader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ import RecoveryCodes from './RecoveryCodes';
 type Panel = 'enroll' | 'email' | 'codes' | null;
 
 /**
- * Seguridad del usuario: estado del MFA, cambio de dispositivo, códigos de
+ * Panel de Seguridad (pestaña de Mi perfil): estado del MFA, cambio de dispositivo, códigos de
  * recuperación, correo de respaldo y desactivación. Las acciones sensibles
  * abren ReauthModal por el 403 reauth_required del backend.
  */
@@ -37,8 +36,6 @@ export default function SecuritySettings() {
 
     return (
         <div>
-            <PageHeader title="Seguridad" description="Verificación en dos pasos de tu usuario." />
-
             {error && (
                 <Alert variant="error" className="mb-6">
                     <AlertTitle>{apiErrorMessage(error, [], 'No se pudo completar la acción.')}</AlertTitle>

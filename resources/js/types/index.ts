@@ -83,10 +83,24 @@ export interface PermissionTreeSection {
     modules: PermissionTreeModule[];
 }
 
-export interface User {
+/** Datos personales de un usuario del panel (no de un contacto). */
+export interface PersonalData {
+    first_name: string | null;
+    last_name: string | null;
+    job_title: string | null;
+    /** YYYY-MM-DD */
+    birth_date: string | null;
+    phone: string | null;
+    mobile: string | null;
+    /** Ruta de la API (disco privado); null sin foto. */
+    photo_url: string | null;
+}
+
+export interface User extends PersonalData {
     id: number;
     name: string;
     email: string;
+    last_login_at: string | null;
     roles: UserRoleSummary[];
     permissions: PermissionName[];
     tenant: Tenant;
@@ -103,10 +117,12 @@ export interface Client extends Tenant {
     created_at: string;
 }
 
-export interface TenantUser {
+export interface TenantUser extends PersonalData {
     id: number;
     name: string;
     email: string;
+    /** Correo nuevo esperando confirmación desde esa dirección. */
+    pending_email: string | null;
     roles: { id: number; name: string; label: string }[];
     email_verified_at: string | null;
     mfa_enabled: boolean;

@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
-import { AlertCircle, ArrowRight, ArrowUpRight, Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { AlertCircle, ArrowRight, ArrowUpRight, CheckCircle2, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,10 @@ export default function Login() {
     const login = useLogin();
     const [showPassword, setShowPassword] = useState(false);
     const [challenge, setChallenge] = useState<LoginChallenge | null>(null);
+    // Vuelve aquí desde el enlace de confirmación de cambio de correo.
+    const [searchParams] = useSearchParams();
+    const emailChanged = searchParams.has('email_changed');
+    const emailChangeFailed = searchParams.has('email_change_failed');
 
     const {
         register,
@@ -97,6 +101,18 @@ export default function Login() {
             </div>
 
             <form onSubmit={onSubmit} className="mt-10 space-y-6 short:mt-7 shorter:mt-5 shorter:space-y-4" noValidate>
+                {emailChanged && (
+                    <Alert variant="success">
+                        <CheckCircle2 />
+                        <AlertTitle>Correo confirmado. Desde ahora inicia sesión con tu correo nuevo.</AlertTitle>
+                    </Alert>
+                )}
+                {emailChangeFailed && (
+                    <Alert variant="error">
+                        <AlertCircle />
+                        <AlertTitle>No se pudo confirmar el correo: el enlace ya no es válido o ese correo ya está en uso.</AlertTitle>
+                    </Alert>
+                )}
                 <Field label="Correo electrónico" htmlFor="email" error={emailError} className="space-y-2.5">
                     <div className="relative">
                         <Mail className={iconClasses} />

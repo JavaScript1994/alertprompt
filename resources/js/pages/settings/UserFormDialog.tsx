@@ -9,27 +9,26 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAssignableRoles, useInviteUser, useUpdateUser } from '@/hooks/useUsers';
+import { useAssignableRoles, useInviteUser } from '@/hooks/useUsers';
 import { applyServerErrors } from '@/lib/forms';
 import type { TenantUser } from '@/types';
+import UserDetailDialog from './UserDetailDialog';
 
 const schema = z.object({
-    name: z.string().trim().min(1, 'Ingresa el nombre').max(120),
-    email: z.string().trim(),
+    first_name: z.string().trim().min(1, 'Ingresa los nombres').max(80),
+    last_name: z.string().trim().min(1, 'Ingresa los apellidos').max(80),
+    email: z.string().trim().min(1, 'Ingresa el correo').email('Correo inválido'),
     role_id: z.string().min(1, 'Elige un rol'),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-const FIELDS = ['name', 'email', 'role_id'] as const;
+const FIELDS = ['first_name', 'last_name', 'email', 'role_id'] as const;
 
-/** Invitar (con correo) o editar nombre y rol de un usuario. */
-export default function UserFormDialog({ open, user, onClose }: { open: boolean; user?: TenantUser; onClose: () => void }) {
-    const isEditing = user !== undefined;
+/** Invitar: lo mínimo para el acceso. El resto de la ficha lo completa la persona en Mi perfil. */
+function InviteUserDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
     const { data: roles } = useAssignableRoles();
     const invite = useInviteUser();
-    const update = useUpdateUser();
-    const mutation = isEditing ? update : invite;
     const [generalError, setGeneralError] = useState<string | null>(null);
 
     const {
@@ -40,43 +39,34 @@ export default function UserFormDialog({ open, user, onClose }: { open: boolean;
         watch,
         setError,
         formState: { errors },
-    } = useForm<FormValues>({
-        resolver: zodResolver(
-            isEditing ? schema : schema.extend({ email: z.string().trim().min(1, 'Ingresa el correo').email('Correo inválido') }),
-        ),
-    });
+    } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
     useEffect(() => {
-        if (!open) return;
-        reset({ name: user?.name ?? '', email: user?.email ?? '', role_id: user?.roles[0] ? String(user.roles[0].id) : '' });
-    }, [open, user, reset]);
+        if (open) reset({ first_name: '', last_name: '', email: '', role_id: '' });
+    }, [open, reset]);
 
     const close = () => {
         setGeneralError(null);
         onClose();
     };
 
-    const onSubmit = handleSubmit((values) => {
-        setGeneralError(null);
-        const onError = (error: unknown) => setGeneralError(applyServerErrors(error, setError, FIELDS));
-        const input = { name: values.name, role_id: Number(values.role_id) };
-
-        if (isEditing) {
-            update.mutate({ ...input, id: user.id }, { onSuccess: close, onError });
-        } else {
-            invite.mutate({ ...input, email: values.email }, { onSuccess: close, onError });
-        }
-    });
+    const onSubmit = handleSubmit((values) =>
+        invite.mutate(
+            { ...values, role_id: Number(values.role_id) },
+            { onSuccess: close, onError: (error) => setGeneralError(applyServerErrors(error, setError, FIELDS)) },
+        ),
+    );
 
     const selectedRole = roles?.find((role) => String(role.id) === watch('role_id'));
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && close()}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{isEditing ? 'Editar usuario' : 'Invitar usuario'}</DialogTitle>
+                    <DialogTitle>Invitar usuario</DialogTitle>
                     <DialogDescription>
-                        {isEditing ? user.email : 'Recibirá un correo para crear su contraseña. El enlace dura 7 días.'}
+                        Recibirá un correo para crear su contraseña (el enlace dura 7 días). El resto de sus datos los completa
+                        en Mi perfil.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -88,23 +78,26 @@ export default function UserFormDialog({ open, user, onClose }: { open: boolean;
                         </Alert>
                     )}
 
-                    <Field label="Nombre" htmlFor="user-name" error={errors.name?.message}>
-                        <Input id="user-name" aria-invalid={Boolean(errors.name)} {...register('name')} />
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <Field label="Nombres" htmlFor="invite-first-name" error={errors.first_name?.message}>
+                            <Input id="invite-first-name" aria-invalid={Boolean(errors.first_name)} {...register('first_name')} />
+                        </Field>
+                        <Field label="Apellidos" htmlFor="invite-last-name" error={errors.last_name?.message}>
+                            <Input id="invite-last-name" aria-invalid={Boolean(errors.last_name)} {...register('last_name')} />
+                        </Field>
+                    </div>
+
+                    <Field label="Correo" htmlFor="invite-email" error={errors.email?.message} hint="Será su usuario para iniciar sesión.">
+                        <Input id="invite-email" type="email" aria-invalid={Boolean(errors.email)} {...register('email')} />
                     </Field>
 
-                    {!isEditing && (
-                        <Field label="Correo" htmlFor="user-email" error={errors.email?.message}>
-                            <Input id="user-email" type="email" aria-invalid={Boolean(errors.email)} {...register('email')} />
-                        </Field>
-                    )}
-
-                    <Field label="Rol" htmlFor="user-role" error={errors.role_id?.message} hint={selectedRole?.description ?? undefined}>
+                    <Field label="Rol" htmlFor="invite-role" error={errors.role_id?.message} hint={selectedRole?.description ?? undefined}>
                         <Controller
                             control={control}
                             name="role_id"
                             render={({ field }) => (
                                 <Select value={field.value} onValueChange={(value) => value && field.onChange(value)}>
-                                    <SelectTrigger id="user-role" className="w-full" aria-invalid={Boolean(errors.role_id)}>
+                                    <SelectTrigger id="invite-role" className="w-full" aria-invalid={Boolean(errors.role_id)}>
                                         <SelectValue placeholder="Elige un rol" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -123,12 +116,19 @@ export default function UserFormDialog({ open, user, onClose }: { open: boolean;
                         <Button type="button" variant="outline" onClick={close}>
                             Cancelar
                         </Button>
-                        <Button type="submit" loading={mutation.isPending}>
-                            {isEditing ? 'Guardar cambios' : 'Enviar invitación'}
+                        <Button type="submit" loading={invite.isPending}>
+                            Enviar invitación
                         </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
         </Dialog>
     );
+}
+
+/** Invitar (sin `user`) o ver y editar la ficha completa de un usuario. */
+export default function UserFormDialog({ open, user, onClose }: { open: boolean; user?: TenantUser; onClose: () => void }) {
+    if (user) return <UserDetailDialog key={user.id} open={open} userId={user.id} fallback={user} onClose={onClose} />;
+
+    return <InviteUserDialog open={open} onClose={onClose} />;
 }
