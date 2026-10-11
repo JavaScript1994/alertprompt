@@ -24,6 +24,8 @@ import Login from '@/pages/auth/Login';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import Campaigns from '@/pages/campaigns/Campaigns';
 import Contacts from '@/pages/contacts/Contacts';
+import AdminAnnouncementsPage from '@/features/announcements/AdminAnnouncementsPage';
+import AnnouncementsPage from '@/features/announcements/AnnouncementsPage';
 import BrandingSettingsPage from '@/features/branding/BrandingSettingsPage';
 import MyProfile from '@/features/profile/MyProfile';
 import Home from '@/pages/dashboard/Home';
@@ -89,6 +91,7 @@ export default function Root() {
                             <Route path="/settings/users" element={<Users />} />
                         </Route>
                         {/* De cada usuario, sin permiso: todos los roles gestionan su perfil y su MFA. */}
+                        <Route path="/announcements" element={<AnnouncementsPage />} />
                         <Route path="/settings/profile" element={<MyProfile key="data" initialTab="data" />} />
                         <Route path="/settings/security" element={<MyProfile key="security" initialTab="security" />} />
 
@@ -107,6 +110,9 @@ export default function Root() {
                         </Route>
                         <Route element={<RequirePermission permission="admin.bulk_imports.view" />}>
                             <Route path="/admin/bulk-imports" element={<BulkImports />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="admin.announcements.view" />}>
+                            <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="admin.alerts.view" />}>
                             <Route path="/admin/alerts" element={<Alerts />} />

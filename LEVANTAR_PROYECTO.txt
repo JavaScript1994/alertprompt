@@ -145,6 +145,8 @@ host (el de la imagen no trae Pest):
     campaigns:dispatch-scheduled   cada minuto
     memberships:refresh            cada hora (minuto 10): activa/vence membresías;
                                    si el scheduler estuvo caído, recupera lo pendiente
+    announcements:send-emails      cada minuto: correo de incidentes y acciones
+                                   requeridas ya publicados (una sola vez)
     billing:daily                  diario 00:30 (Lima): emite comprobantes del período
                                    y alerta los vencidos
 

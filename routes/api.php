@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\Admin\AlertController as AdminAlertController;
+use App\Http\Controllers\Api\Admin\AnnouncementController as AdminAnnouncementController;
 use App\Http\Controllers\Api\Admin\BulkImportController;
 use App\Http\Controllers\Api\Admin\ClientChannelAccountController;
 use App\Http\Controllers\Api\Admin\ClientController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Api\Admin\PlanController;
 use App\Http\Controllers\Api\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\AlertController;
+use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BillingController;
 use App\Http\Controllers\Api\BrandingController;
@@ -79,6 +81,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Todo lo demás exige el segundo factor (o el plazo de gracia).
     Route::middleware('mfa')->group(function () {
         Route::post('/reauth', [ReauthController::class, 'store']);
+
+        // Comunicados de la plataforma: todos los roles de los clientes.
+        Route::get('/announcements', [AnnouncementController::class, 'index']);
+        Route::post('/announcements/read-all', [AnnouncementController::class, 'readAll']);
+        Route::post('/announcements/{announcement}/read', [AnnouncementController::class, 'read'])->whereNumber('announcement');
+        Route::post('/announcements/{announcement}/dismiss', [AnnouncementController::class, 'dismiss'])->whereNumber('announcement');
 
         // Mi perfil: todos los roles.
         Route::put('/profile', [ProfileController::class, 'update']);
@@ -188,6 +196,13 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/clients/{client}/channel-accounts', [ClientChannelAccountController::class, 'index'])->middleware('permission:admin.clients.view');
             Route::put('/clients/{client}/channel-accounts/{channel}', [ClientChannelAccountController::class, 'update'])->middleware(['permission:admin.clients.update', 'reauth:change_provider_config']);
             Route::post('/clients/{client}/users/{user}/mfa/reset', [ClientUserMfaController::class, 'reset'])->whereNumber('user')->middleware(['permission:admin.clients.update', 'reauth:reset_user_mfa']);
+
+            Route::get('/announcements', [AdminAnnouncementController::class, 'index'])->middleware('permission:admin.announcements.view');
+            Route::get('/announcements/{announcement}/stats', [AdminAnnouncementController::class, 'stats'])->whereNumber('announcement')->middleware('permission:admin.announcements.view');
+            Route::post('/announcements', [AdminAnnouncementController::class, 'store'])->middleware('permission:admin.announcements.manage');
+            Route::put('/announcements/{announcement}', [AdminAnnouncementController::class, 'update'])->whereNumber('announcement')->middleware('permission:admin.announcements.manage');
+            Route::post('/announcements/{announcement}/resolve', [AdminAnnouncementController::class, 'resolve'])->whereNumber('announcement')->middleware('permission:admin.announcements.manage');
+            Route::delete('/announcements/{announcement}', [AdminAnnouncementController::class, 'destroy'])->whereNumber('announcement')->middleware('permission:admin.announcements.manage');
 
             Route::get('/alerts', [AdminAlertController::class, 'index'])->middleware('permission:admin.alerts.view');
             Route::post('/alerts/{alert}/resolve', [AdminAlertController::class, 'resolve'])->whereNumber('alert')->middleware('permission:admin.alerts.manage');
