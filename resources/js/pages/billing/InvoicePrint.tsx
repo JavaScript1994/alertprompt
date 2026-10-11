@@ -108,6 +108,18 @@ export default function InvoicePrint({ scope }: { scope: 'client' | 'admin' }) {
                             <dd className="tabular-nums">{money(invoice.paid, invoice.currency)}</dd>
                         </div>
                     )}
+                    {Number(invoice.credited) > 0 && (
+                        <div className="flex justify-between text-muted-foreground">
+                            <dt>Notas de crédito</dt>
+                            <dd className="tabular-nums">−{money(invoice.credited, invoice.currency)}</dd>
+                        </div>
+                    )}
+                    {invoice.status === 'issued' && Number(invoice.balance) < Number(invoice.total) && (
+                        <div className="flex justify-between font-medium">
+                            <dt>Saldo pendiente</dt>
+                            <dd className="tabular-nums">{money(invoice.balance, invoice.currency)}</dd>
+                        </div>
+                    )}
                 </dl>
 
                 {invoice.void_reason && <p className="mt-6 text-sm text-error">Anulado: {invoice.void_reason}</p>}

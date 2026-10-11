@@ -10,7 +10,8 @@ import Pagination from '@/components/shared/Pagination';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useBillingSummary, useMyInvoices, useMyPayments } from '@/hooks/useBilling';
+import CreditNotesTable from '@/components/shared/CreditNotesTable';
+import { useBillingSummary, useCreditNotes, useMyInvoices, useMyPayments } from '@/hooks/useBilling';
 import type { Invoice, PaymentRecord } from '@/types';
 
 const invoiceColumn = createColumnHelper<Invoice>();
@@ -22,6 +23,8 @@ export default function Payments() {
     const { data: summary } = useBillingSummary();
     const { data: invoices, isLoading } = useMyInvoices(invoicePage);
     const { data: payments } = useMyPayments(paymentPage);
+    const [creditPage, setCreditPage] = useState(1);
+    const { data: creditNotes } = useCreditNotes('client', creditPage);
 
     const invoiceColumns = useMemo(
         () => [
@@ -71,6 +74,11 @@ export default function Payments() {
                             {summary.overdue_count} comprobante{summary.overdue_count === 1 ? '' : 's'} vencido{summary.overdue_count === 1 ? '' : 's'}
                         </p>
                     )}
+                    {summary && Number(summary.credit_balance) > 0 && (
+                        <p className="text-xs font-medium text-success">
+                            Saldo a favor: {money(summary.credit_balance)} (se descuenta de tu próximo comprobante)
+                        </p>
+                    )}
                 </Card>
                 <Card className="lg:col-span-2">
                     <CardHeader>
@@ -93,6 +101,14 @@ export default function Payments() {
                 </>
             ) : (
                 <EmptyState icon={FileText} title="Aún no tienes comprobantes" />
+            )}
+
+            {creditNotes && creditNotes.data.length > 0 && (
+                <>
+                    <h2 className="mt-8 mb-3 text-lg">Notas de crédito</h2>
+                    <CreditNotesTable notes={creditNotes.data} scope="client" />
+                    <Pagination meta={creditNotes.meta} noun="notas de crédito" onPageChange={setCreditPage} />
+                </>
             )}
 
             <h2 className="mt-8 mb-3 text-lg">Pagos registrados</h2>

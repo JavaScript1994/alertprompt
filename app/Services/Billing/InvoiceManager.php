@@ -10,6 +10,7 @@ use App\Enums\DocumentType;
 use App\Enums\InvoiceStatus;
 use App\Enums\MembershipStatus;
 use App\Enums\PaymentMethodType;
+use App\Models\CreditNote;
 use App\Models\Invoice;
 use App\Models\Membership;
 use App\Models\Payment;
@@ -37,12 +38,16 @@ class InvoiceManager
         private readonly BillingProviders $providers,
         private readonly AuditLogger $audit,
         private readonly Alerts $alerts,
+        private readonly DocumentNumbers $numbers,
+        private readonly CreditNoteManager $credits,
     ) {}
 
     /**
      * Emite un comprobante por un monto SIN IGV.
      *
-     * @param  list<array{description: string, amount: string}>  $lines  detalle; vacío = una línea con $description
+     * Si el cliente tiene saldo a favor (notas de crédito), se descuenta solo.
+     *
+     * @param  list<array{description: string, amount: string, tenant_add_on_id?: int}>  $lines  detalle; vacío = una línea con $description
      */
     public function issue(
         Tenant $tenant,
@@ -62,9 +67,7 @@ class InvoiceManager
         $lines = $lines !== [] ? $lines : [['description' => $description, 'amount' => number_format($subtotal, 2, '.', '')]];
 
         $invoice = DB::transaction(function () use ($tenant, $documentType, $series, $subtotal, $igv, $description, $membership, $periodStart, $today, $lines, $addOnContract) {
-            DB::table('invoice_sequences')->insertOrIgnore(['series' => $series, 'last_number' => 0]);
-            $number = (int) DB::table('invoice_sequences')->where('series', $series)->lockForUpdate()->value('last_number') + 1;
-            DB::table('invoice_sequences')->where('series', $series)->update(['last_number' => $number]);
+            $number = $this->numbers->next($series);
 
             $invoice = Invoice::query()->create([
                 'tenant_id' => $tenant->id,
@@ -93,8 +96,9 @@ class InvoiceManager
             ]);
 
             $this->audit->record('invoice.issued', $tenant->id, $invoice, ['code' => $invoice->code(), 'total' => (string) $invoice->total]);
+            $this->credits->applyAvailableCredit($invoice);
 
-            return $invoice;
+            return $invoice->refresh();
         });
 
         // El envío a SUNAT va fuera de la transacción: si el proveedor falla,
@@ -121,7 +125,7 @@ class InvoiceManager
      */
     public function issueForMembershipPeriod(Membership $membership, CarbonImmutable $today): ?Invoice
     {
-        $periodStart = $this->currentPeriodStart($membership, $today);
+        $periodStart = BillingPeriod::currentStart($membership, $today);
 
         if ($periodStart === null) {
             return null;
@@ -147,6 +151,8 @@ class InvoiceManager
             $lines[] = [
                 'description' => "Servicio {$contract->addOn->name} ({$cycle})",
                 'amount' => $this->money((float) $contract->monthly_price * ($yearly ? 12 : 1)),
+                // Para encontrar qué comprobante cobró el servicio (notas de crédito).
+                'tenant_add_on_id' => $contract->id,
             ];
         }
 
@@ -185,14 +191,14 @@ class InvoiceManager
             return null;
         }
 
-        $periodStart = $this->currentPeriodStart($membership, $today);
+        $periodStart = BillingPeriod::currentStart($membership, $today);
         $alreadyIssued = Invoice::query()->withoutGlobalScope(TenantScope::class)->where('tenant_add_on_id', $contract->id)->exists();
         if ($periodStart === null || $alreadyIssued) {
             return null;
         }
 
         $startsAt = CarbonImmutable::parse($contract->starts_at)->startOfDay();
-        $months = collect(range(1, 11))->filter(fn (int $k) => $periodStart->addMonthsNoOverflow($k)->greaterThan($startsAt))->count();
+        $months = BillingPeriod::monthsLeftInYear($periodStart, $startsAt);
         $amount = (float) $contract->monthly_price * $months;
 
         if ($months === 0 || $amount <= 0) {
@@ -210,7 +216,7 @@ class InvoiceManager
             $description,
             $membership,
             null,
-            [['description' => $description, 'amount' => $this->money($amount)]],
+            [['description' => $description, 'amount' => $this->money($amount), 'tenant_add_on_id' => $contract->id]],
             $contract,
         );
     }
@@ -224,7 +230,7 @@ class InvoiceManager
             throw ValidationException::withMessages(['invoice' => 'El comprobante está anulado.']);
         }
 
-        $pending = round((float) $invoice->total - (float) $invoice->paidAmount(), 2);
+        $pending = $invoice->balance();
         $amount = round((float) $data['amount'], 2);
 
         if ($amount > $pending + 0.001) {
@@ -245,7 +251,7 @@ class InvoiceManager
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            if ((float) $invoice->paidAmount() + 0.001 >= (float) $invoice->total) {
+            if ($invoice->balance() <= 0) {
                 $invoice->update(['status' => InvoiceStatus::Paid, 'paid_at' => $payment->paid_at]);
             }
 
@@ -264,8 +270,15 @@ class InvoiceManager
         if ($invoice->status !== InvoiceStatus::Issued || $invoice->payments()->exists()) {
             throw ValidationException::withMessages(['invoice' => 'Solo se anula un comprobante emitido y sin pagos.']);
         }
+        if (CreditNote::query()->withoutGlobalScope(TenantScope::class)->where('invoice_id', $invoice->id)->exists()) {
+            throw ValidationException::withMessages(['invoice' => 'Tiene una nota de crédito: ya fue corregido con ella.']);
+        }
 
-        $invoice->update(['status' => InvoiceStatus::Void, 'voided_at' => now(), 'void_reason' => $reason]);
+        DB::transaction(function () use ($invoice, $reason) {
+            // Lo que se le aplicó de saldo a favor vuelve al cliente.
+            $this->credits->release($invoice);
+            $invoice->update(['status' => InvoiceStatus::Void, 'voided_at' => now(), 'void_reason' => $reason]);
+        });
         $this->audit->record('invoice.voided', $invoice->tenant_id, $invoice, ['code' => $invoice->code(), 'reason' => $reason]);
 
         return $invoice;
@@ -335,21 +348,5 @@ class InvoiceManager
     private function planName(string $key): string
     {
         return Plan::query()->where('key', $key)->value('name') ?? $key;
-    }
-
-    /** Inicio del ciclo de facturación que contiene $today (o null si fuera de vigencia). */
-    private function currentPeriodStart(Membership $membership, CarbonImmutable $today): ?CarbonImmutable
-    {
-        $start = CarbonImmutable::parse($membership->starts_at)->startOfDay();
-        $end = CarbonImmutable::parse($membership->ends_at)->startOfDay();
-
-        if ($today->lessThan($start) || $today->greaterThan($end)) {
-            return null;
-        }
-
-        $months = $membership->billing_cycle === BillingCycle::Monthly ? 1 : 12;
-        $elapsed = (int) floor($start->diffInMonths($today) / $months) * $months;
-
-        return $start->addMonthsNoOverflow($elapsed);
     }
 }

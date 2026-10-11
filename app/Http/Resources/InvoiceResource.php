@@ -17,6 +17,7 @@ class InvoiceResource extends JsonResource
     public function toArray(Request $request): array
     {
         $paid = (float) ($this->paid_total ?? $this->paidAmount());
+        $credited = (float) ($this->relationLoaded('creditApplications') ? $this->creditApplications->sum('amount') : $this->creditedAmount());
 
         return [
             'id' => $this->id,
@@ -32,7 +33,9 @@ class InvoiceResource extends JsonResource
             'igv' => (string) $this->igv,
             'total' => (string) $this->total,
             'paid' => number_format($paid, 2, '.', ''),
-            'balance' => number_format(max(0, (float) $this->total - $paid), 2, '.', ''),
+            // Saldado con notas de crédito (saldo a favor), no es dinero recibido.
+            'credited' => number_format($credited, 2, '.', ''),
+            'balance' => number_format(max(0, (float) $this->total - $paid - $credited), 2, '.', ''),
             'description' => $this->description,
             // Los emitidos antes del desglose tienen una sola línea.
             'lines' => $this->lines ?? [['description' => $this->description, 'amount' => (string) $this->subtotal]],
