@@ -11,6 +11,7 @@ import {
     Megaphone,
     MessageCircle,
     MessageSquareText,
+    Newspaper,
     Palette,
     Receipt,
     Settings2,
@@ -67,6 +68,10 @@ const PLATFORM_NAV: NavSection[] = [
             { to: '/admin/clients/companies', label: 'Empresas', icon: Building2, permission: 'admin.clients.view' },
             { to: '/admin/clients/individuals', label: 'Naturales', icon: UserIcon, permission: 'admin.clients.view' },
         ],
+    },
+    {
+        heading: 'Comunicación',
+        items: [{ to: '/admin/announcements', label: 'Comunicados', icon: Newspaper, permission: 'admin.announcements.view' }],
     },
     {
         heading: 'Facturación',
@@ -152,6 +157,7 @@ const DETAIL_LABELS: [prefix: string, label: string][] = [
     ['/admin/clients/', 'Clientes'],
     ['/billing/invoices/', 'Comprobante'],
     ['/settings/profile', 'Mi perfil'],
+    ['/announcements', 'Novedades'],
     ['/settings/security', 'Mi perfil'],
 ];
 

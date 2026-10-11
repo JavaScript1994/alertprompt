@@ -108,6 +108,15 @@ los usuarios de cada cliente. Nunca a los contactos.
   `hash_equals`) ni `challenge_token`. El correo con el OTP **no** va a la cola
   (el payload quedaría en Redis/`failed_jobs`).
 
+### 2.6 Comunicados de la plataforma
+
+Distintos de las **alertas** (automáticas, operativas). Los escribe la
+Administración general: novedad, aviso, incidente, acción requerida y
+promoción, para todos, por plan o por cliente, y opcionalmente solo para
+administradores. Se ven dentro del panel (campana, banners, ventana de
+novedades, página Novedades). Por correo **solo** incidentes y acciones
+requeridas, una vez; **las promociones nunca van por correo** (§2.1).
+
 ### 2.5 Subdominio y marca por empresa
 
 - Cada cliente tiene `tenants.slug` y su login en `{slug}.{APP_BASE_DOMAIN}`.
@@ -311,6 +320,13 @@ campaign_recipients   id, campaign_id, contact_id, status, provider_message_id,
                       INDEX(provider_message_id)                  ← lo usa el webhook
 message_events        id, campaign_recipient_id, event, payload(jsonb), occurred_at
                       (particionar por mes cuando crezca)
+announcements         id, type (feature|notice|incident|action_required|promotion), title, body,
+                      link_url, link_label, audience (all|plans|tenants), plan_keys(jsonb),
+                      admins_only, published_at (null = borrador), expires_at, resolved_at,
+                      send_email, emailed_at, created_by
+announcement_tenant   announcement_id, tenant_id          ← audiencia "clientes específicos"
+announcement_reads    id, announcement_id, user_id, read_at, dismissed_at
+                      UNIQUE(announcement_id, user_id)
 auth_events           id, user_id, tenant_id, event, ip, user_agent, metadata(jsonb), occurred_at
                       INDEX(user_id, occurred_at), INDEX(tenant_id, event, occurred_at)
 sensitive_action_confirmations

@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import Logo from '@/components/shared/Logo';
 import { Button } from '@/components/ui/button';
 import { useAuthUser } from '@/hooks/useAuth';
+import NotificationBell from '@/features/announcements/NotificationBell';
 import { cn } from '@/lib/utils';
 import { navigationFor, routeLabel } from './navigation';
 import ProfileMenu from './ProfileMenu';
@@ -49,6 +50,7 @@ export default function Header({ onOpenSidebar }: { onOpenSidebar: () => void })
 
                 <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                     <ThemeToggle />
+                    <NotificationBell />
                     <ProfileMenu />
                 </div>
             </nav>

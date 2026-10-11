@@ -4,6 +4,8 @@ import { Outlet } from 'react-router-dom';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import Header from './partials/Header';
 import ImpersonationBanner from './partials/ImpersonationBanner';
+import AnnouncementBanners from '@/features/announcements/AnnouncementBanners';
+import WhatsNewDialog from '@/features/announcements/WhatsNewDialog';
 import MfaBanner from './partials/MfaBanner';
 import Sidebar from './partials/Sidebar';
 
@@ -34,6 +36,7 @@ export default function DashboardLayout() {
                 <div className="print:hidden">
                     <ImpersonationBanner />
                     <MfaBanner />
+                    <AnnouncementBanners />
                     <Header onOpenSidebar={() => setIsSidebarOpen(true)} />
                 </div>
 
@@ -42,6 +45,7 @@ export default function DashboardLayout() {
                         <Outlet />
                     </div>
                 </main>
+                <WhatsNewDialog />
 
                 <footer className="px-6 pb-6 text-center text-xs text-muted-foreground print:hidden">
                     © {CURRENT_YEAR} AlertPrompt · Mensajería con consentimiento (Ley N° 32323)
