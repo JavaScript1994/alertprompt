@@ -1,4 +1,6 @@
-FROM php:8.3-fpm-alpine
+# Versión de parche fija: 8.3.36 corrige PHP2Shell (CVE-2026-109618/109619, RCE).
+# Subirla a mano en cada release de seguridad de PHP; nunca bajar de aquí.
+FROM php:8.3.36-fpm-alpine
 
 RUN apk add --no-cache \
     postgresql-dev \
@@ -23,6 +25,9 @@ RUN apk add --no-cache $PHPIZE_DEPS \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apk del $PHPIZE_DEPS
+
+# Mitigación adicional de CVE-2026-109619; Laravel no usa upload_progress.
+RUN echo 'session.upload_progress.enabled = 0' > "$PHP_INI_DIR/conf.d/zz-security.ini"
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
